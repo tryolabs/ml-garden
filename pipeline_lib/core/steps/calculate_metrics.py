@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -9,8 +11,9 @@ from .base import PipelineStep
 class CalculateMetricsStep(PipelineStep):
     """Calculate metrics."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[dict] = None) -> None:
         """Initialize CalculateMetricsStep."""
+        super().__init__(config=config)
         self.init_logger()
 
     def execute(self, data: DataContainer) -> DataContainer:

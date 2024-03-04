@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -11,8 +11,9 @@ from .base import PipelineStep
 class TabularSplitStep(PipelineStep):
     """Split the data."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[dict] = None) -> None:
         """Initialize SplitStep."""
+        super().__init__(config=config)
         self.init_logger()
 
     def _id_based_split(
@@ -75,7 +76,7 @@ class TabularSplitStep(PipelineStep):
         """Execute the split based on IDs."""
         self.logger.info("Splitting tabular data...")
 
-        split_configs = data[DataContainer.SPLIT_CONFIGS]
+        split_configs = self.config
 
         if split_configs is None:
             self.logger.info("No split_configs found. No splitting will be performed.")

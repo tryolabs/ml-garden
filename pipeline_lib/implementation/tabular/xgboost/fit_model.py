@@ -17,17 +17,20 @@ class XGBoostFitModelStep(FitModelStep):
 
         start_time = time.time()
 
-        model_configs = data[DataContainer.MODEL_CONFIGS]
+        model_configs = self.config
+
+        if model_configs is None:
+            raise ValueError("No model configs found")
 
         target = model_configs.get("target")
 
         if target is None:
             raise ValueError("Target column not found in model_configs.")
 
-        drop_columns: list[str] = model_configs.get("drop_columns")
-
         df_train = data[DataContainer.TRAIN]
         df_valid = data[DataContainer.VALIDATION]
+
+        drop_columns = model_configs.get("drop_columns")
 
         if drop_columns:
             df_train = df_train.drop(columns=drop_columns)

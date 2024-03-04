@@ -21,17 +21,12 @@ class DataContainer:
         A dictionary to store data items.
     """
 
-    GENERATE_CONFIGS = "generate_configs"
-    CLEAN_CONFIGS = "clean_configs"
-    SPLIT_CONFIGS = "split_configs"
-    TARGET_SCALING_CONFIGS = "target_scaling_configs"
     RAW = "raw"
     CLEAN = "clean"
     TRAIN = "train"
     VALIDATION = "validation"
     TEST = "test"
     MODEL = "model"
-    MODEL_CONFIGS = "model_configs"
     MODEL_INPUT = "model_input"
     MODEL_OUTPUT = "model_output"
     METRICS = "metrics"

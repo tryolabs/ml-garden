@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pipeline_lib.core import DataContainer
 
 from .base import PipelineStep
@@ -6,14 +8,14 @@ from .base import PipelineStep
 class TargetScalingStep(PipelineStep):
     """Scale the target."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[dict] = None) -> None:
         """Initialize TargetScalingStep."""
+        super().__init__(config=config)
         self.init_logger()
 
     def execute(self, data: DataContainer) -> DataContainer:
-        target_scaling_configs = data.get(DataContainer.TARGET_SCALING_CONFIGS)
-
-        if target_scaling_configs is None:
+        """Execute the step."""
+        if not self.config:
             self.logger.info("No target scaling configs found. Skipping target scaling.")
             return data
 
