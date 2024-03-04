@@ -8,6 +8,8 @@ import pickle
 import sys
 from typing import Optional, Union
 
+import yaml
+
 
 class DataContainer:
     """
@@ -193,9 +195,11 @@ class DataContainer:
         )
 
     @classmethod
-    def load(cls, file_path: str, keys: Optional[Union[str, list[str]]] = None) -> DataContainer:
+    def from_pickle(
+        cls, file_path: str, keys: Optional[Union[str, list[str]]] = None
+    ) -> DataContainer:
         """
-        Load data from a file and return a new instance of DataContainer.
+        Load data from a  pickle file and return a new instance of DataContainer.
 
         Parameters
         ----------
@@ -209,6 +213,10 @@ class DataContainer:
         DataContainer
             A new instance of DataContainer populated with the deserialized data.
         """
+        # Check file is a pickle file
+        if not file_path.endswith(".pkl"):
+            raise ValueError(f"File {file_path} is not a pickle file")
+
         with open(file_path, "rb") as file:
             data = pickle.loads(file.read())
 
@@ -228,6 +236,65 @@ class DataContainer:
 
         new_container.logger.info(f"{cls.__name__} loaded from {file_path}")
         return new_container
+
+    @classmethod
+    def from_json(cls, file_path: str) -> DataContainer:
+        """
+        Create a new DataContainer instance from a JSON file.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to the JSON file containing the configurations.
+
+        Returns
+        -------
+        DataContainer
+            A new instance of DataContainer populated with the data from the JSON file.
+        """
+        # Check file is a JSON file
+        if not file_path.endswith(".json"):
+            raise ValueError(f"File {file_path} is not a JSON file")
+
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        # The loaded data is used as the initial data for the DataContainer instance
+        return cls(initial_data=data)
+
+    @classmethod
+    def from_yaml(cls, file_path: str) -> DataContainer:
+        """
+        Create a new DataContainer instance from a YAML file.
+
+        Parameters
+        ----------
+        file_path : str
+            The path to the YAML file containing the configurations.
+
+        Returns
+        -------
+        DataContainer
+            A new instance of DataContainer populated with the data from the YAML file.
+
+        Raises
+        ------
+        ValueError
+            If the provided file is not a YAML file.
+        """
+        # Check if the file has a .yaml or .yml extension
+        if not (file_path.endswith(".yaml") or file_path.endswith(".yml")):
+            raise ValueError(f"The file {file_path} is not a YAML file.")
+
+        try:
+            with open(file_path, "r") as f:
+                data = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            # Handle cases where the file content is not valid YAML
+            raise ValueError(f"Error parsing YAML from {file_path}: {e}")
+
+        # The loaded data is used as the initial data for the DataContainer instance
+        return cls(initial_data=data)
 
     def __eq__(self, other) -> bool:
         """
