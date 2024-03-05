@@ -34,6 +34,7 @@ class DataContainer:
     EXPLAINER = "explainer"
     TUNING_PARAMS = "tuning_params"
     TARGET = "target"
+    IMPORTANCE = "importance"
 
     def __init__(self, initial_data: Optional[dict] = None):
         """
