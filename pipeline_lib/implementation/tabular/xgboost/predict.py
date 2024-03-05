@@ -19,14 +19,15 @@ class XGBoostPredictStep(PredictStep):
         if not isinstance(model_input, pd.DataFrame):
             raise ValueError("model_input must be a pandas DataFrame.")
 
-        model_configs = data.get(DataContainer.MODEL_CONFIGS)
-        if model_configs:
-            drop_columns: list[str] = model_configs.get("drop_columns")
+        if self.config:
+            drop_columns = self.config.get("drop_columns")
             if drop_columns:
                 model_input = model_input.drop(columns=drop_columns)
-            target = model_configs.get("target")
+
+            target = self.config.get("target")
             if target is None:
                 raise ValueError("Target column not found in model_configs.")
+            data[DataContainer.TARGET] = target
 
             predictions = model.predict(model_input.drop(columns=[target]))
         else:

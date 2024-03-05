@@ -33,6 +33,7 @@ class DataContainer:
     PREDICTIONS = "predictions"
     EXPLAINER = "explainer"
     TUNING_PARAMS = "tuning_params"
+    TARGET = "target"
 
     def __init__(self, initial_data: Optional[dict] = None):
         """
@@ -184,6 +185,7 @@ class DataContainer:
 
         with open(file_path, "wb") as file:
             file.write(serialized_data)
+
         self.logger.info(
             f"{self.__class__.__name__} serialized and saved to {file_path}. Size:"
             f" {data_size_mb:.2f} MB"

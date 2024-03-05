@@ -27,6 +27,8 @@ class XGBoostFitModelStep(FitModelStep):
         if target is None:
             raise ValueError("Target column not found in model_configs.")
 
+        data[DataContainer.TARGET] = target
+
         df_train = data[DataContainer.TRAIN]
         df_valid = data[DataContainer.VALIDATION]
 

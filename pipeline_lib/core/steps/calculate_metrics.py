@@ -19,11 +19,11 @@ class CalculateMetricsStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting metric calculation")
         model_output = data[DataContainer.MODEL_OUTPUT]
-        model_configs = data[DataContainer.MODEL_CONFIGS]
-        target_column_name = model_configs.get("target")
+
+        target_column_name = data.get(DataContainer.TARGET)
 
         if target_column_name is None:
-            raise ValueError("Target column not found in model_configs.")
+            raise ValueError("Target column not found on any configuration.")
 
         true_values = model_output[target_column_name]
         predictions = model_output[DataContainer.PREDICTIONS]
@@ -32,5 +32,6 @@ class CalculateMetricsStep(PipelineStep):
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
 
         results = {"MAE": str(mae), "RMSE": str(rmse)}
+        self.logger.info(results)
         data[DataContainer.METRICS] = results
         return data

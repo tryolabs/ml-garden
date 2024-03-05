@@ -22,6 +22,8 @@ class Pipeline:
         if not all(isinstance(step, PipelineStep) for step in self.steps):
             raise TypeError("All steps must be instances of PipelineStep")
         self.initial_data = initial_data
+        self.save_path = None
+        self.load_path = None
 
     @classmethod
     def register_step(cls, step_class):
@@ -102,11 +104,15 @@ class Pipeline:
     def run(self) -> DataContainer:
         """Run the pipeline on the given data."""
 
-        data = DataContainer()
+        data = DataContainer.from_pickle(self.load_path) if self.load_path else DataContainer()
 
         for i, step in enumerate(self.steps):
             Pipeline.logger.info(f"Running {step.__class__.__name__} - {i + 1} / {len(self.steps)}")
             data = step.execute(data)
+
+        if self.save_path:
+            data.save(self.save_path)
+
         return data
 
     @classmethod
@@ -124,6 +130,10 @@ class Pipeline:
             Pipeline.load_and_register_custom_steps(custom_steps_path)
 
         pipeline = Pipeline()
+
+        pipeline.load_path = config.get("load_path")
+        pipeline.save_path = config.get("save_path")
+
         steps = []
 
         for step_config in config["pipeline"]["steps"]:
