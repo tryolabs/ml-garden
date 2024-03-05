@@ -61,8 +61,8 @@ class Pipeline:
                 ):
                     cls.register_step(attribute)
 
-    @staticmethod
-    def load_and_register_custom_steps(custom_steps_path: str) -> None:
+    @classmethod
+    def load_and_register_custom_steps(cls, custom_steps_path: str) -> None:
         """
         Dynamically loads and registers step classes found in the specified directory.
 
@@ -74,11 +74,6 @@ class Pipeline:
         ----------
         custom_steps_path : str
             The path to the directory containing custom step implementation files.
-
-        Returns
-        -------
-        NoReturn
-            This function does not return anything.
         """
         Pipeline.logger.debug(f"Loading custom steps from: {custom_steps_path}")
         for filename in os.listdir(custom_steps_path):
