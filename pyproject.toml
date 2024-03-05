@@ -21,9 +21,12 @@ pandas = "^2.2.1"
 scikit-learn = "^1.4.1.post1"
 explainerdashboard = "^0.4.5"
 optuna = "^3.5.0"
-xgboost = "^2.0.3"
 pyarrow = "^15.0.0"
 PyYAML = "^6.0.1"
+
+[tool.poetry.extras]
+xgboost = ["xgboost>=2.0.0,<2.1.0"]
+all_models = ["xgboost>=2.0.0,<2.1.0"]
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"
