@@ -138,7 +138,7 @@ class XGBoostFitModelStep(FitModelStep):
         self.logger.info(f"Optimizing XGBoost hyperparameters with {optuna_trials} trials.")
 
         study_name = optuna_params.get("study_name", "xgboost_optimization")
-        storage = optuna_params.get("storage", "I")
+        storage = optuna_params.get("storage", "sqlite:///db.sqlite3")
 
         study = optuna.create_study(
             direction="minimize",
