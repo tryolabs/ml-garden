@@ -19,8 +19,6 @@ class Pipeline:
 
     def __init__(self, initial_data: Optional[DataContainer] = None):
         self.steps = []
-        if not all(isinstance(step, PipelineStep) for step in self.steps):
-            raise TypeError("All steps must be instances of PipelineStep")
         self.initial_data = initial_data
         self.save_path = None
         self.load_path = None

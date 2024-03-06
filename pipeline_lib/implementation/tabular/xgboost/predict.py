@@ -1,4 +1,5 @@
 import pandas as pd
+from joblib import load
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import PredictStep
@@ -10,9 +11,16 @@ class XGBoostPredictStep(PredictStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Obtaining predictions for XGBoost model.")
 
-        model = data[DataContainer.MODEL]
-        if model is None:
-            raise Exception("Model not trained yet.")
+        if not self.config:
+            raise ValueError("No prediction configs found.")
+
+        load_path = self.config.get("load_path")
+        if not load_path:
+            raise ValueError("No load path found in model_configs.")
+
+        if not load_path.endswith(".joblib"):
+            raise ValueError("Only joblib format is supported for loading the model.")
+        model = load(load_path)
 
         model_input = data[DataContainer.CLEAN]
 

@@ -2,6 +2,7 @@ import time
 
 import optuna
 import xgboost as xgb
+from joblib import dump
 from optuna.pruners import MedianPruner
 from sklearn.metrics import mean_absolute_error
 
@@ -78,6 +79,15 @@ class XGBoostFitModelStep(FitModelStep):
         importance = model.get_booster().get_score(importance_type="gain")
         importance = dict(sorted(importance.items(), key=lambda item: item[1], reverse=True))
         data[DataContainer.IMPORTANCE] = importance
+
+        # save model to disk
+        save_path = model_configs.get("save_path")
+
+        if save_path:
+            if not save_path.endswith(".joblib"):
+                raise ValueError("Only joblib format is supported for saving the model.")
+            self.logger.info(f"Saving the model to {save_path}")
+            dump(model, save_path)
 
         end_time = time.time()
         elapsed_time = end_time - start_time
