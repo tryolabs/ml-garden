@@ -1,9 +1,10 @@
+from typing import Optional
+
 import pandas as pd
 from joblib import load
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import PredictStep
-from typing import Optional
 
 
 class XGBoostPredictStep(PredictStep):

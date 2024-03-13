@@ -1,12 +1,11 @@
 import time
+from typing import Optional
 
 import optuna
 import xgboost as xgb
 from joblib import dump
 from optuna.pruners import MedianPruner
 from sklearn.metrics import mean_absolute_error
-
-from typing import Optional
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import FitModelStep
