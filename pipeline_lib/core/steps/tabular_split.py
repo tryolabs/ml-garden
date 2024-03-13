@@ -11,10 +11,19 @@ from .base import PipelineStep
 class TabularSplitStep(PipelineStep):
     """Split the data."""
 
-    def __init__(self, config: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        train_percentage: float,
+        id_column: str,
+        train_ids: Optional[list[str]] = None,
+        validation_ids: Optional[list[str]] = None,
+    ) -> None:
         """Initialize SplitStep."""
-        super().__init__(config=config)
         self.init_logger()
+        self.train_percentage = train_percentage
+        self.id_column_name = id_column
+        self.train_ids = train_ids
+        self.validation_ids = validation_ids
 
     def _id_based_split(
         self,
@@ -76,50 +85,24 @@ class TabularSplitStep(PipelineStep):
         """Execute the split based on IDs."""
         self.logger.info("Splitting tabular data...")
 
-        split_configs = self.config
-
-        if split_configs is None:
-            self.logger.info("No split_configs found. No splitting will be performed.")
-            return data
-
         df = data[DataContainer.CLEAN]
-        id_column_name = split_configs.get("id_column")
-        if not id_column_name:
-            raise ValueError("ID column name must be specified in split_configs.")
 
-        # check if both train_percentage and train_ids are provided
-        if "train_percentage" in split_configs and "train_ids" in split_configs:
-            raise ValueError(
-                "Both train_percentage and train_ids cannot be provided in split_configs."
-            )
-
-        # check if either train_percentage or train_ids are provided
-        if "train_percentage" not in split_configs and "train_ids" not in split_configs:
-            raise ValueError(
-                "Either train_percentage or train_ids must be provided in split_configs."
-            )
-
-        if "train_percentage" in split_configs:
-            train_percentage = split_configs.get("train_percentage")
-            if train_percentage is None or train_percentage <= 0 or train_percentage >= 1:
+        if self.train_percentage:
+            if (
+                self.train_percentage is None
+                or self.train_percentage <= 0
+                or self.train_percentage >= 1
+            ):
                 raise ValueError("train_percentage must be between 0 and 1.")
             train_ids, validation_ids = self._percentage_based_id_split(
-                df, train_percentage, id_column_name
+                df, self.train_percentage, self.id_column_name
             )
-        else:
-            train_ids = split_configs.get("train_ids")
-            validation_ids = split_configs.get("validation_ids")
-            if not train_ids or not validation_ids:
-                raise ValueError(
-                    "Both train_ids and validation_ids must be provided in split_configs unless"
-                    " train_percentage is specified."
-                )
 
         self.logger.info(f"Number of train ids: {len(train_ids)}")
         self.logger.info(f"Number of validation ids: {len(validation_ids)}")
 
         train_df, validation_df = self._id_based_split(
-            df, train_ids, validation_ids, id_column_name
+            df, train_ids, validation_ids, self.id_column_name
         )
 
         train_rows = len(train_df)
@@ -134,7 +117,9 @@ class TabularSplitStep(PipelineStep):
             f" {validation_rows/total_rows:.2%}"
         )
 
-        left_ids = df[~df[id_column_name].isin(train_ids + validation_ids)][id_column_name].unique()
+        left_ids = df[~df[self.id_column_name].isin(train_ids + validation_ids)][
+            self.id_column_name
+        ].unique()
         self.logger.info(f"Number of IDs left from total df: {len(left_ids)}")
         self.logger.debug(f"IDs left from total df: {left_ids}")
 

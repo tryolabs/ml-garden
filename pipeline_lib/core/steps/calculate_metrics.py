@@ -11,9 +11,9 @@ from .base import PipelineStep
 class CalculateMetricsStep(PipelineStep):
     """Calculate metrics."""
 
-    def __init__(self, config: Optional[dict] = None) -> None:
+    def __init__(self) -> None:
         """Initialize CalculateMetricsStep."""
-        super().__init__(config=config)
+        super().__init__()
         self.init_logger()
 
     def execute(self, data: DataContainer) -> DataContainer:

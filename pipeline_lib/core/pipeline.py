@@ -143,7 +143,7 @@ class Pipeline:
             )
 
             step_class = Pipeline.get_step_class(step_type)
-            step = step_class(config=parameters)
+            step = step_class(**parameters)
             steps.append(step)
 
         pipeline.add_steps(steps)

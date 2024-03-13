@@ -6,6 +6,8 @@ from joblib import dump
 from optuna.pruners import MedianPruner
 from sklearn.metrics import mean_absolute_error
 
+from typing import Optional
+
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import FitModelStep
 
@@ -13,41 +15,21 @@ from pipeline_lib.core.steps import FitModelStep
 class XGBoostFitModelStep(FitModelStep):
     """Fit the model with XGBoost."""
 
-    def execute(self, data: DataContainer) -> DataContainer:
-        self.logger.debug("Starting model fitting with XGBoost")
-
-        start_time = time.time()
-
-        model_configs = self.config
-
-        if model_configs is None:
-            raise ValueError("No model configs found")
-
-        target = model_configs.get("target")
+    def __init__(
+        self,
+        target: str,
+        drop_columns: Optional[list[str]] = None,
+        xgb_params: Optional[dict] = None,
+        optuna_params: Optional[dict] = None,
+        save_path: Optional[str] = None,
+    ) -> None:
+        self.init_logger()
 
         if target is None:
-            raise ValueError("Target column not found in model_configs.")
+            raise ValueError("Target column not found in the parameters.")
 
-        data[DataContainer.TARGET] = target
-
-        df_train = data[DataContainer.TRAIN]
-        df_valid = data[DataContainer.VALIDATION]
-
-        drop_columns = model_configs.get("drop_columns")
-
-        if drop_columns:
-            df_train = df_train.drop(columns=drop_columns)
-            df_valid = df_valid.drop(columns=drop_columns)
-
-        # Prepare the data
-        X_train = df_train.drop(columns=[target])
-        y_train = df_train[target]
-
-        X_valid = df_valid.drop(columns=[target])
-        y_valid = df_valid[target]
-
-        optuna_params = model_configs.get("optuna_params")
-        xgb_params = model_configs.get("xgb_params")
+        self.target = target
+        self.drop_columns = drop_columns
 
         if optuna_params and xgb_params:
             raise ValueError("Both optuna_params and xgb_params are defined. Please choose one.")
@@ -57,10 +39,37 @@ class XGBoostFitModelStep(FitModelStep):
                 "No parameters defined. Please define either optuna_params or xgb_params."
             )
 
-        params = xgb_params
+        self.xgb_params = xgb_params
+        self.optuna_params = optuna_params
+        self.save_path = save_path
 
-        if optuna_params:
-            params = self.optimize_with_optuna(X_train, y_train, X_valid, y_valid, optuna_params)
+    def execute(self, data: DataContainer) -> DataContainer:
+        self.logger.debug("Starting model fitting with XGBoost")
+
+        start_time = time.time()
+
+        data[DataContainer.TARGET] = self.target
+
+        df_train = data[DataContainer.TRAIN]
+        df_valid = data[DataContainer.VALIDATION]
+
+        if self.drop_columns:
+            df_train = df_train.drop(columns=self.drop_columns)
+            df_valid = df_valid.drop(columns=self.drop_columns)
+
+        # Prepare the data
+        X_train = df_train.drop(columns=[self.target])
+        y_train = df_train[self.target]
+
+        X_valid = df_valid.drop(columns=[self.target])
+        y_valid = df_valid[self.target]
+
+        params = self.xgb_params
+
+        if self.optuna_params:
+            params = self.optimize_with_optuna(
+                X_train, y_train, X_valid, y_valid, self.optuna_params
+            )
             data[DataContainer.TUNING_PARAMS] = params
 
         model = xgb.XGBRegressor(**params)
@@ -69,9 +78,14 @@ class XGBoostFitModelStep(FitModelStep):
             X_train,
             y_train,
             eval_set=[(X_valid, y_valid)],
-            early_stopping_rounds=model_configs.get("early_stopping_rounds", 100),
             verbose=True,
         )
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+        self.logger.info(f"XGBoost model fitting took {minutes} minutes and {seconds} seconds.")
 
         # Save the model to the data container
         data[DataContainer.MODEL] = model
@@ -81,7 +95,7 @@ class XGBoostFitModelStep(FitModelStep):
         data[DataContainer.IMPORTANCE] = importance
 
         # save model to disk
-        save_path = model_configs.get("save_path")
+        save_path = self.save_path
 
         if save_path:
             if not save_path.endswith(".joblib"):
@@ -89,11 +103,6 @@ class XGBoostFitModelStep(FitModelStep):
             self.logger.info(f"Saving the model to {save_path}")
             dump(model, save_path)
 
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        minutes = int(elapsed_time // 60)
-        seconds = int(elapsed_time % 60)
-        self.logger.info(f"XGBoost model fitting took {minutes} minutes and {seconds} seconds.")
         return data
 
     def optimize_with_optuna(self, X_train, y_train, X_valid, y_valid, optuna_params):
