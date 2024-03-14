@@ -90,10 +90,6 @@ class XGBoostFitModelStep(FitModelStep):
         # Save the model to the data container
         data[DataContainer.MODEL] = model
 
-        importance = model.get_booster().get_score(importance_type="gain")
-        importance = dict(sorted(importance.items(), key=lambda item: item[1], reverse=True))
-        data[DataContainer.IMPORTANCE] = importance
-
         # save model to disk
         save_path = self.save_path
 

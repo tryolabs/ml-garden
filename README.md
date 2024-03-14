@@ -46,7 +46,6 @@ Here's an example of how to use the library to run an XGBoost pipeline:
 ```json
 {
     "custom_steps_path": "examples/ocf/",
-    "save_path": "runs/xgboost_train.pkl",
     "pipeline": {
         "name": "XGBoostTrainingPipeline",
         "description": "Training pipeline for XGBoost models.",
