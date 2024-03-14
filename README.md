@@ -1,10 +1,47 @@
 # Pipeline Library
 
-The purpose of this library is to create pipelines for ML as simple as possible. At the moment we support XGBoost models, but we are working to support more models.
+The Pipeline Library is designed to simplify the creation of machine learning pipelines. Currently, it supports XGBoost models, with plans to expand support for more models in the future.
 
-This is an example of how to use the library to run an XGBoost pipeline:
+## Installation
 
-We create a `train.json` file with the following content:
+To install the Pipeline Library, you need to have Python 3.9 or higher and Poetry installed. Follow these steps:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/tryolabs/pipeline-lib.git
+   ```
+
+2. Navigate to the project directory:
+
+    ```bash
+    cd pipeline-lib
+    ```
+
+3. Install the dependencies using Poetry:
+
+    ```bash
+    poetry install
+    ```
+
+    If you want to include optional dependencies, you can specify the extras:
+
+    ```bash
+    poetry install --extras "xgboost"
+    ```
+
+    or
+
+    ```bash
+    poetry install --extras "all_models"
+    ```
+
+## Usage
+
+Here's an example of how to use the library to run an XGBoost pipeline:
+
+1. Create a `train.json` file with the following content:
+
 
 ```json
 {
@@ -57,7 +94,7 @@ We create a `train.json` file with the following content:
 }
 ```
 
-The user can define custom steps to generate and clean their own data and use them in the pipeline. Then we can run the pipeline with the following code:
+2. Run the pipeline using the following code:
 
 ```python
 import logging
@@ -68,3 +105,5 @@ logging.basicConfig(level=logging.INFO)
 
 Pipeline.from_json("train.json").run()
 ```
+
+The library allows users to define custom steps for generating and cleaning their own data, which can be used in the pipeline.
