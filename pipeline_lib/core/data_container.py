@@ -35,6 +35,7 @@ class DataContainer:
     TUNING_PARAMS = "tuning_params"
     TARGET = "target"
     IMPORTANCE = "importance"
+    DROP_COLUMNS = "drop_columns"
 
     def __init__(self, initial_data: Optional[dict] = None):
         """

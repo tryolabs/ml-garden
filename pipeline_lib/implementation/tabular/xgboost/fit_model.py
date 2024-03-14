@@ -48,6 +48,7 @@ class XGBoostFitModelStep(FitModelStep):
         start_time = time.time()
 
         data[DataContainer.TARGET] = self.target
+        data[DataContainer.DROP_COLUMNS] = self.drop_columns
 
         df_train = data[DataContainer.TRAIN]
         df_valid = data[DataContainer.VALIDATION]

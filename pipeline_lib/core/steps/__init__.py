@@ -11,3 +11,4 @@ from .input_scaling import InputScalingStep  # noqa: F401
 from .predict import PredictStep  # noqa: F401
 from .tabular_split import TabularSplitStep  # noqa: F401
 from .target_scaling import TargetScalingStep  # noqa: F401
+from .explainer_dashboard import ExplainerDashboardStep  # noqa: F401

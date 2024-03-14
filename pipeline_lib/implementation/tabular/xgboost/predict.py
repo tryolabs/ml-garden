@@ -40,6 +40,8 @@ class XGBoostPredictStep(PredictStep):
         predictions_df = pd.DataFrame(predictions, columns=["prediction"])
 
         model_input[DataContainer.PREDICTIONS] = predictions_df
+        data[DataContainer.MODEL] = self.model
         data[DataContainer.MODEL_OUTPUT] = model_input
         data[DataContainer.TARGET] = self.target
+        data[DataContainer.DROP_COLUMNS] = self.drop_columns
         return data
