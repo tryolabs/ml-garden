@@ -1,4 +1,3 @@
-import pandas as pd
 from explainerdashboard import RegressionExplainer
 
 from pipeline_lib.core import DataContainer
@@ -7,6 +6,7 @@ from pipeline_lib.core.steps import PipelineStep
 
 class ExplainerDashboardStep(PipelineStep):
     """Scale the target using Quantile Transformer."""
+
     def __init__(
         self,
         max_samples: int = 1000,
@@ -29,6 +29,10 @@ class ExplainerDashboardStep(PipelineStep):
 
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples
+            self.logger.info(
+                f"Dataset contains {len(df)} data points and max_samples is set to"
+                f" {self.max_samples}."
+            )
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
@@ -39,7 +43,11 @@ class ExplainerDashboardStep(PipelineStep):
         X_test = df.drop(columns=[target])
         y_test = df[target]
 
-        explainer = RegressionExplainer(model, X_test, y_test,)
+        explainer = RegressionExplainer(
+            model,
+            X_test,
+            y_test,
+        )
 
         data[DataContainer.EXPLAINER] = explainer
 
