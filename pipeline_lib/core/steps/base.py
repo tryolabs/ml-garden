@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from pipeline_lib.core import DataContainer
+from pipeline_lib.core.data_container import DataContainer
 
 
 class PipelineStep(ABC):

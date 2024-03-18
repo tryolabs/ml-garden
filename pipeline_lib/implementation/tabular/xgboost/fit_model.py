@@ -40,6 +40,11 @@ class XGBoostFitModelStep(FitModelStep):
 
         self.xgb_params = xgb_params
         self.optuna_params = optuna_params
+
+        if save_path:
+            if not save_path.endswith(".joblib"):
+                raise ValueError("Only joblib format is supported for saving the model.")
+
         self.save_path = save_path
 
     def execute(self, data: DataContainer) -> DataContainer:
@@ -90,15 +95,9 @@ class XGBoostFitModelStep(FitModelStep):
         # Save the model to the data container
         data[DataContainer.MODEL] = model
 
-        # save model to disk
-        save_path = self.save_path
-
-        if save_path:
-            if not save_path.endswith(".joblib"):
-                raise ValueError("Only joblib format is supported for saving the model.")
-            self.logger.info(f"Saving the model to {save_path}")
-            dump(model, save_path)
-
+        if self.save_path:
+            self.logger.info(f"Saving the model to {self.save_path}")
+            dump(model, self.save_path)
         return data
 
     def optimize_with_optuna(self, X_train, y_train, X_valid, y_valid, optuna_params):

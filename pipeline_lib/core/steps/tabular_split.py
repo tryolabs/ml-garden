@@ -1,8 +1,7 @@
 from sklearn.model_selection import train_test_split
 
 from pipeline_lib.core import DataContainer
-
-from .base import PipelineStep
+from pipeline_lib.core.steps.base import PipelineStep
 
 
 class TabularSplitStep(PipelineStep):

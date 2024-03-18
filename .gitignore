@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+*.joblib
+*.bin
+*.json
+
 # ignore examples folder
 examples/
 

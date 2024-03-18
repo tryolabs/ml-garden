@@ -1,7 +1,7 @@
 from explainerdashboard import RegressionExplainer
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps import PipelineStep
+from pipeline_lib.core.steps.base import PipelineStep
 
 
 class ExplainerDashboardStep(PipelineStep):

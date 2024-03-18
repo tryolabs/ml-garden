@@ -1,8 +1,7 @@
 from typing import Optional
 
 from pipeline_lib.core import DataContainer
-
-from .base import PipelineStep
+from pipeline_lib.core.steps.base import PipelineStep
 
 
 class FitEncodersStep(PipelineStep):

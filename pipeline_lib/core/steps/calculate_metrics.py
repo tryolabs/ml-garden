@@ -2,8 +2,7 @@ import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from pipeline_lib.core import DataContainer
-
-from .base import PipelineStep
+from pipeline_lib.core.steps.base import PipelineStep
 
 
 class CalculateMetricsStep(PipelineStep):
