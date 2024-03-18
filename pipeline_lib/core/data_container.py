@@ -36,6 +36,7 @@ class DataContainer:
     TARGET = "target"
     IMPORTANCE = "importance"
     DROP_COLUMNS = "drop_columns"
+    FEATURES = "features"
 
     def __init__(self, initial_data: Optional[dict] = None):
         """

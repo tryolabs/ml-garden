@@ -10,11 +10,16 @@ class CleanStep(PipelineStep):
         fill_missing: Optional[dict] = None,
         remove_outliers: Optional[dict] = None,
         convert_dtypes: Optional[dict] = None,
+        drop_na_columns: Optional[list] = None,
+        drop_ids: Optional[dict] = None,
+
     ):
         self.init_logger()
         self.fill_missing = fill_missing
         self.remove_outliers = remove_outliers
         self.convert_dtypes = convert_dtypes
+        self.drop_na_columns = drop_na_columns
+        self.drop_ids = drop_ids
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
@@ -63,6 +68,47 @@ class CleanStep(PipelineStep):
                     self.logger.info(f"Converted column '{column}' to {dtype}")
                 else:
                     self.logger.warning(f"Column '{column}' not found in the DataFrame")
+
+        if self.drop_na_columns:
+            for column in self.drop_na_columns:
+                if column in df.columns:
+                    initial_rows = len(df)
+                    df.dropna(subset=[column], inplace=True)
+                    dropped_rows = initial_rows - len(df)
+                    self.logger.info(
+                        f"Dropped {dropped_rows} rows with None values in column '{column}'"
+                    )
+                else:
+                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+
+        if self.drop_ids:
+            for column, ids in self.drop_ids.items():
+                if column in df.columns:
+                    initial_rows = len(df)
+                    initial_ids = set(df[column].unique())
+
+                    dropped_ids = set(ids) & initial_ids
+                    not_found_ids = set(ids) - initial_ids
+
+                    if dropped_ids:
+                        df = df.loc[~df[column].isin(dropped_ids)].copy()
+                        dropped_rows = initial_rows - len(df)
+                        percentage_dropped = (dropped_rows / initial_rows) * 100  # Calculate the percentage of rows dropped
+                        self.logger.info(
+                            f"Dropped {dropped_rows} rows ({percentage_dropped:.2f}%) with IDs {list(dropped_ids)} in column '{column}'"
+                        )
+                    else:
+                        self.logger.info(
+                            f"No rows dropped for IDs {list(ids)} in column '{column}'"
+                        )
+
+                    if not_found_ids:
+                        self.logger.warning(
+                            f"IDs {list(not_found_ids)} not found in column '{column}'"
+                        )
+                else:
+                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+
 
         data[DataContainer.CLEAN] = df
 
