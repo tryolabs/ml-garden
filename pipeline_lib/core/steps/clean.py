@@ -12,7 +12,6 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
-
     ):
         self.init_logger()
         self.fill_missing = fill_missing
@@ -93,9 +92,12 @@ class CleanStep(PipelineStep):
                     if dropped_ids:
                         df = df.loc[~df[column].isin(dropped_ids)].copy()
                         dropped_rows = initial_rows - len(df)
-                        percentage_dropped = (dropped_rows / initial_rows) * 100  # Calculate the percentage of rows dropped
+                        percentage_dropped = (
+                            dropped_rows / initial_rows
+                        ) * 100  # Calculate the percentage of rows dropped
                         self.logger.info(
-                            f"Dropped {dropped_rows} rows ({percentage_dropped:.2f}%) with IDs {list(dropped_ids)} in column '{column}'"
+                            f"Dropped {dropped_rows} rows ({percentage_dropped:.2f}%) with IDs"
+                            f" {list(dropped_ids)} in column '{column}'"
                         )
                     else:
                         self.logger.info(
@@ -108,7 +110,6 @@ class CleanStep(PipelineStep):
                         )
                 else:
                     self.logger.warning(f"Column '{column}' not found in the DataFrame")
-
 
         data[DataContainer.CLEAN] = df
 
