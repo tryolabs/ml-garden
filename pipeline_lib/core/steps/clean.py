@@ -112,5 +112,6 @@ class CleanStep(PipelineStep):
                     self.logger.warning(f"Column '{column}' not found in the DataFrame")
 
         data.clean = df
+        data.flow = df
 
         return data

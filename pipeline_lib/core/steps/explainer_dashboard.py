@@ -25,7 +25,7 @@ class ExplainerDashboardStep(PipelineStep):
         if target is None:
             raise ValueError("Target column not found in any parameter.")
 
-        df = data.features if data.features is not None else data.clean
+        df = data.flow
 
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples

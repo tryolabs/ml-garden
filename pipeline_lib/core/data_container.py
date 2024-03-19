@@ -592,6 +592,30 @@ class DataContainer:
         """
         self["features"] = value
 
+    @property
+    def flow(self) -> Any:
+        """
+        Get the flow from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The flow stored in the DataContainer.
+        """
+        return self["flow"]
+
+    @flow.setter
+    def flow(self, value: Any):
+        """
+        Set the flow in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The flow to be stored in the DataContainer.
+        """
+        self["flow"] = value
+
     def __eq__(self, other) -> bool:
         """
         Compare this DataContainer with another for equality.

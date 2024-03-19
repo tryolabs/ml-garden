@@ -30,7 +30,7 @@ class XGBoostPredictStep(PredictStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Obtaining predictions for XGBoost model.")
 
-        model_input = data.features if data.features is not None else data.clean
+        model_input = data.flow
 
         if self.drop_columns:
             self.logger.info(f"Dropping columns: {self.drop_columns}")
