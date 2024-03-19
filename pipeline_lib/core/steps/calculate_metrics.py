@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
@@ -27,8 +27,23 @@ class CalculateMetricsStep(PipelineStep):
 
         mae = mean_absolute_error(true_values, predictions)
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
+        r2 = r2_score(true_values, predictions)
 
-        results = {"MAE": str(mae), "RMSE": str(rmse)}
+        # Additional metrics
+        me = np.mean(true_values - predictions)  # Mean Error
+        mape = np.mean(np.abs((true_values - predictions) / true_values)) * 100
+        max_error = np.max(np.abs(true_values - predictions))
+        median_absolute_error = np.median(np.abs(true_values - predictions))
+
+        results = {
+            "MAE": str(mae),
+            "RMSE": str(rmse),
+            "R^2": str(r2),
+            "Mean Error": str(me),
+            "MAPE": str(mape),
+            "Max Error": str(max_error),
+            "Median Absolute Error": str(median_absolute_error),
+        }
         self.logger.info(results)
         data.metrics = results
         return data
