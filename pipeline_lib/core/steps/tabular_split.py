@@ -19,11 +19,7 @@ class TabularSplitStep(PipelineStep):
         """Execute the random train-validation split."""
         self.logger.info("Splitting tabular data...")
 
-        df = (
-            data[DataContainer.FEATURES]
-            if DataContainer.FEATURES in data
-            else data[DataContainer.CLEAN]
-        )
+        df = data.features if data.features is not None else data.clean
 
         train_df, validation_df = train_test_split(
             df, train_size=self.train_percentage, random_state=42
@@ -41,7 +37,7 @@ class TabularSplitStep(PipelineStep):
             f" {validation_rows/total_rows:.2%}"
         )
 
-        data[DataContainer.TRAIN] = train_df
-        data[DataContainer.VALIDATION] = validation_df
+        data.train = train_df
+        data.validation = validation_df
 
         return data

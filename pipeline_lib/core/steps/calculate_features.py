@@ -70,7 +70,7 @@ class CalculateFeaturesStep(PipelineStep):
         """Execute the step."""
         self.logger.info("Calculating features")
 
-        df = data[DataContainer.CLEAN]
+        df = data.clean
         created_features = []
 
         if self.datetime_columns:
@@ -97,6 +97,6 @@ class CalculateFeaturesStep(PipelineStep):
 
         self.logger.info(f"Created new features: {created_features}")
 
-        data[DataContainer.FEATURES] = df
+        data.features = df
 
         return data

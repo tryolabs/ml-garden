@@ -23,7 +23,7 @@ class CleanStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
 
-        df = data[DataContainer.RAW]
+        df = data.raw
 
         if self.fill_missing:
             for column, fill_value in self.fill_missing.items():
@@ -111,6 +111,6 @@ class CleanStep(PipelineStep):
                 else:
                     self.logger.warning(f"Column '{column}' not found in the DataFrame")
 
-        data[DataContainer.CLEAN] = df
+        data.clean = df
 
         return data

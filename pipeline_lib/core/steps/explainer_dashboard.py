@@ -17,19 +17,15 @@ class ExplainerDashboardStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting explainer dashboard")
 
-        model = data.get(DataContainer.MODEL)
+        model = data.model
         if model is None:
             raise ValueError("Model not found in data container.")
 
-        target = data.get(DataContainer.TARGET)
+        target = data.target
         if target is None:
             raise ValueError("Target column not found in any parameter.")
 
-        df = (
-            data[DataContainer.FEATURES]
-            if DataContainer.FEATURES in data
-            else data[DataContainer.CLEAN]
-        )
+        df = data.features if data.features is not None else data.clean
 
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples
@@ -53,6 +49,6 @@ class ExplainerDashboardStep(PipelineStep):
             y_test,
         )
 
-        data[DataContainer.EXPLAINER] = explainer
+        data.explainer = explainer
 
         return data

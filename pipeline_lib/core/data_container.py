@@ -6,7 +6,7 @@ import json
 import logging
 import pickle
 import sys
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import yaml
 
@@ -20,23 +20,6 @@ class DataContainer:
     data : dict
         A dictionary to store data items.
     """
-
-    RAW = "raw"
-    CLEAN = "clean"
-    TRAIN = "train"
-    VALIDATION = "validation"
-    TEST = "test"
-    MODEL = "model"
-    MODEL_INPUT = "model_input"
-    MODEL_OUTPUT = "model_output"
-    METRICS = "metrics"
-    PREDICTIONS = "predictions"
-    EXPLAINER = "explainer"
-    TUNING_PARAMS = "tuning_params"
-    TARGET = "target"
-    IMPORTANCE = "importance"
-    DROP_COLUMNS = "drop_columns"
-    FEATURES = "features"
 
     def __init__(self, initial_data: Optional[dict] = None):
         """
@@ -295,6 +278,319 @@ class DataContainer:
 
         # The loaded data is used as the initial data for the DataContainer instance
         return cls(initial_data=data)
+
+    @property
+    def clean(self) -> Any:
+        """
+        Get the clean data from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The clean data stored in the DataContainer.
+        """
+        return self["clean"]
+
+    @clean.setter
+    def clean(self, value: Any):
+        """
+        Set the clean data in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The clean data to be stored in the DataContainer.
+        """
+        self["clean"] = value
+
+    # create the same for raw
+    @property
+    def raw(self) -> Any:
+        """
+        Get the raw data from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The raw data stored in the DataContainer.
+        """
+        return self["raw"]
+
+    @raw.setter
+    def raw(self, value: Any):
+        """
+        Set the raw data in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The raw data to be stored in the DataContainer.
+        """
+        self["raw"] = value
+
+    @property
+    def train(self) -> Any:
+        """
+        Get the train data from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The train data stored in the DataContainer.
+        """
+        return self["train"]
+
+    @train.setter
+    def train(self, value: Any):
+        """
+        Set the train data in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The train data to be stored in the DataContainer.
+        """
+        self["train"] = value
+
+    @property
+    def validation(self) -> Any:
+        """
+        Get the validation data from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The validation data stored in the DataContainer.
+        """
+        return self["validation"]
+
+    @validation.setter
+    def validation(self, value: Any):
+        """
+        Set the validation data in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The validation data to be stored in the DataContainer.
+        """
+        self["validation"] = value
+
+    @property
+    def model(self) -> Any:
+        """
+        Get the model from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The model stored in the DataContainer.
+        """
+        return self["model"]
+
+    @model.setter
+    def model(self, value: Any):
+        """
+        Set the model in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The model to be stored in the DataContainer.
+        """
+        self["model"] = value
+
+    @property
+    def model_input(self) -> Any:
+        """
+        Get the model input from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The model input stored in the DataContainer.
+        """
+        return self["model_input"]
+
+    @model_input.setter
+    def model_input(self, value: Any):
+        """
+        Set the model input in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The model input to be stored in the DataContainer.
+        """
+        self["model_input"] = value
+
+    @property
+    def model_output(self) -> Any:
+        """
+        Get the model output from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The model output stored in the DataContainer.
+        """
+        return self["model_output"]
+
+    @model_output.setter
+    def model_output(self, value: Any):
+        """
+        Set the model output in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The model output to be stored in the DataContainer.
+        """
+        self["model_output"] = value
+
+    @property
+    def metrics(self) -> Any:
+        """
+        Get the metrics from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The metrics stored in the DataContainer.
+        """
+        return self["metrics"]
+
+    @metrics.setter
+    def metrics(self, value: Any):
+        """
+        Set the metrics in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The metrics to be stored in the DataContainer.
+        """
+        self["metrics"] = value
+
+    @property
+    def predictions(self) -> Any:
+        """
+        Get the predictions from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The predictions stored in the DataContainer.
+        """
+        return self["predictions"]
+
+    @predictions.setter
+    def predictions(self, value: Any):
+        """
+        Set the predictions in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The predictions to be stored in the DataContainer.
+        """
+        self["predictions"] = value
+
+    @property
+    def explainer(self) -> Any:
+        """
+        Get the explainer from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The explainer stored in the DataContainer.
+        """
+        return self["explainer"]
+
+    @explainer.setter
+    def explainer(self, value: Any):
+        """
+        Set the explainer in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The explainer to be stored in the DataContainer.
+        """
+        self["explainer"] = value
+
+    @property
+    def tuning_params(self) -> Any:
+        """
+        Get the tuning parameters from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The tuning parameters stored in the DataContainer.
+        """
+        return self["tuning_params"]
+
+    @tuning_params.setter
+    def tuning_params(self, value: Any):
+        """
+        Set the tuning parameters in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The tuning parameters to be stored in the DataContainer.
+        """
+        self["tuning_params"] = value
+
+    @property
+    def target(self) -> Any:
+        """
+        Get the target from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The target stored in the DataContainer.
+        """
+        return self["target"]
+
+    @target.setter
+    def target(self, value: Any):
+        """
+        Set the target in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The target to be stored in the DataContainer.
+        """
+        self["target"] = value
+
+    @property
+    def features(self) -> Any:
+        """
+        Get the features from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The features stored in the DataContainer.
+        """
+        return self["features"]
+
+    @features.setter
+    def features(self, value: Any):
+        """
+        Set the features in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The features to be stored in the DataContainer.
+        """
+        self["features"] = value
 
     def __eq__(self, other) -> bool:
         """

@@ -33,7 +33,7 @@ class GenerateStep(PipelineStep):
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
-        data[DataContainer.RAW] = df
+        data.raw = df
 
         self.logger.info(f"Generated DataFrame with shape: {df.shape}")
 

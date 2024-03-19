@@ -52,11 +52,8 @@ class XGBoostFitModelStep(FitModelStep):
 
         start_time = time.time()
 
-        data[DataContainer.TARGET] = self.target
-        data[DataContainer.DROP_COLUMNS] = self.drop_columns
-
-        df_train = data[DataContainer.TRAIN]
-        df_valid = data[DataContainer.VALIDATION]
+        df_train = data.train
+        df_valid = data.validation
 
         if self.drop_columns:
             df_train = df_train.drop(columns=self.drop_columns)
@@ -75,7 +72,7 @@ class XGBoostFitModelStep(FitModelStep):
             params = self.optimize_with_optuna(
                 X_train, y_train, X_valid, y_valid, self.optuna_params
             )
-            data[DataContainer.TUNING_PARAMS] = params
+            data.tuning_params = params
 
         model = xgb.XGBRegressor(**params)
 
@@ -93,7 +90,8 @@ class XGBoostFitModelStep(FitModelStep):
         self.logger.info(f"XGBoost model fitting took {minutes} minutes and {seconds} seconds.")
 
         # Save the model to the data container
-        data[DataContainer.MODEL] = model
+        data.model = model
+        data.target = self.target
 
         if self.save_path:
             self.logger.info(f"Saving the model to {self.save_path}")

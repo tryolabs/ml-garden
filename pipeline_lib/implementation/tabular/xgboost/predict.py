@@ -30,11 +30,7 @@ class XGBoostPredictStep(PredictStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Obtaining predictions for XGBoost model.")
 
-        model_input = (
-            data[DataContainer.FEATURES]
-            if DataContainer.FEATURES in data
-            else data[DataContainer.CLEAN]
-        )
+        model_input = data.features if data.features is not None else data.clean
 
         if self.drop_columns:
             self.logger.info(f"Dropping columns: {self.drop_columns}")
@@ -44,9 +40,8 @@ class XGBoostPredictStep(PredictStep):
 
         predictions_df = pd.DataFrame(predictions, columns=["prediction"])
 
-        model_input[DataContainer.PREDICTIONS] = predictions_df
-        data[DataContainer.MODEL] = self.model
-        data[DataContainer.MODEL_OUTPUT] = model_input
-        data[DataContainer.TARGET] = self.target
-        data[DataContainer.DROP_COLUMNS] = self.drop_columns
+        model_input["predictions"] = predictions_df
+        data.model = self.model
+        data.model_output = model_input
+        data.target = self.target
         return data
