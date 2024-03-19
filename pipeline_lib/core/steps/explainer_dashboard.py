@@ -25,7 +25,11 @@ class ExplainerDashboardStep(PipelineStep):
         if target is None:
             raise ValueError("Target column not found in any parameter.")
 
-        df = data.get(DataContainer.CLEAN)
+        df = (
+            data[DataContainer.FEATURES]
+            if DataContainer.FEATURES in data
+            else data[DataContainer.CLEAN]
+        )
 
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples

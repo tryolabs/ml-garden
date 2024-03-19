@@ -1,6 +1,17 @@
 # Pipeline Library
 
-The Pipeline Library is designed to simplify the creation of machine learning pipelines. Currently, it supports XGBoost models, with plans to expand support for more models in the future.
+The Pipeline Library is a powerful and flexible tool designed to simplify the creation and management of machine learning pipelines. It provides a high-level interface for defining and executing pipelines, allowing users to focus on the core aspects of their machine learning projects. The library currently supports XGBoost models, with plans to expand support for more models in the future.
+
+## Features
+
+* Intuitive and easy-to-use API for defining pipeline steps and configurations
+* Support for various data loading formats, including CSV and Parquet
+* Flexible data preprocessing steps, such as data cleaning, feature calculation, and encoding
+* Seamless integration with XGBoost for model training and prediction
+* Hyperparameter optimization using Optuna for fine-tuning models
+* Evaluation metrics calculation and reporting
+* Explainable AI (XAI) dashboard for model interpretability
+* Extensible architecture for adding custom pipeline steps
 
 ## Installation
 
@@ -45,25 +56,48 @@ Here's an example of how to use the library to run an XGBoost pipeline:
 
 ```json
 {
-    "custom_steps_path": "examples/ocf/",
     "pipeline": {
         "name": "XGBoostTrainingPipeline",
         "description": "Training pipeline for XGBoost models.",
         "steps": [
             {
-                "step_type": "OCFGenerateStep",
+                "step_type": "GenerateStep",
                 "parameters": {
                     "path": "examples/ocf/data/trainset_new.parquet"
                 }
             },
             {
-                "step_type": "OCFCleanStep",
-                "parameters": {}
+                "step_type": "CleanStep",
+                "parameters": {
+                    "drop_na_columns": [
+                        "average_power_kw"
+                    ],
+                    "drop_ids": {
+                        "ss_id": [
+                            7759,
+                            7061
+                        ]
+                    }
+                }
+            },
+            {
+                "step_type": "CalculateFeaturesStep",
+                "parameters": {
+                    "datetime_columns": [
+                        "date"
+                    ],
+                    "features": [
+                        "year",
+                        "month",
+                        "day",
+                        "hour",
+                        "minute"
+                    ]
+                }
             },
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "id_column": "ss_id",
                     "train_percentage": 0.95
                 }
             },
@@ -72,7 +106,9 @@ Here's an example of how to use the library to run an XGBoost pipeline:
                 "parameters": {
                     "target": "average_power_kw",
                     "drop_columns": [
-                        "ss_id"
+                        "ss_id",
+                        "operational_at",
+                        "total_energy_kwh"
                     ],
                     "xgb_params": {
                         "max_depth": 12,
@@ -80,12 +116,13 @@ Here's an example of how to use the library to run an XGBoost pipeline:
                         "objective": "reg:squarederror",
                         "eval_metric": "mae",
                         "n_jobs": -1,
-                        "n_estimators": 2,
+                        "n_estimators": 672,
                         "min_child_weight": 7,
                         "subsample": 0.8057743223537057,
-                        "colsample_bytree": 0.6316852278944352
+                        "colsample_bytree": 0.6316852278944352,
+                        "early_stopping_rounds": 10
                     },
-                    "save_model": true
+                    "save_path": "model.joblib"
                 }
             }
         ]
@@ -105,4 +142,78 @@ logging.basicConfig(level=logging.INFO)
 Pipeline.from_json("train.json").run()
 ```
 
-The library allows users to define custom steps for generating and cleaning their own data, which can be used in the pipeline.
+3. Create a `predict.json` file with the pipeline configuration for prediction:
+
+```json
+{
+    "pipeline": {
+        "name": "XGBoostPredictionPipeline",
+        "description": "Prediction pipeline for XGBoost models.",
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "path": "examples/ocf/data/testset_new.parquet"
+                }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {
+                    "drop_na_columns": [
+                        "average_power_kw"
+                    ]
+                }
+            },
+            {
+                "step_type": "CalculateFeaturesStep",
+                "parameters": {
+                    "datetime_columns": [
+                        "date"
+                    ],
+                    "features": [
+                        "year",
+                        "month",
+                        "day",
+                        "hour",
+                        "minute"
+                    ]
+                }
+            },
+            {
+                "step_type": "XGBoostPredictStep",
+                "parameters": {
+                    "target": "average_power_kw",
+                    "drop_columns": [
+                        "ss_id",
+                        "operational_at",
+                        "total_energy_kwh"
+                    ],
+                    "load_path": "model.joblib"
+                }
+            },
+            {
+                "step_type": "CalculateMetricsStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "max_samples": 1000
+                }
+            }
+        ]
+    }
+}
+```
+
+4. Run the prediction pipeline:
+
+```python
+Pipeline.from_json("predict.json").run()
+```
+
+The library allows users to define custom steps for data generation, cleaning, and preprocessing, which can be seamlessly integrated into the pipeline.
+
+## Contributing
+
+Contributions to the Pipeline Library are welcome! If you encounter any issues, have suggestions for improvements, or want to add new features, please open an issue or submit a pull request on the GitHub repository.
