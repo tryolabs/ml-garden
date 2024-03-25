@@ -19,15 +19,14 @@ class CalculateMetricsStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting metric calculation")
-        model_output = data.flow
 
         target_column_name = data.target
 
         if target_column_name is None:
-            raise ValueError("Target column not found on any configuration.")
+            raise ValueError("Target column nsot found on any configuration.")
 
-        true_values = model_output[target_column_name]
-        predictions = model_output["predictions"]
+        true_values = data.flow[target_column_name]
+        predictions = data.predictions
 
         mae = mean_absolute_error(true_values, predictions)
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
