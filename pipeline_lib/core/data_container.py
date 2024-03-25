@@ -616,6 +616,54 @@ class DataContainer:
         """
         self["flow"] = value
 
+    @property
+    def _drop_columns(self) -> Any:
+        """
+        Get the drop columns from the DataContainer.
+
+        Returns
+        -------
+        Any
+            The drop columns stored in the DataContainer.
+        """
+        return self["_drop_columns"]
+
+    @_drop_columns.setter
+    def _drop_columns(self, value: Any):
+        """
+        Set the drop columns in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The drop columns to be stored in the DataContainer.
+        """
+        self["_drop_columns"] = value
+
+    @property
+    def is_train(self) -> bool:
+        """
+        Check if the DataContainer is made for training.
+
+        Returns
+        -------
+        bool
+            True if the DataContainer contains training data, False otherwise.
+        """
+        return self["is_train"]
+
+    @is_train.setter
+    def is_train(self, value: bool):
+        """
+        Set the is_train flag in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The is_train flag to be stored in the DataContainer.
+        """
+        self["is_train"] = value
+
     def __eq__(self, other) -> bool:
         """
         Compare this DataContainer with another for equality.
