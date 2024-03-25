@@ -37,8 +37,10 @@ class Pipeline:
 
         if is_train:
             steps_to_run = [step for step in self.steps if step.used_for_training]
+            self.logger.info("Training the pipeline")
         else:
             steps_to_run = [step for step in self.steps if step.used_for_prediction]
+            self.logger.info("Predicting with the pipeline")
 
         for i, step in enumerate(steps_to_run):
             Pipeline.logger.info(
@@ -53,17 +55,11 @@ class Pipeline:
 
     def train(self) -> DataContainer:
         """Run the pipeline on the given data."""
-        self.logger.info("Training the pipeline")
         return self.run(is_train=True)
 
     def predict(self) -> DataContainer:
         """Run the pipeline on the given data."""
-        self.logger.info("Predicting with the pipeline")
-        data = self.run(is_train=False)
-        data.predictions = data.model.predict(data.flow)
-        self.logger.info("Predictions:")
-        self.logger.info(data.predictions)
-        return data
+        return self.run(is_train=False)
 
     @classmethod
     def from_json(cls, path: str) -> Pipeline:

@@ -1,8 +1,7 @@
 from typing import List, Optional
 
-from joblib import load
-
 from pipeline_lib.core import DataContainer
+from pipeline_lib.core.model import Model
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -22,7 +21,7 @@ class PredictStep(PipelineStep):
         super().__init__()
         self.init_logger()
         self.load_path = load_path
-        self.model = load(self.load_path)
+        self.model = Model.from_file(load_path)
         self.target = target
         self.drop_columns = drop_columns or []
 

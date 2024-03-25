@@ -1,7 +1,6 @@
 from typing import Optional, Type
 
 import optuna
-from joblib import dump
 from sklearn.metrics import mean_absolute_error
 
 from pipeline_lib.core import DataContainer
@@ -70,11 +69,11 @@ class FitModelStep(PipelineStep):
 
         data.model = self.model
         data.target = self.target
-        data.model_path = self.save_path
+        data._drop_columns = self.drop_columns
 
         if self.save_path:
             self.logger.info(f"Saving the model to {self.save_path}")
-            dump(self.model, self.save_path)
+            self.model.save(self.save_path)
 
         return data
 

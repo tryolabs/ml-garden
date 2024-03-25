@@ -377,6 +377,30 @@ class DataContainer:
         self["validation"] = value
 
     @property
+    def test(self) -> Any:
+        """
+        Get the test data from the DataContainer.
+
+        Returns
+        -------
+        Any
+        The test data stored in the DataContainer.
+        """
+        return self["test"]
+
+    @test.setter
+    def test(self, value: Any):
+        """
+        Set the test data in the DataContainer.
+
+        Parameters
+        ----------
+        value
+        The test data to be stored in the DataContainer.
+        """
+        self["test"] = value
+
+    @property
     def model(self) -> Any:
         """
         Get the model from the DataContainer.
@@ -399,54 +423,6 @@ class DataContainer:
             The model to be stored in the DataContainer.
         """
         self["model"] = value
-
-    @property
-    def model_input(self) -> Any:
-        """
-        Get the model input from the DataContainer.
-
-        Returns
-        -------
-        Any
-            The model input stored in the DataContainer.
-        """
-        return self["model_input"]
-
-    @model_input.setter
-    def model_input(self, value: Any):
-        """
-        Set the model input in the DataContainer.
-
-        Parameters
-        ----------
-        value
-            The model input to be stored in the DataContainer.
-        """
-        self["model_input"] = value
-
-    @property
-    def model_output(self) -> Any:
-        """
-        Get the model output from the DataContainer.
-
-        Returns
-        -------
-        Any
-            The model output stored in the DataContainer.
-        """
-        return self["model_output"]
-
-    @model_output.setter
-    def model_output(self, value: Any):
-        """
-        Set the model output in the DataContainer.
-
-        Parameters
-        ----------
-        value
-            The model output to be stored in the DataContainer.
-        """
-        self["model_output"] = value
 
     @property
     def metrics(self) -> Any:
@@ -567,30 +543,6 @@ class DataContainer:
             The target to be stored in the DataContainer.
         """
         self["target"] = value
-
-    @property
-    def features(self) -> Any:
-        """
-        Get the features from the DataContainer.
-
-        Returns
-        -------
-        Any
-            The features stored in the DataContainer.
-        """
-        return self["features"]
-
-    @features.setter
-    def features(self, value: Any):
-        """
-        Set the features in the DataContainer.
-
-        Parameters
-        ----------
-        value
-            The features to be stored in the DataContainer.
-        """
-        self["features"] = value
 
     @property
     def flow(self) -> Any:
