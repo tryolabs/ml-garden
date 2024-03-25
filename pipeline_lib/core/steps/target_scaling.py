@@ -7,9 +7,12 @@ from pipeline_lib.core.steps.base import PipelineStep
 class TargetScalingStep(PipelineStep):
     """Scale the target."""
 
-    def __init__(self, config: Optional[dict] = None) -> None:
+    used_for_prediction = True
+    used_for_training = True
+
+    def __init__(self) -> None:
         """Initialize TargetScalingStep."""
-        super().__init__(config=config)
+        super().__init__()
         self.init_logger()
 
     def execute(self, data: DataContainer) -> DataContainer:

@@ -44,4 +44,5 @@ class XGBoostPredictStep(PredictStep):
         data.model = self.model
         data.model_output = model_input
         data.target = self.target
+        data._drop_columns = self.drop_columns
         return data

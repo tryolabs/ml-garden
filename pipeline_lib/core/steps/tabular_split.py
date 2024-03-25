@@ -7,6 +7,9 @@ from pipeline_lib.core.steps.base import PipelineStep
 class TabularSplitStep(PipelineStep):
     """Split the data."""
 
+    used_for_prediction = False
+    used_for_training = True
+
     def __init__(self, train_percentage: float) -> None:
         """Initialize SplitStep."""
         self.init_logger()

@@ -7,6 +7,9 @@ from pipeline_lib.core.steps.base import PipelineStep
 class CalculateReportsStep(PipelineStep):
     """Calculate reports."""
 
+    used_for_prediction = True
+    used_for_training = False
+
     def __init__(self, config: Optional[dict] = None) -> None:
         """Initialize CalculateReportsStep."""
         super().__init__(config=config)

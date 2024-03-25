@@ -2,13 +2,14 @@ import time
 from typing import Optional
 
 import optuna
-import xgboost as xgb
 from joblib import dump
 from optuna.pruners import MedianPruner
 from sklearn.metrics import mean_absolute_error
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import FitModelStep
+
+from .model import XGBoostModel
 
 
 class XGBoostFitModelStep(FitModelStep):
@@ -74,7 +75,7 @@ class XGBoostFitModelStep(FitModelStep):
             )
             data.tuning_params = params
 
-        model = xgb.XGBRegressor(**params)
+        model = XGBoostModel(**params)
 
         model.fit(
             X_train,
@@ -125,12 +126,11 @@ class XGBoostFitModelStep(FitModelStep):
                 "n_estimators": trial.suggest_int("n_estimators", n_estimators[0], n_estimators[1]),
             }
 
-            model = xgb.XGBRegressor(**param)
+            model = XGBoostModel(**param)
             model.fit(
                 X_train,
                 y_train,
                 eval_set=[(X_valid, y_valid)],
-                early_stopping_rounds=optuna_params.get("early_stopping_rounds", 50),
                 verbose=True,
             )
             preds = model.predict(X_valid)

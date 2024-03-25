@@ -8,14 +8,18 @@ from pipeline_lib.core.steps.base import PipelineStep
 class CalculateMetricsStep(PipelineStep):
     """Calculate metrics."""
 
-    def __init__(self) -> None:
+    used_for_prediction = True
+    used_for_training = False
+
+    def __init__(self, mape_threshold: float = 0.01) -> None:
         """Initialize CalculateMetricsStep."""
         super().__init__()
         self.init_logger()
+        self.mape_threshold = mape_threshold
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting metric calculation")
-        model_output = data.model_output
+        model_output = data.flow
 
         target_column_name = data.target
 
@@ -31,9 +35,17 @@ class CalculateMetricsStep(PipelineStep):
 
         # Additional metrics
         me = np.mean(true_values - predictions)  # Mean Error
-        mape = np.mean(np.abs((true_values - predictions) / true_values)) * 100
         max_error = np.max(np.abs(true_values - predictions))
         median_absolute_error = np.median(np.abs(true_values - predictions))
+
+        # MAPE calculation with threshold
+        mask = (true_values > self.mape_threshold) & (predictions > self.mape_threshold)
+        mape_true_values = true_values[mask]
+        mape_predictions = predictions[mask]
+        if len(mape_true_values) > 0:
+            mape = np.mean(np.abs((mape_true_values - mape_predictions) / mape_true_values)) * 100
+        else:
+            mape = np.nan
 
         results = {
             "MAE": str(mae),

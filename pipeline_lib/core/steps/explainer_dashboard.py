@@ -7,6 +7,9 @@ from pipeline_lib.core.steps.base import PipelineStep
 class ExplainerDashboardStep(PipelineStep):
     """Scale the target using Quantile Transformer."""
 
+    used_for_prediction = True
+    used_for_training = False
+
     def __init__(
         self,
         max_samples: int = 1000,
@@ -36,7 +39,7 @@ class ExplainerDashboardStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        drop_columns = data.get("drop_columns")
+        drop_columns = data._drop_columns
         if drop_columns:
             df = df.drop(columns=drop_columns)
 

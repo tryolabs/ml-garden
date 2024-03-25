@@ -7,6 +7,9 @@ from pipeline_lib.core.steps.base import PipelineStep
 class EncodeStep(PipelineStep):
     """Encode the data."""
 
+    used_for_prediction = True
+    used_for_training = True
+
     def __init__(self, config: Optional[dict] = None) -> None:
         """Initialize EncodeStep."""
         super().__init__(config=config)

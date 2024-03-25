@@ -16,6 +16,9 @@ class UnsupportedFeatureError(Exception):
 class CalculateFeaturesStep(PipelineStep):
     """Calculate features."""
 
+    used_for_prediction = True
+    used_for_training = True
+
     def __init__(
         self,
         datetime_columns: Optional[List[str]] = None,

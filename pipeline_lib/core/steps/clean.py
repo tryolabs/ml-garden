@@ -5,6 +5,9 @@ from pipeline_lib.core.steps.base import PipelineStep
 
 
 class CleanStep(PipelineStep):
+    used_for_prediction = True
+    used_for_training = True
+
     def __init__(
         self,
         fill_missing: Optional[dict] = None,
