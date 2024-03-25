@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
 

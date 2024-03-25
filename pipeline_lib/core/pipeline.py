@@ -4,8 +4,6 @@ import json
 import logging
 from typing import Optional
 
-from joblib import load
-
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
 from pipeline_lib.core.step_registry import StepRegistry
