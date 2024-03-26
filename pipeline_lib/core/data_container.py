@@ -6,9 +6,12 @@ import json
 import logging
 import pickle
 import sys
-from typing import Any, Optional, Union
+from typing import Any, List, Optional, Union
 
+import pandas as pd
 import yaml
+
+from pipeline_lib.core.model import Model
 
 
 class DataContainer:
@@ -280,19 +283,19 @@ class DataContainer:
         return cls(initial_data=data)
 
     @property
-    def clean(self) -> Any:
+    def clean(self) -> pd.DataFrame:
         """
         Get the clean data from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
             The clean data stored in the DataContainer.
         """
         return self["clean"]
 
     @clean.setter
-    def clean(self, value: Any):
+    def clean(self, value: pd.DataFrame):
         """
         Set the clean data in the DataContainer.
 
@@ -305,19 +308,19 @@ class DataContainer:
 
     # create the same for raw
     @property
-    def raw(self) -> Any:
+    def raw(self) -> pd.DataFrame:
         """
         Get the raw data from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
             The raw data stored in the DataContainer.
         """
         return self["raw"]
 
     @raw.setter
-    def raw(self, value: Any):
+    def raw(self, value: pd.DataFrame):
         """
         Set the raw data in the DataContainer.
 
@@ -329,19 +332,19 @@ class DataContainer:
         self["raw"] = value
 
     @property
-    def train(self) -> Any:
+    def train(self) -> pd.DataFrame:
         """
         Get the train data from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
             The train data stored in the DataContainer.
         """
         return self["train"]
 
     @train.setter
-    def train(self, value: Any):
+    def train(self, value: pd.DataFrame):
         """
         Set the train data in the DataContainer.
 
@@ -353,19 +356,19 @@ class DataContainer:
         self["train"] = value
 
     @property
-    def validation(self) -> Any:
+    def validation(self) -> pd.DataFrame:
         """
         Get the validation data from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
             The validation data stored in the DataContainer.
         """
         return self["validation"]
 
     @validation.setter
-    def validation(self, value: Any):
+    def validation(self, value: pd.DataFrame):
         """
         Set the validation data in the DataContainer.
 
@@ -377,19 +380,19 @@ class DataContainer:
         self["validation"] = value
 
     @property
-    def test(self) -> Any:
+    def test(self) -> pd.DataFrame:
         """
         Get the test data from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
         The test data stored in the DataContainer.
         """
         return self["test"]
 
     @test.setter
-    def test(self, value: Any):
+    def test(self, value: pd.DataFrame):
         """
         Set the test data in the DataContainer.
 
@@ -401,19 +404,19 @@ class DataContainer:
         self["test"] = value
 
     @property
-    def model(self) -> Any:
+    def model(self) -> Model:
         """
         Get the model from the DataContainer.
 
         Returns
         -------
-        Any
+        Model
             The model stored in the DataContainer.
         """
         return self["model"]
 
     @model.setter
-    def model(self, value: Any):
+    def model(self, value: Model):
         """
         Set the model in the DataContainer.
 
@@ -425,49 +428,49 @@ class DataContainer:
         self["model"] = value
 
     @property
-    def metrics(self) -> Any:
+    def metrics(self) -> dict:
         """
         Get the metrics from the DataContainer.
 
         Returns
         -------
-        Any
+        dict
             The metrics stored in the DataContainer.
         """
         return self["metrics"]
 
     @metrics.setter
-    def metrics(self, value: Any):
+    def metrics(self, value: dict):
         """
         Set the metrics in the DataContainer.
 
         Parameters
         ----------
-        value
+        dict
             The metrics to be stored in the DataContainer.
         """
         self["metrics"] = value
 
     @property
-    def predictions(self) -> Any:
+    def predictions(self) -> pd.Series:
         """
         Get the predictions from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.Series
             The predictions stored in the DataContainer.
         """
         return self["predictions"]
 
     @predictions.setter
-    def predictions(self, value: Any):
+    def predictions(self, value: pd.Series):
         """
         Set the predictions in the DataContainer.
 
         Parameters
         ----------
-        value
+        pd.Series
             The predictions to be stored in the DataContainer.
         """
         self["predictions"] = value
@@ -497,43 +500,43 @@ class DataContainer:
         self["explainer"] = value
 
     @property
-    def tuning_params(self) -> Any:
+    def tuning_params(self) -> dict:
         """
         Get the tuning parameters from the DataContainer.
 
         Returns
         -------
-        Any
+        dict
             The tuning parameters stored in the DataContainer.
         """
         return self["tuning_params"]
 
     @tuning_params.setter
-    def tuning_params(self, value: Any):
+    def tuning_params(self, value: dict):
         """
         Set the tuning parameters in the DataContainer.
 
         Parameters
         ----------
-        value
+        dict
             The tuning parameters to be stored in the DataContainer.
         """
         self["tuning_params"] = value
 
     @property
-    def target(self) -> Any:
+    def target(self) -> str:
         """
         Get the target from the DataContainer.
 
         Returns
         -------
-        Any
+        str
             The target stored in the DataContainer.
         """
         return self["target"]
 
     @target.setter
-    def target(self, value: Any):
+    def target(self, value: str):
         """
         Set the target in the DataContainer.
 
@@ -545,19 +548,19 @@ class DataContainer:
         self["target"] = value
 
     @property
-    def flow(self) -> Any:
+    def flow(self) -> pd.DataFrame:
         """
         Get the flow from the DataContainer.
 
         Returns
         -------
-        Any
+        pd.DataFrame
             The flow stored in the DataContainer.
         """
         return self["flow"]
 
     @flow.setter
-    def flow(self, value: Any):
+    def flow(self, value: pd.DataFrame):
         """
         Set the flow in the DataContainer.
 
@@ -569,19 +572,19 @@ class DataContainer:
         self["flow"] = value
 
     @property
-    def _drop_columns(self) -> Any:
+    def _drop_columns(self) -> List[str]:
         """
         Get the drop columns from the DataContainer.
 
         Returns
         -------
-        Any
+        List[str]
             The drop columns stored in the DataContainer.
         """
         return self["_drop_columns"]
 
     @_drop_columns.setter
-    def _drop_columns(self, value: Any):
+    def _drop_columns(self, value: List[str]):
         """
         Set the drop columns in the DataContainer.
 
