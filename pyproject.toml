@@ -24,6 +24,7 @@ optuna = "^3.5.0"
 pyarrow = "^15.0.0"
 PyYAML = "^6.0.1"
 xgboost = { version = "^2.0.3", optional = true }
+optuna-dashboard = "^0.15.0"
 
 [tool.poetry.extras]
 xgboost = ["xgboost"]
