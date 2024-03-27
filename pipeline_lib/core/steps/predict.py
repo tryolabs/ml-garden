@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Optional
 
 from pipeline_lib.core import DataContainer
@@ -21,13 +22,19 @@ class PredictStep(PipelineStep):
         super().__init__()
         self.init_logger()
         self.load_path = load_path
-        self.model = Model.from_file(load_path)
+        if not Path(load_path).is_file():
+            self.logger.warning(f"Model file not found at {load_path}")
+            self.model = None
+        else:
+            self.model = Model.from_file(load_path)
         self.target = target
         self.drop_columns = drop_columns or []
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step."""
         self.logger.info("Obtaining predictions")
+        if not self.model:
+            raise ValueError("Model not found. Please check the path.")
 
         drop_columns = self.drop_columns + [self.target]
 
