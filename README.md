@@ -1,104 +1,165 @@
-# Repo Template
+# Pipeline Library
 
-Kick off a project with the right foot.
+The Pipeline Library is a powerful and flexible tool designed to simplify the creation and management of machine learning pipelines. It provides a high-level interface for defining and executing pipelines, allowing users to focus on the core aspects of their machine learning projects. The library currently supports XGBoost models, with plans to expand support for more models in the future.
 
-A repository template for easily setting up a well behaved development environment for a smooth
-collaboration experience.
+## Features
 
-This template takes care of setting up and configuring:
+* Intuitive and easy-to-use API for defining pipeline steps and configurations
+* Support for various data loading formats, including CSV and Parquet
+* Flexible data preprocessing steps, such as data cleaning, feature calculation, and encoding
+* Seamless integration with XGBoost for model training and prediction
+* Hyperparameter optimization using Optuna for fine-tuning models
+* Evaluation metrics calculation and reporting
+* Explainable AI (XAI) dashboard for model interpretability
+* Extensible architecture for adding custom pipeline steps
 
-- A **virtual environment**
-- **Formatting and linting** tools
-- Some shared default **VSCode settings**
-- A **Pull Request template**
-- A **GitHub Action** that runs formatting and linting checks
+## Installation
 
-Any of these configurations and features can be disabled/modified freely after set up if the team
-chooses to.
+To install the Pipeline Library, you need to have Python 3.9 or higher and Poetry installed. Follow these steps:
 
-Note: [pyenv](https://github.com/pyenv/pyenv#installation) and
-[poetry](https://python-poetry.org/docs/#installation) are used for setting up a virtual environment
-with the correct python version. Make sure both of those are installed correctly in your machine.
+1. Clone the repository:
 
-# Usage
+   ```bash
+   git clone https://github.com/tryolabs/pipeline-lib.git
+   ```
 
-1. Click the `Use this template` button at the top of this repo's home page to spawn a new repo
-   from this template.
+2. Navigate to the project directory:
 
-2. Clone the new repo to your local environment.
+    ```bash
+    cd pipeline-lib
+    ```
 
-3. Run `sh init.sh <your_project_name> <python version>`.
+3. Install the dependencies using Poetry:
 
-   Note that:
+    ```bash
+    poetry install
+    ```
 
-   - the project's accepted python versions will be set to `^<python version>` - feel free
-     to change this manually in the `pyproject.toml` file after running the script.
-   - your project's source code should be placed in the newly-created folder with your project's
-     name, so that absolute imports (`from my_project.my_module import func`) work everywhere.
+    If you want to include optional dependencies, you can specify the extras:
 
-4. Nuke this readme and the `init.sh` file.
+    ```bash
+    poetry install --extras "xgboost"
+    ```
 
-5. Add to git the changes made by the init script, such as the newly created `poetry.toml`,
-   `poetry.lock` and `.python-version` files.
+    or
 
-6. Commit and push your changes - your project is all set up.
+    ```bash
+    poetry install --extras "all_models"
+    ```
 
-7. [Recommended] Set up the following in your GitHub project's `Settings` tab:
-   - Enable branch protection for the `main` branch in the `Branches` menu to prevent non-reviewed
-     pushes/merges to it.
-   - Enable `Automatically delete head branches` in the `General` tab for feature branches to be
-     cleaned up when merged.
+## Usage
 
-# For ongoing projects
+Here's an example of how to use the library to run an XGBoost pipeline:
 
-If you want to improve the current configs of an existing project, these files are the ones you'll
-probably want to steal some content from:
+1. Create a `config.json` file with the following content:
 
-- [VSCode settings](.vscode/settings.json)
-- [Flake8 config](.flake8)
-- [Black and iSort configs](pyproject.toml)
-- [Style check GitHub Action](.github/workflows/style-checks.yaml)
 
-Additionally, you might want to check the
-[project's source code is correctly installed via Poetry](https://stackoverflow.com/questions/66586856/how-can-i-make-my-project-available-in-the-poetry-environment)
-for intra-project imports to work as expected across the board.
+```json
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "examples/ocf/data/trainset_forecast.parquet",
+                    "predict_path": "examples/ocf/data/testset_forecast.parquet"
+                }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {
+                    "drop_na_columns": [
+                        "average_power_kw",
+                        "diffuse_radiation"
+                    ],
+                    "drop_ids": {
+                        "ss_id": [
+                            7759,
+                            7061
+                        ]
+                    }
+                }
+            },
+            {
+                "step_type": "CalculateFeaturesStep",
+                "parameters": {
+                    "datetime_columns": [
+                        "date"
+                    ],
+                    "features": [
+                        "year",
+                        "month",
+                        "day",
+                        "hour",
+                        "minute"
+                    ]
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.95
+                }
+            },
+            {
+                "step_type": "FitModelStep",
+                "parameters": {
+                    "model_class": "XGBoostModel",
+                    "target": "average_power_kw",
+                    "drop_columns": [
+                        "ss_id",
+                        "operational_at",
+                        "total_energy_kwh"
+                    ],
+                    "model_params": {
+                        "max_depth": 12,
+                        "eta": 0.12410097733370863,
+                        "objective": "reg:squarederror",
+                        "eval_metric": "mae",
+                        "n_jobs": -1,
+                        "n_estimators": 40,
+                        "min_child_weight": 7,
+                        "subsample": 0.8057743223537057,
+                        "colsample_bytree": 0.6316852278944352,
+                        "early_stopping_rounds": 10
+                    },
+                    "save_path": "model_forecast.joblib"
+                }
+            },
+            {
+                "step_type": "PredictStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "CalculateTrainMetricsStep",
+                "parameters": {}
+            }
+        ]
+    }
+}
+```
 
-# For developers of this template
+2. Run the pipeline in train mode using the following code:
 
-To test new changes made to this template:
+```python
+import logging
 
-1. Run the template in test mode with `test=true sh init.sh <your_project_name> <python version>`,
-   which will not delete the [project_base/test.py](project_base/test.py) file from the source
-   directory.
+from pipeline_lib import Pipeline
 
-2. Use that file to check everything works as expected (see details in its docstring).
+logging.basicConfig(level=logging.INFO)
 
-3. Make sure not to version any of the files created by the script. `git reset --hard` + manually
-   deleting the created files not yet added to versioning works, for example.
+data = Pipeline.from_json("config.json").run(is_train=True)
+```
 
-# Issues and suggestions
+3. To run it in prediction mode you have to set `is_train` to `False`.
 
-Feel free to report issues or propose improvements to this template via GitHub issues or through the
-`#team-tech-meta` channel in Slack.
+```python
+data = Pipeline.from_json("config.json").run(is_train=False)
+```
 
-# Can I use it without Poetry?
+The library allows users to define custom steps for data generation, cleaning, and preprocessing, which can be seamlessly integrated into the pipeline.
 
-This template currently sets up your virtual environment via poetry only.
-
-If you want to use a different dependency manager, you'll have to manually do the following:
-
-1. Remove the `.venv` environment and the `pyproject.toml` and `poetry.lock` files.
-2. Create a new environment with your dependency manager of choice.
-3. Install flake, black and isort as dev dependencies.
-4. Install the current project's source.
-5. Set the path to your new environment's python in the `python.pythonPath` and
-   `python.defaultInterpreterPath` in [vscode settings](.vscode/settings.json).
-
-Disclaimer: this has not been tested, additional steps may be needed.
-
-# Troubleshooting
-
-### pyenv not picking up correct python version from .python-version
-
-Make sure the `PYENV_VERSION` env var isn't set in your current shell
-(and if it is, run `unset PYENV_VERSION`).
+## Contributing
+Contributions to the Pipeline Library are welcome! If you encounter any issues, have suggestions for improvements, or want to add new features, please open an issue or submit a pull request on the GitHub repository.
