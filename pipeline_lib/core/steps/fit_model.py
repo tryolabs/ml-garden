@@ -1,11 +1,12 @@
+import json
 from typing import Optional, Type
 
 import optuna
-from sklearn.metrics import mean_absolute_error
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.model import Model
 from pipeline_lib.core.steps.base import PipelineStep
+from pipeline_lib.core.utils import calculate_error
 
 
 class FitModelStep(PipelineStep):
@@ -35,8 +36,6 @@ class FitModelStep(PipelineStep):
         self.search_space = search_space or {}
         self.save_path = save_path
 
-        self.model = self.model_class(**self.model_params)
-
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step."""
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
@@ -57,8 +56,20 @@ class FitModelStep(PipelineStep):
         params = self.model_params
 
         if self.optuna_params:
-            params = self.optimize_with_optuna(X_train, y_train, X_valid, y_valid)
+            objective_metric = self.optuna_params.get("objective_metric", "mean_absolute_error")
+            params = self.optimize_with_optuna(X_train, y_train, X_valid, y_valid, objective_metric)
             data.tuning_params = params
+            self.logger.info(
+                "Finished optimizing the model with Optuna. Using the best parameters to fit the"
+                " model."
+            )
+            # add model_params to params
+            params.update(self.model_params)
+
+        self.logger.info(
+            f"Fitting the model with the following parameters: \n {json.dumps(params, indent=4)}"
+        )
+        self.model = self.model_class(**params)
 
         self.model.fit(
             X_train,
@@ -77,15 +88,19 @@ class FitModelStep(PipelineStep):
 
         return data
 
-    def optimize_with_optuna(self, X_train, y_train, X_valid, y_valid):
+    def optimize_with_optuna(self, X_train, y_train, X_valid, y_valid, objective_metric: str):
         def objective(trial):
             param = {}
             for key, value in self.search_space.items():
                 if isinstance(value, dict):
                     suggest_func = getattr(trial, f"suggest_{value['type']}")
-                    param[key] = suggest_func(key, *value["args"], **value["kwargs"])
+                    kwargs = value.get("kwargs", {})
+                    param[key] = suggest_func(key, *value["args"], **kwargs)
                 else:
                     param[key] = value
+
+            # add model_params to params
+            param.update(self.model_params)
 
             model = self.model_class(**param)
             model.fit(
@@ -95,8 +110,10 @@ class FitModelStep(PipelineStep):
                 verbose=True,
             )
             preds = model.predict(X_valid)
-            mae = mean_absolute_error(y_valid, preds)
-            return mae
+
+            error = calculate_error(y_valid, preds, objective_metric)
+
+            return error
 
         def optuna_logging_callback(study, trial):
             if trial.state == optuna.trial.TrialState.COMPLETE:
@@ -113,17 +130,26 @@ class FitModelStep(PipelineStep):
 
         self.logger.info(f"Optimizing XGBoost hyperparameters with {optuna_trials} trials.")
 
-        study_name = self.optuna_params.get("study_name", "xgboost_optimization")
+        study_name = self.optuna_params.get("study_name")
+
+        if not study_name:
+            raise ValueError("Study name is not provided in the optuna parameters.")
+
+        load_if_exists = self.optuna_params.get("load_if_exists", False)
+        if load_if_exists:
+            self.logger.info("Loading existing study if it exists. It will overwrite the study.")
+
         storage = self.optuna_params.get("storage", "sqlite:///db.sqlite3")
 
         study = optuna.create_study(
             direction="minimize",
             study_name=study_name,
             storage=storage,
+            load_if_exists=load_if_exists,
         )
 
         study.optimize(objective, n_trials=optuna_trials, callbacks=[optuna_logging_callback])
 
         best_params = study.best_params
-        self.logger.info(f"Best parameters found by Optuna: {best_params}")
+        self.logger.info(f"Best parameters found by Optuna: \n{json.dumps(best_params, indent=4)}")
         return best_params

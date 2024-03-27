@@ -121,6 +121,17 @@ files = [
 ]
 
 [[package]]
+name = "bottle"
+version = "0.12.25"
+description = "Fast and simple WSGI-framework for small web-applications."
+optional = false
+python-versions = "*"
+files = [
+    {file = "bottle-0.12.25-py3-none-any.whl", hash = "sha256:d6f15f9d422670b7c073d63bd8d287b135388da187a0f3e3c19293626ce034ea"},
+    {file = "bottle-0.12.25.tar.gz", hash = "sha256:e1a9c94970ae6d710b3fb4526294dfeb86f2cb4a81eff3a4b98dc40fb0e5e021"},
+]
+
+[[package]]
 name = "certifi"
 version = "2024.2.2"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1614,6 +1625,30 @@ optional = ["boto3", "botorch", "cmaes (>=0.10.0)", "google-cloud-storage", "mat
 test = ["coverage", "fakeredis[lua]", "kaleido", "moto", "pytest", "scipy (>=1.9.2)"]
 
 [[package]]
+name = "optuna-dashboard"
+version = "0.15.0"
+description = "Real-time dashboard for Optuna"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "optuna-dashboard-0.15.0.tar.gz", hash = "sha256:0a42485140f6f023a943b2c9c4191e63b7f6c6cde2f15e76c56b4514805cd8e9"},
+    {file = "optuna_dashboard-0.15.0-py3-none-any.whl", hash = "sha256:a3667364c293c4babc0795de2690b17c6ab6570559a75e92f53efebc6070626e"},
+]
+
+[package.dependencies]
+bottle = "*"
+optuna = ">=3.1.0"
+packaging = "*"
+scikit-learn = "*"
+
+[package.extras]
+docs = ["boto3", "botorch", "sphinx", "sphinx-rtd-theme", "streamlit"]
+optional = ["boto3", "botorch (>=0.8.1)", "streamlit"]
+plotlypy = ["plotly"]
+preferential = ["botorch (>=0.8.1)"]
+test = ["coverage", "moto[s3]", "plotly", "pytest"]
+
+[[package]]
 name = "oyaml"
 version = "1.0"
 description = "Ordered YAML: drop-in replacement for PyYAML which preserves dict ordering"
@@ -2848,4 +2883,4 @@ xgboost = ["xgboost"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1569b3419d8a6c81d4ac0603e9d20e605f68f339527079764611a2454dee0d5b"
+content-hash = "710a9f3401a6bc73c235b6b78c1fd249d41ea96193dfcc018a662bc84ae53c29"
