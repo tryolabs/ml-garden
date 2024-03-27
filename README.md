@@ -2,6 +2,9 @@
 
 The Pipeline Library is a powerful and flexible tool designed to simplify the creation and management of machine learning pipelines. It provides a high-level interface for defining and executing pipelines, allowing users to focus on the core aspects of their machine learning projects. The library currently supports XGBoost models, with plans to expand support for more models in the future.
 
+> [!WARNING]
+> This library is in the early stages of development and is not yet ready for production use. The API and functionality may change without notice. Use at your own risk.
+
 ## Features
 
 * Intuitive and easy-to-use API for defining pipeline steps and configurations
@@ -133,7 +136,7 @@ Here's an example of how to use the library to run an XGBoost pipeline:
                 "parameters": {}
             },
             {
-                "step_type": "CalculateTrainMetricsStep",
+                "step_type": "CalculateMetricsStep",
                 "parameters": {}
             }
         ]
