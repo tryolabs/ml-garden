@@ -13,18 +13,18 @@ version = "0.1.0"
 description = "A library for designing and re-using ML pipelines"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "pipeline_lib"}]
+packages = [{ include = "pipeline_lib" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 pandas = "^2.2.1"
-scikit-learn = "^1.4.1.post1"
-explainerdashboard = "^0.4.5"
-optuna = "^3.5.0"
 pyarrow = "^15.0.0"
 PyYAML = "^6.0.1"
-xgboost = { version = "^2.0.3", optional = true }
+scikit-learn = "^1.4.1.post1"
+optuna = "^3.5.0"
 optuna-dashboard = "^0.15.0"
+explainerdashboard = "^0.4.5"
+xgboost = { version = "^2.0.3", optional = true }
 
 [tool.poetry.extras]
 xgboost = ["xgboost"]
