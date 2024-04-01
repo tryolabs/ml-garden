@@ -67,6 +67,7 @@ class TabularSplitStep(PipelineStep):
         validation_percentage: Optional[float] = None,
         test_percentage: Optional[float] = None,
         group_by_columns: Optional[list[str]] = None,
+        random_seed: Optional[int] = 42,
     ) -> None:
         """Initialize SplitStep."""
         self.init_logger()
@@ -74,6 +75,7 @@ class TabularSplitStep(PipelineStep):
         self.validation_percentage = validation_percentage
         self.test_percentage = test_percentage
         self.group_by_columns = group_by_columns
+        self.random_seed = random_seed
 
         if self.train_percentage <= 0 or self.train_percentage >= 1:
             raise ValueError("train_percentage must be between 0 and 1.")
@@ -122,7 +124,7 @@ class TabularSplitStep(PipelineStep):
                 train_val_values,
                 train_size=self.train_percentage
                 / (self.train_percentage + self.validation_percentage),
-                random_state=42,
+                random_state=self.random_seed,
             )
         else:
             train_values, validation_values = train_test_split(
