@@ -64,7 +64,7 @@ class EncodeStep(PipelineStep):
 
         self.column_transformer.fit(df, df[target_column_name])
         transformed_data = self.column_transformer.transform(df)
-        self.logger.info(f"Transformed data shape: {transformed_data.shape}")
+        self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
 
         encoded_data = pd.DataFrame(transformed_data)
 
@@ -79,7 +79,18 @@ class EncodeStep(PipelineStep):
         low_cardinality_features,
         high_cardinality_features,
     ):
-        self.logger.info(f"Categorical features: {categorical_features}")
-        self.logger.info(f"Numeric features: {numeric_features}")
-        self.logger.info(f"Low cardinality features: {low_cardinality_features}")
-        self.logger.info(f"High cardinality features: {high_cardinality_features}")
+        self.logger.info(
+            f"Categorical features: ({len(categorical_features)}) - {categorical_features}"
+        )
+        self.logger.info(
+            f"Low cardinality features (cardinality ratio < {self.cardinality_threshold}):"
+            f" ({len(low_cardinality_features)}) - {low_cardinality_features}"
+        )
+        self.logger.info("Low cardinality features encoding method: target encoder")
+        self.logger.info(
+            f"High cardinality features (cardinality ratio >= {self.cardinality_threshold}):"
+            f" ({len(high_cardinality_features)}) -  {high_cardinality_features}"
+        )
+        self.logger.info("High cardinality features encoding method: ordinal encoder")
+        self.logger.info(f"Numeric features: ({len(numeric_features)}) - {numeric_features}")
+        self.logger.info("Numeric features encoding method: passthrough")
