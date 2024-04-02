@@ -3,6 +3,7 @@ from typing import Optional
 import pandas as pd
 from category_encoders import TargetEncoder
 from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OrdinalEncoder
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
@@ -55,6 +56,7 @@ class EncodeStep(PipelineStep):
         self.column_transformer = ColumnTransformer(
             [
                 ("target_encoder", TargetEncoder(), low_cardinality_features),
+                ("ordinal_encoder", OrdinalEncoder(), high_cardinality_features),
             ],
             remainder="passthrough",
             verbose_feature_names_out=True,
@@ -64,7 +66,7 @@ class EncodeStep(PipelineStep):
         transformed_data = self.column_transformer.transform(df)
         self.logger.info(f"Transformed data shape: {transformed_data.shape}")
 
-        encoded_data = pd.DataFrame(transformed_data, columns=df.columns)
+        encoded_data = pd.DataFrame(transformed_data)
 
         data.flow = encoded_data
 
