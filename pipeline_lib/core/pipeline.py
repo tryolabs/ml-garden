@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
+from pipeline_lib.core.random_generator import initialize_generator
 from pipeline_lib.core.step_registry import StepRegistry
 from pipeline_lib.core.steps import PipelineStep
 
@@ -94,6 +95,12 @@ class Pipeline:
 
         pipeline.config = config
         pipeline.save_data_path = save_data_path
+
+        if "seed" in config["pipeline"]:
+            seed = config["pipeline"]["seed"]
+        else:
+            seed = 42
+        initialize_generator(seed)
 
         steps = []
 
