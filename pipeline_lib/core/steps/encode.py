@@ -20,7 +20,6 @@ class EncodeStep(PipelineStep):
         self.init_logger()
         self.target = target
         self.cardinality_threshold = cardinality_threshold
-        self.column_transformer = None
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step."""
@@ -53,20 +52,29 @@ class EncodeStep(PipelineStep):
             high_cardinality_features,
         )
 
-        self.column_transformer = ColumnTransformer(
+        column_transformer = ColumnTransformer(
             [
-                ("target_encoder", TargetEncoder(), low_cardinality_features),
-                ("ordinal_encoder", OrdinalEncoder(), high_cardinality_features),
+                ("target_encoder", TargetEncoder(), high_cardinality_features),
+                ("ordinal_encoder", OrdinalEncoder(), low_cardinality_features),
             ],
             remainder="passthrough",
-            verbose_feature_names_out=True,
+            verbose_feature_names_out=False,
         )
 
-        self.column_transformer.fit(df, df[target_column_name])
-        transformed_data = self.column_transformer.transform(df)
+        column_transformer.fit(df, df[target_column_name])
+        transformed_data = column_transformer.transform(df)
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
 
-        encoded_data = pd.DataFrame(transformed_data)
+        encoded_data = pd.DataFrame(
+            transformed_data, columns=column_transformer.get_feature_names_out()
+        )
+
+        # ensure that the output columns are in the same order as the input columns
+        new_column_order = [
+            col for col in df.columns if col in encoded_data.columns or col == target_column_name
+        ]
+
+        encoded_data = encoded_data[new_column_order]
 
         data.flow = encoded_data
 
@@ -86,11 +94,11 @@ class EncodeStep(PipelineStep):
             f"Low cardinality features (cardinality ratio < {self.cardinality_threshold}):"
             f" ({len(low_cardinality_features)}) - {low_cardinality_features}"
         )
-        self.logger.info("Low cardinality features encoding method: target encoder")
+        self.logger.info("Low cardinality features encoding method: ordinal encoder")
         self.logger.info(
             f"High cardinality features (cardinality ratio >= {self.cardinality_threshold}):"
             f" ({len(high_cardinality_features)}) -  {high_cardinality_features}"
         )
-        self.logger.info("High cardinality features encoding method: ordinal encoder")
+        self.logger.info("High cardinality features encoding method: target encoder")
         self.logger.info(f"Numeric features: ({len(numeric_features)}) - {numeric_features}")
         self.logger.info("Numeric features encoding method: passthrough")
