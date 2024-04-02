@@ -25,6 +25,7 @@ optuna = "^3.5.0"
 optuna-dashboard = "^0.15.0"
 explainerdashboard = "^0.4.5"
 xgboost = { version = "^2.0.3", optional = true }
+category-encoders = "^2.6.3"
 
 [tool.poetry.extras]
 xgboost = ["xgboost"]
