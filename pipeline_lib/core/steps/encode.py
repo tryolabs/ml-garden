@@ -46,7 +46,9 @@ class EncodeStep(PipelineStep):
 
         encoded_data = self._transform_data(df, target_column_name, column_transformer)
         encoded_data = self._restore_column_order(df, encoded_data)
-        encoded_data = self._convert_ordinal_encoded_columns(encoded_data, column_transformer)
+        encoded_data = self._convert_ordinal_encoded_columns_to_int(
+            encoded_data, column_transformer
+        )
         encoded_data = self._restore_numeric_dtypes(encoded_data, numeric_features)
         encoded_data = self._restore_target_dtype(encoded_data, target_column_name)
 
@@ -109,16 +111,26 @@ class EncodeStep(PipelineStep):
         new_column_order = [col for col in df.columns if col in encoded_data.columns]
         return encoded_data[new_column_order]
 
-    def _convert_ordinal_encoded_columns(
+    def _convert_ordinal_encoded_columns_to_int(
         self, encoded_data: pd.DataFrame, column_transformer: ColumnTransformer
     ) -> pd.DataFrame:
-        """Convert ordinal encoded columns to integer dtype."""
+        """Convert ordinal encoded columns to the smallest possible integer dtype."""
         ordinal_encoder_features = column_transformer.named_transformers_[
             "ordinal_encoder"
         ].get_feature_names_out()
+
         for col in ordinal_encoder_features:
             if col in encoded_data.columns:
-                encoded_data[col] = encoded_data[col].astype(int)
+                n_unique = encoded_data[col].nunique()
+                if n_unique <= 2**8:
+                    encoded_data[col] = encoded_data[col].astype(np.int8)
+                elif n_unique <= 2**16:
+                    encoded_data[col] = encoded_data[col].astype(np.int16)
+                elif n_unique <= 2**32:
+                    encoded_data[col] = encoded_data[col].astype(np.int32)
+                else:
+                    encoded_data[col] = encoded_data[col].astype(np.int64)
+
         return encoded_data
 
     def _restore_numeric_dtypes(
