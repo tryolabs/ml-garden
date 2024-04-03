@@ -27,11 +27,17 @@ class EncodeStep(PipelineStep):
         self.logger.info("Encoding data")
         df = data.flow
         target_column_name = self.target or data.target
+        target_original_dtype = None
 
         categorical_features, numeric_features = self._get_feature_types(df, target_column_name)
         low_cardinality_features, high_cardinality_features = self._split_categorical_features(
             df, categorical_features
         )
+
+        original_numeric_dtypes = {col: df[col].dtype for col in numeric_features}
+
+        if pd.api.types.is_numeric_dtype(df[target_column_name]):
+            target_original_dtype = df[target_column_name].dtype
 
         self._log_feature_info(
             categorical_features,
@@ -49,8 +55,11 @@ class EncodeStep(PipelineStep):
         encoded_data = self._convert_ordinal_encoded_columns_to_int(
             encoded_data, column_transformer
         )
-        encoded_data = self._restore_numeric_dtypes(encoded_data, numeric_features)
-        encoded_data = self._restore_target_dtype(encoded_data, target_column_name)
+        encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
+        encoded_data = self._restore_target_dtype(
+            encoded_data, target_column_name, target_original_dtype
+        )
+        encoded_data = self._convert_float64_to_float32(encoded_data)
 
         data.flow = encoded_data
 
@@ -91,7 +100,7 @@ class EncodeStep(PipelineStep):
         return ColumnTransformer(
             [
                 ("target_encoder", TargetEncoder(), high_cardinality_features),
-                ("ordinal_encoder", OrdinalEncoder(dtype=np.int32), low_cardinality_features),
+                ("ordinal_encoder", OrdinalEncoder(), low_cardinality_features),
             ],
             remainder="passthrough",
             verbose_feature_names_out=False,
@@ -134,10 +143,9 @@ class EncodeStep(PipelineStep):
         return encoded_data
 
     def _restore_numeric_dtypes(
-        self, encoded_data: pd.DataFrame, numeric_features: List[str]
+        self, encoded_data: pd.DataFrame, original_numeric_dtypes: dict
     ) -> pd.DataFrame:
         """Restore original dtypes of numeric features."""
-        original_numeric_dtypes = {col: encoded_data[col].dtype for col in numeric_features}
         for col, dtype in original_numeric_dtypes.items():
             if col in encoded_data.columns:
                 try:
@@ -149,20 +157,31 @@ class EncodeStep(PipelineStep):
         return encoded_data
 
     def _restore_target_dtype(
-        self, encoded_data: pd.DataFrame, target_column_name: str
+        self,
+        encoded_data: pd.DataFrame,
+        target_column_name: str,
+        target_original_dtype: Optional[np.dtype],
     ) -> pd.DataFrame:
         """Restore original dtype of the target column."""
-        if pd.api.types.is_numeric_dtype(encoded_data[target_column_name]):
-            target_original_dtype = encoded_data[target_column_name].dtype
-            try:
-                encoded_data[target_column_name] = encoded_data[target_column_name].astype(
-                    target_original_dtype
-                )
-            except ValueError:
-                self.logger.warning(
-                    f"Failed to convert target column '{target_column_name}' to its original dtype"
-                    f" ({target_original_dtype})."
-                )
+        if not target_original_dtype:
+            return encoded_data
+
+        try:
+            encoded_data[target_column_name] = encoded_data[target_column_name].astype(
+                target_original_dtype
+            )
+        except ValueError:
+            self.logger.warning(
+                f"Failed to convert target column '{target_column_name}' to its original dtype"
+                f" ({target_original_dtype})."
+            )
+        return encoded_data
+
+    def _convert_float64_to_float32(self, encoded_data: pd.DataFrame) -> pd.DataFrame:
+        """Convert float64 columns to float32."""
+        float64_columns = encoded_data.select_dtypes(include=["float64"]).columns
+        for col in float64_columns:
+            encoded_data[col] = encoded_data[col].astype(np.float32)
         return encoded_data
 
     def _log_feature_info(
