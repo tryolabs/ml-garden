@@ -46,7 +46,6 @@ class GenerateStep(PipelineStep):
         kwargs = self.kwargs.copy()
         if data.is_train:
             kwargs.pop("predict_path", None)  # Remove prediction_path if in train mode
-            self.logger.info(f"Removing prediction_path from kwargs: {kwargs}")
         else:
             kwargs.pop("train_path", None)  # Remove train_path if in predict mode
 
