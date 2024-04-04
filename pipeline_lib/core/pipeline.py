@@ -95,8 +95,6 @@ class Pipeline:
         pipeline.config = config
         pipeline.save_data_path = save_data_path
 
-        print(f"Saved data path: {save_data_path}")
-
         steps = []
 
         for step_config in config["pipeline"]["steps"]:
