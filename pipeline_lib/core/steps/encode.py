@@ -41,7 +41,6 @@ class EncodeStep(PipelineStep):
             raise ValueError("Target column not found in any parameter before encoding.")
 
         target_column_name = self.target or data.target
-        target_original_dtype = None
 
         categorical_features, numeric_features = self._get_feature_types(df, target_column_name)
         low_cardinality_features, high_cardinality_features = self._split_categorical_features(
@@ -50,8 +49,7 @@ class EncodeStep(PipelineStep):
 
         original_numeric_dtypes = {col: df[col].dtype for col in numeric_features}
 
-        if pd.api.types.is_numeric_dtype(df[target_column_name]):
-            target_original_dtype = df[target_column_name].dtype
+        self._create_encoder_feature_map(high_cardinality_features, low_cardinality_features)
 
         if data.is_train:
             column_transformer = self._create_column_transformer(
@@ -71,9 +69,6 @@ class EncodeStep(PipelineStep):
         encoded_data = self._restore_column_order(df, encoded_data)
         encoded_data = self._convert_ordinal_encoded_columns_to_int(encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
-        encoded_data = self._restore_target_dtype(
-            encoded_data, target_column_name, target_original_dtype
-        )
         encoded_data = self._convert_float64_to_float32(encoded_data)
 
         self._log_feature_info(
@@ -82,6 +77,10 @@ class EncodeStep(PipelineStep):
             low_cardinality_features,
             high_cardinality_features,
         )
+
+        # add target column back if existed, check if df had target
+        if target_column_name in df.columns:
+            encoded_data[target_column_name] = df[target_column_name]
 
         data.flow = encoded_data
 
@@ -133,30 +132,24 @@ class EncodeStep(PipelineStep):
 
         return encoder
 
+    def _create_encoder_feature_map(
+        self, high_cardinality_features: List[str], low_cardinality_features: List[str]
+    ):
+        """Create a dictionary mapping encoder names to feature lists."""
+        self.encoder_feature_map = {}
+        high_cardinality_encoder_name = self.high_cardinality_encoder.__class__.__name__
+        low_cardinality_encoder_name = self.low_cardinality_encoder.__class__.__name__
+        if high_cardinality_encoder_name == low_cardinality_encoder_name:
+            combined_features = high_cardinality_features + low_cardinality_features
+            self.encoder_feature_map[high_cardinality_encoder_name] = combined_features
+        else:
+            self.encoder_feature_map[high_cardinality_encoder_name] = high_cardinality_features
+            self.encoder_feature_map[low_cardinality_encoder_name] = low_cardinality_features
+
     def _create_column_transformer(
         self, high_cardinality_features: List[str], low_cardinality_features: List[str]
     ) -> ColumnTransformer:
         """Create a ColumnTransformer for encoding."""
-
-        # Initialize the encoder_feature_map as an empty dictionary
-        self.encoder_feature_map = {}
-
-        high_cardinality_encoder_name = self.high_cardinality_encoder.__class__.__name__
-        low_cardinality_encoder_name = self.low_cardinality_encoder.__class__.__name__
-
-        # Check if both encoders are the same
-        if high_cardinality_encoder_name == low_cardinality_encoder_name:
-            # If the same, merge the feature lists
-            # This assumes you want to combine the features into a single list; adjust if needed
-            combined_features = high_cardinality_features + low_cardinality_features
-            self.encoder_feature_map[high_cardinality_encoder_name] = combined_features
-        else:
-            # If not the same, assign individually
-            self.encoder_feature_map[high_cardinality_encoder_name] = high_cardinality_features
-            self.encoder_feature_map[low_cardinality_encoder_name] = low_cardinality_features
-
-        self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
-
         return ColumnTransformer(
             [
                 (
@@ -179,7 +172,9 @@ class EncodeStep(PipelineStep):
     ) -> pd.DataFrame:
         """Transform the data using the ColumnTransformer."""
         if is_train:
-            column_transformer.fit(df, df[target_column_name])
+            X = df.drop(columns=[target_column_name])  # Drop the target column
+            y = df[target_column_name]
+            column_transformer.fit(X, y)
         transformed_data = column_transformer.transform(df)
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
         return pd.DataFrame(transformed_data, columns=column_transformer.get_feature_names_out())
@@ -221,27 +216,6 @@ class EncodeStep(PipelineStep):
                     )
         return encoded_data
 
-    def _restore_target_dtype(
-        self,
-        encoded_data: pd.DataFrame,
-        target_column_name: str,
-        target_original_dtype: Optional[np.dtype],
-    ) -> pd.DataFrame:
-        """Restore original dtype of the target column."""
-        if not target_original_dtype:
-            return encoded_data
-
-        try:
-            encoded_data[target_column_name] = encoded_data[target_column_name].astype(
-                target_original_dtype
-            )
-        except ValueError:
-            self.logger.warning(
-                f"Failed to convert target column '{target_column_name}' to its original dtype"
-                f" ({target_original_dtype})."
-            )
-        return encoded_data
-
     def _convert_float64_to_float32(self, encoded_data: pd.DataFrame) -> pd.DataFrame:
         """Convert float64 columns to float32."""
         float64_columns = encoded_data.select_dtypes(include=["float64"]).columns
@@ -269,3 +243,4 @@ class EncodeStep(PipelineStep):
             f" ({len(high_cardinality_features)}) -  {high_cardinality_features}"
         )
         self.logger.info(f"Numeric features: ({len(numeric_features)}) - {numeric_features}")
+        self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
