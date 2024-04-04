@@ -113,7 +113,8 @@ class EncodeStep(PipelineStep):
 
         if not encoder:
             raise ValueError(
-                f"Unsupported encoder: {encoder_name}. Supported encoders: {encoder_map}"
+                f"Unsupported encoder: {encoder_name}. Supported encoders:"
+                f" {list(encoder_map.keys())}"
             )
 
         return encoder
@@ -139,7 +140,7 @@ class EncodeStep(PipelineStep):
             self.encoder_feature_map[self.high_cardinality_encoder] = high_cardinality_features
             self.encoder_feature_map[self.low_cardinality_encoder] = low_cardinality_features
 
-        print(self.encoder_feature_map)
+        self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
 
         return ColumnTransformer(
             [
@@ -244,4 +245,3 @@ class EncodeStep(PipelineStep):
             f" ({len(high_cardinality_features)}) -  {high_cardinality_features}"
         )
         self.logger.info(f"Numeric features: ({len(numeric_features)}) - {numeric_features}")
-        self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
