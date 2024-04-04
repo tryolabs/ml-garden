@@ -28,6 +28,12 @@ class ExplainerDashboardStep(PipelineStep):
         if target is None:
             raise ValueError("Target column not found in any parameter.")
 
+        if target not in data.flow.columns:
+            raise ValueError(
+                f"Target column `{target}` not found in the dataset. It must be present for the"
+                " explainer dashboard."
+            )
+
         df = data.flow
 
         if len(df) > self.max_samples:
@@ -39,9 +45,10 @@ class ExplainerDashboardStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        drop_columns = data._drop_columns + ["predictions"]
-        if drop_columns:
-            df = df.drop(columns=drop_columns)
+        if data._drop_columns:
+            df = df.drop(columns=data._drop_columns + ["predictions"])
+        else:
+            df = df.drop(columns=["predictions"])
 
         X_test = df.drop(columns=[target])
         y_test = df[target]
