@@ -32,7 +32,7 @@ class GenerateStep(PipelineStep):
             raise ValueError("train_path must be provided for training.")
 
         if not data.is_train and not self.predict_path:
-            raise ValueError("prediction_path must be provided for prediction.")
+            raise ValueError("predict_path must be provided for prediction.")
 
         file_path = self.train_path if data.is_train else self.predict_path
 
