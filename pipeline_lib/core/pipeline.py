@@ -20,13 +20,13 @@ class Pipeline:
     step_registry = StepRegistry()
     model_registry = ModelRegistry()
 
+    KEYS_TO_SAVE = ["model", "encoder", "_drop_columns", "target"]
+
     def __init__(self, initial_data: Optional[DataContainer] = None):
         self.steps = []
         self.initial_data = initial_data
-        self.save_path = None
-        self.load_path = None
-        self.model_path = None
         self.config = None
+        self.save_data_path = None
 
     def add_steps(self, steps: list[PipelineStep]):
         """Add steps to the pipeline."""
@@ -35,21 +35,31 @@ class Pipeline:
     def run(self, is_train: bool, save: bool = True) -> DataContainer:
         """Run the pipeline on the given data."""
 
-        data = DataContainer.from_pickle(self.load_path) if self.load_path else DataContainer()
-        data.is_train = is_train
+        if not self.save_data_path:
+            raise ValueError(
+                "A path for saving the data must be provided. Use the `save_data_path` attribute."
+            )
+
+        data = DataContainer()
 
         if is_train:
             steps_to_run = [step for step in self.steps if step.used_for_training]
             self.logger.info("Training the pipeline")
         else:
+            data = DataContainer.from_pickle(self.save_data_path)
             steps_to_run = [step for step in self.steps if step.used_for_prediction]
             self.logger.info("Predicting with the pipeline")
+
+        data.is_train = is_train
 
         for i, step in enumerate(steps_to_run):
             Pipeline.logger.info(
                 f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
             )
             data = step.execute(data)
+
+        if is_train:
+            data.save(self.save_data_path, keys=self.KEYS_TO_SAVE)
 
         if save:
             self.save_run(data)
@@ -78,17 +88,16 @@ class Pipeline:
         if custom_steps_path:
             cls.step_registry.load_and_register_custom_steps(custom_steps_path)
 
+        save_data_path = config["pipeline"].get("save_data_path")
+
         pipeline = Pipeline()
 
-        pipeline.load_path = config.get("load_path")
-        pipeline.save_path = config.get("save_path")
         pipeline.config = config
+        pipeline.save_data_path = save_data_path
+
+        print(f"Saved data path: {save_data_path}")
 
         steps = []
-
-        model_path = None
-        drop_columns = None
-        target = None
 
         for step_config in config["pipeline"]["steps"]:
             step_type = step_config["step_type"]
@@ -103,15 +112,6 @@ class Pipeline:
                 model_class_name = parameters.pop("model_class")
                 model_class = cls.model_registry.get_model_class(model_class_name)
                 parameters["model_class"] = model_class
-                model_path = parameters.get("save_path")
-                drop_columns = parameters.get("drop_columns")
-                target = parameters.get("target")
-
-            # if step type is prediction, add model path
-            if step_type == "PredictStep":
-                parameters["load_path"] = model_path
-                parameters["drop_columns"] = drop_columns
-                parameters["target"] = target
 
             step_class = cls.step_registry.get_step_class(step_type)
             step = step_class(**parameters)

@@ -39,7 +39,7 @@ class ExplainerDashboardStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        drop_columns = data._drop_columns
+        drop_columns = data._drop_columns + ["predictions"]
         if drop_columns:
             df = df.drop(columns=drop_columns)
 
