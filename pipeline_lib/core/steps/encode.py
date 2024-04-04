@@ -52,7 +52,7 @@ class EncodeStep(PipelineStep):
         self._create_encoder_feature_map(high_cardinality_features, low_cardinality_features)
 
         if data.is_train:
-            column_transformer = self._create_column_transformer(
+            column_transformer: ColumnTransformer = self._create_column_transformer(
                 high_cardinality_features, low_cardinality_features
             )
             # Save the encoder for prediction
@@ -137,8 +137,8 @@ class EncodeStep(PipelineStep):
     ):
         """Create a dictionary mapping encoder names to feature lists."""
         self.encoder_feature_map = {}
-        high_cardinality_encoder_name = self.high_cardinality_encoder.__class__.__name__
-        low_cardinality_encoder_name = self.low_cardinality_encoder.__class__.__name__
+        high_cardinality_encoder_name: str = self.high_cardinality_encoder.__class__.__name__
+        low_cardinality_encoder_name: str = self.low_cardinality_encoder.__class__.__name__
         if high_cardinality_encoder_name == low_cardinality_encoder_name:
             combined_features = high_cardinality_features + low_cardinality_features
             self.encoder_feature_map[high_cardinality_encoder_name] = combined_features
