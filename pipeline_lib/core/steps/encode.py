@@ -36,6 +36,10 @@ class EncodeStep(PipelineStep):
         """Execute the encoding step."""
         self.logger.info("Encoding data")
         df = data.flow
+
+        if not data.target and not self.target:
+            raise ValueError("Target column not found in any parameter before encoding.")
+
         target_column_name = self.target or data.target
         target_original_dtype = None
 
@@ -49,11 +53,21 @@ class EncodeStep(PipelineStep):
         if pd.api.types.is_numeric_dtype(df[target_column_name]):
             target_original_dtype = df[target_column_name].dtype
 
-        column_transformer = self._create_column_transformer(
-            high_cardinality_features, low_cardinality_features
-        )
+        if data.is_train:
+            column_transformer = self._create_column_transformer(
+                high_cardinality_features, low_cardinality_features
+            )
+            # Save the encoder for prediction
+            data._encoder = column_transformer
+        else:
+            column_transformer = data._encoder
 
-        encoded_data = self._transform_data(df, target_column_name, column_transformer)
+        encoded_data = self._transform_data(
+            df,
+            target_column_name,
+            column_transformer,
+            data.is_train,
+        )
         encoded_data = self._restore_column_order(df, encoded_data)
         encoded_data = self._convert_ordinal_encoded_columns_to_int(encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
@@ -157,10 +171,15 @@ class EncodeStep(PipelineStep):
         )
 
     def _transform_data(
-        self, df: pd.DataFrame, target_column_name: str, column_transformer: ColumnTransformer
+        self,
+        df: pd.DataFrame,
+        target_column_name: str,
+        column_transformer: ColumnTransformer,
+        is_train: bool,
     ) -> pd.DataFrame:
         """Transform the data using the ColumnTransformer."""
-        column_transformer.fit(df, df[target_column_name])
+        if is_train:
+            column_transformer.fit(df, df[target_column_name])
         transformed_data = column_transformer.transform(df)
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
         return pd.DataFrame(transformed_data, columns=column_transformer.get_feature_names_out())

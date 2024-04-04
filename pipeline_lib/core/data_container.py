@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Union
 
 import pandas as pd
 import yaml
+from sklearn.compose import ColumnTransformer
 
 from pipeline_lib.core.model import Model
 
@@ -166,7 +167,7 @@ class DataContainer:
         if isinstance(keys, str):
             keys = [keys]
 
-        data_to_save = {k: self.data[k] for k in keys} if keys else self.data
+        data_to_save = {k: self.data.get(k) for k in keys} if keys else self.data
 
         serialized_data = pickle.dumps(data_to_save)
         data_size_bytes = sys.getsizeof(serialized_data)
@@ -618,6 +619,30 @@ class DataContainer:
             The is_train flag to be stored in the DataContainer.
         """
         self["is_train"] = value
+
+    @property
+    def _encoder(self) -> ColumnTransformer:
+        """
+        Get the encoder from the DataContainer.
+
+        Returns
+        -------
+        ColumnTransformer
+            The encoder stored in the DataContainer.
+        """
+        return self["encoder"]
+
+    @_encoder.setter
+    def _encoder(self, value: ColumnTransformer):
+        """
+        Set the encoder in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The encoder to be stored in the DataContainer.
+        """
+        self["encoder"] = value
 
     def __eq__(self, other) -> bool:
         """
