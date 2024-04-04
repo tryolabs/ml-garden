@@ -22,7 +22,9 @@ class PredictStep(PipelineStep):
         if not data.model:
             raise ValueError("Model is not present on the data container.")
 
-        drop_columns = data._drop_columns + [data.target]
+        drop_columns = data._drop_columns.copy()
+
+        drop_columns = drop_columns + [data.target]
 
         missing_columns = [col for col in drop_columns if col not in data.flow.columns]
         if missing_columns:
