@@ -28,8 +28,8 @@ class EncodeStep(PipelineStep):
         self.init_logger()
         self.target = target
         self.cardinality_threshold = cardinality_threshold
-        self.low_cardinality_encoder = low_cardinality_encoder
-        self.high_cardinality_encoder = high_cardinality_encoder
+        self.high_cardinality_encoder = self._get_encoder(high_cardinality_encoder)
+        self.low_cardinality_encoder = self._get_encoder(low_cardinality_encoder)
         self.encoder_feature_map = {}
 
     def execute(self, data: DataContainer) -> DataContainer:
@@ -123,29 +123,34 @@ class EncodeStep(PipelineStep):
         self, high_cardinality_features: List[str], low_cardinality_features: List[str]
     ) -> ColumnTransformer:
         """Create a ColumnTransformer for encoding."""
-        high_cardinality_encoder = self._get_encoder(self.high_cardinality_encoder)
-        low_cardinality_encoder = self._get_encoder(self.low_cardinality_encoder)
 
         # Initialize the encoder_feature_map as an empty dictionary
         self.encoder_feature_map = {}
 
+        high_cardinality_encoder_name = self.high_cardinality_encoder.__class__.__name__
+        low_cardinality_encoder_name = self.low_cardinality_encoder.__class__.__name__
+
         # Check if both encoders are the same
-        if self.high_cardinality_encoder == self.low_cardinality_encoder:
+        if high_cardinality_encoder_name == low_cardinality_encoder_name:
             # If the same, merge the feature lists
             # This assumes you want to combine the features into a single list; adjust if needed
             combined_features = high_cardinality_features + low_cardinality_features
-            self.encoder_feature_map[self.high_cardinality_encoder] = combined_features
+            self.encoder_feature_map[high_cardinality_encoder_name] = combined_features
         else:
             # If not the same, assign individually
-            self.encoder_feature_map[self.high_cardinality_encoder] = high_cardinality_features
-            self.encoder_feature_map[self.low_cardinality_encoder] = low_cardinality_features
+            self.encoder_feature_map[high_cardinality_encoder_name] = high_cardinality_features
+            self.encoder_feature_map[low_cardinality_encoder_name] = low_cardinality_features
 
         self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
 
         return ColumnTransformer(
             [
-                ("high_cardinality_encoder", high_cardinality_encoder, high_cardinality_features),
-                ("low_cardinality_encoder", low_cardinality_encoder, low_cardinality_features),
+                (
+                    "high_cardinality_encoder",
+                    self.high_cardinality_encoder,
+                    high_cardinality_features,
+                ),
+                ("low_cardinality_encoder", self.low_cardinality_encoder, low_cardinality_features),
             ],
             remainder="passthrough",
             verbose_feature_names_out=False,
