@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -17,20 +17,25 @@ class EncodeStep(PipelineStep):
     used_for_prediction = True
     used_for_training = True
 
+    HIGH_CARDINALITY_ENCODER = "TargetEncoder"
+    LOW_CARDINALITY_ENCODER = "OrdinalEncoder"
+
+    ENCODER_MAP = {
+        "OrdinalEncoder": OrdinalEncoder,
+        "TargetEncoder": TargetEncoder,
+    }
+
     def __init__(
         self,
         target: Optional[str] = None,
-        cardinality_threshold: float = 0.3,
-        low_cardinality_encoder: str = "OrdinalEncoder",
-        high_cardinality_encoder: str = "TargetEncoder",
+        cardinality_threshold: float = 0.9,
+        feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
         self.init_logger()
         self.target = target
         self.cardinality_threshold = cardinality_threshold
-        self.high_cardinality_encoder = self._get_encoder(high_cardinality_encoder)
-        self.low_cardinality_encoder = self._get_encoder(low_cardinality_encoder)
-        self.encoder_feature_map = {}
+        self.feature_encoders = feature_encoders or {}
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the encoding step."""
@@ -49,11 +54,11 @@ class EncodeStep(PipelineStep):
 
         original_numeric_dtypes = {col: df[col].dtype for col in numeric_features}
 
-        self._create_encoder_feature_map(high_cardinality_features, low_cardinality_features)
-
         if data.is_train:
             column_transformer: ColumnTransformer = self._create_column_transformer(
-                high_cardinality_features, low_cardinality_features
+                high_cardinality_features,
+                low_cardinality_features,
+                numeric_features,
             )
             # Save the encoder for prediction
             data._encoder = column_transformer
@@ -67,15 +72,20 @@ class EncodeStep(PipelineStep):
             data.is_train,
         )
         encoded_data = self._restore_column_order(df, encoded_data)
-        encoded_data = self._convert_ordinal_encoded_columns_to_int(encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
         encoded_data = self._convert_float64_to_float32(encoded_data)
+
+        feature_encoder_map = self._create_feature_encoder_map(column_transformer)
+        encoded_data = self._convert_ordinal_encoded_columns_to_int(
+            encoded_data, feature_encoder_map
+        )
 
         self._log_feature_info(
             categorical_features,
             numeric_features,
             low_cardinality_features,
             high_cardinality_features,
+            feature_encoder_map,
         )
 
         # add target column back if existed, check if df had target
@@ -114,52 +124,62 @@ class EncodeStep(PipelineStep):
         ]
         return low_cardinality_features, high_cardinality_features
 
-    def _get_encoder(self, encoder_name: str) -> Union[OrdinalEncoder, TargetEncoder]:
+    def _get_encoder_class(
+        self, encoder_name: str
+    ) -> Union[Type[OrdinalEncoder], Type[TargetEncoder]]:
         """Map encoder name to the corresponding encoder class."""
-        encoder_map = {
-            "OrdinalEncoder": OrdinalEncoder(),
-            "TargetEncoder": TargetEncoder(),
-            # Add more encoders as needed
-        }
 
-        encoder = encoder_map.get(encoder_name)
+        encoder = self.ENCODER_MAP.get(encoder_name)
 
         if not encoder:
             raise ValueError(
                 f"Unsupported encoder: {encoder_name}. Supported encoders:"
-                f" {list(encoder_map.keys())}"
+                f" {list(self.ENCODER_MAP.keys())}"
             )
 
         return encoder
 
-    def _create_encoder_feature_map(
-        self, high_cardinality_features: List[str], low_cardinality_features: List[str]
-    ):
-        """Create a dictionary mapping encoder names to feature lists."""
-        self.encoder_feature_map = {}
-        high_cardinality_encoder_name: str = self.high_cardinality_encoder.__class__.__name__
-        low_cardinality_encoder_name: str = self.low_cardinality_encoder.__class__.__name__
-        if high_cardinality_encoder_name == low_cardinality_encoder_name:
-            combined_features = high_cardinality_features + low_cardinality_features
-            self.encoder_feature_map[high_cardinality_encoder_name] = combined_features
-        else:
-            self.encoder_feature_map[high_cardinality_encoder_name] = high_cardinality_features
-            self.encoder_feature_map[low_cardinality_encoder_name] = low_cardinality_features
-
     def _create_column_transformer(
-        self, high_cardinality_features: List[str], low_cardinality_features: List[str]
+        self,
+        high_cardinality_features: List[str],
+        low_cardinality_features: List[str],
+        numeric_features: List[str],
     ) -> ColumnTransformer:
         """Create a ColumnTransformer for encoding."""
-        return ColumnTransformer(
-            [
-                (
+        transformers = []
+
+        if not self.feature_encoders:
+            high_cardinality_encoder_class = self._get_encoder_class(self.HIGH_CARDINALITY_ENCODER)
+            low_cardinality_encoder_class = self._get_encoder_class(self.LOW_CARDINALITY_ENCODER)
+
+            if high_cardinality_features:
+                transformers.append((
                     "high_cardinality_encoder",
-                    self.high_cardinality_encoder,
+                    high_cardinality_encoder_class(),
                     high_cardinality_features,
-                ),
-                ("low_cardinality_encoder", self.low_cardinality_encoder, low_cardinality_features),
-            ],
-            remainder="passthrough",
+                ))
+
+            if low_cardinality_features:
+                transformers.append((
+                    "low_cardinality_encoder",
+                    low_cardinality_encoder_class(),
+                    low_cardinality_features,
+                ))
+        else:
+            for feature in self.feature_encoders:
+                encoder_config = self.feature_encoders[feature]
+                encoder_class = self._get_encoder_class(encoder_config["encoder"])
+                encoder_params = encoder_config.get("params", {})
+                encoder = encoder_class(**encoder_params)
+                transformers.append((f"{feature}_encoder", encoder, [feature]))
+
+        # Pass numeric features as is
+        if numeric_features:
+            transformers.append(("numeric", "passthrough", numeric_features))
+
+        return ColumnTransformer(
+            transformers,
+            remainder="drop",
             verbose_feature_names_out=False,
         )
 
@@ -184,10 +204,13 @@ class EncodeStep(PipelineStep):
         new_column_order = [col for col in df.columns if col in encoded_data.columns]
         return encoded_data[new_column_order]
 
-    def _convert_ordinal_encoded_columns_to_int(self, encoded_data: pd.DataFrame) -> pd.DataFrame:
+    def _convert_ordinal_encoded_columns_to_int(
+        self, encoded_data: pd.DataFrame, encoded_feature_map: Dict[str, str]
+    ) -> pd.DataFrame:
         """Convert ordinal encoded columns to the smallest possible integer dtype."""
-        ordinal_encoded_features = self.encoder_feature_map.get("OrdinalEncoder", [])
-
+        ordinal_encoded_features = [
+            col for col, encoder in encoded_feature_map.items() if encoder == "OrdinalEncoder"
+        ]
         for col in ordinal_encoded_features:
             if col in encoded_data.columns:
                 n_unique = encoded_data[col].nunique()
@@ -223,12 +246,32 @@ class EncodeStep(PipelineStep):
             encoded_data[col] = encoded_data[col].astype(np.float32)
         return encoded_data
 
+    def _create_feature_encoder_map(self, column_transformer: ColumnTransformer) -> Dict[str, str]:
+        """
+        Create a dictionary to store the encoder used for each feature.
+        """
+        feature_encoder_map = {}
+        transformed_features = column_transformer.get_feature_names_out()
+
+        for transformer_name, transformer, features in column_transformer.transformers_:
+
+            encoder_name = (
+                "PassThrough" if transformer_name == "numeric" else transformer.__class__.__name__
+            )
+
+            for feature in features:
+                if feature in transformed_features:
+                    feature_encoder_map[feature] = encoder_name
+
+        return feature_encoder_map
+
     def _log_feature_info(
         self,
         categorical_features: List[str],
         numeric_features: List[str],
         low_cardinality_features: List[str],
         high_cardinality_features: List[str],
+        feature_encoder_map: Dict[str, str],
     ) -> None:
         """Log information about the features."""
         self.logger.info(
@@ -243,4 +286,5 @@ class EncodeStep(PipelineStep):
             f" ({len(high_cardinality_features)}) -  {high_cardinality_features}"
         )
         self.logger.info(f"Numeric features: ({len(numeric_features)}) - {numeric_features}")
-        self.logger.info(f"Encoder feature map: \n{json.dumps(self.encoder_feature_map, indent=4)}")
+
+        self.logger.info(f"Encoder feature map: \n{json.dumps(feature_encoder_map, indent=4)}")
