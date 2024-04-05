@@ -28,7 +28,7 @@ class EncodeStep(PipelineStep):
     def __init__(
         self,
         target: Optional[str] = None,
-        cardinality_threshold: float = 0.9,
+        cardinality_threshold: float = 0.2,
         feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
