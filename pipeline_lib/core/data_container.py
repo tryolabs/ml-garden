@@ -486,6 +486,11 @@ class DataContainer:
         Any
             The explainer stored in the DataContainer.
         """
+        if self.is_train:
+            raise ValueError(
+                "Explainer is only available for prediction. Pipeline was executed on training"
+                " mode."
+            )
         return self["explainer"]
 
     @explainer.setter
