@@ -58,11 +58,6 @@ class CalculateMetricsStep(PipelineStep):
         drop_columns = (drop_columns or []) + [target]
         return model.predict(df.drop(columns=drop_columns))
 
-    def _log_metrics(self, dataset_name: str, metrics: dict) -> None:
-        self.logger.info(f"Metrics for {dataset_name} dataset:")
-        for metric, value in metrics.items():
-            self.logger.info(f"{metric}: {value}")
-
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting metric calculation")
 
