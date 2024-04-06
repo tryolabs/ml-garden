@@ -3,7 +3,11 @@ import logging
 from typing import Optional, Type
 
 import optuna
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    root_mean_squared_error,
+)
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.model import Model
@@ -53,7 +57,7 @@ class OptunaOptimizer:
         load_if_exists = self.optuna_params.get("load_if_exists", False)
 
         self.logger.info(
-            f"Creating Optuna study with parameters: \n {json.dumps(self.optuna_params)}"
+            f"Creating Optuna study with parameters: \n {json.dumps(self.optuna_params, indent=4)}"
         )
 
         study = optuna.create_study(
@@ -67,11 +71,9 @@ class OptunaOptimizer:
     @staticmethod
     def _calculate_error(y_true, y_pred, metric):
         metrics = {
-            "mean_absolute_error": mean_absolute_error,
-            "mean_squared_error": mean_squared_error,
-            "root_mean_squared_error": lambda y_true, y_pred: mean_squared_error(
-                y_true, y_pred, squared=False
-            ),
+            "mae": mean_absolute_error,
+            "mse": mean_squared_error,
+            "rmse": root_mean_squared_error,
         }
 
         if metric not in metrics:
