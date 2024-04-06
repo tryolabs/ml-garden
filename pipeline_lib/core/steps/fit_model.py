@@ -1,8 +1,9 @@
 import json
 import logging
-from typing import Optional, Type
+from typing import Optional, Tuple, Type
 
 import optuna
+import pandas as pd
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
@@ -108,7 +109,7 @@ class FitModelStep(PipelineStep):
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
 
         df_train, df_valid = self._prepare_data(data)
-        X_train, y_train, X_valid, y_valid = self._split_data(df_train, df_valid)
+        X_train, y_train, X_valid, y_valid = self._extract_target(df_train, df_valid)
 
         model_params = self.model_params
 
@@ -144,7 +145,10 @@ class FitModelStep(PipelineStep):
 
         return df_train, df_valid
 
-    def _split_data(self, df_train, df_valid) -> tuple:
+    def _extract_target(
+        self, df_train: pd.DataFrame, df_valid: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+        """Extract target column from the dataframes, to be used in model fitting."""
         X_train = df_train.drop(columns=[self.target])
         y_train = df_train[self.target]
 
