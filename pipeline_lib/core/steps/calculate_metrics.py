@@ -1,7 +1,13 @@
+import json
+import time
+from typing import List, Optional
+
 import numpy as np
+import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from pipeline_lib.core import DataContainer
+from pipeline_lib.core.model import Model
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -9,7 +15,7 @@ class CalculateMetricsStep(PipelineStep):
     """Calculate metrics."""
 
     used_for_prediction = True
-    used_for_training = False
+    used_for_training = True
 
     def __init__(self, mape_threshold: float = 0.01) -> None:
         """Initialize CalculateMetricsStep."""
@@ -17,17 +23,7 @@ class CalculateMetricsStep(PipelineStep):
         self.init_logger()
         self.mape_threshold = mape_threshold
 
-    def execute(self, data: DataContainer) -> DataContainer:
-        self.logger.debug("Starting metric calculation")
-
-        target_column_name = data.target
-
-        if target_column_name is None:
-            raise ValueError("Target column nsot found on any configuration.")
-
-        true_values = data.flow[target_column_name]
-        predictions = data.predictions
-
+    def _calculate_metrics(self, true_values: pd.Series, predictions: pd.Series) -> dict:
         mae = mean_absolute_error(true_values, predictions)
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
         r2 = r2_score(true_values, predictions)
@@ -46,7 +42,7 @@ class CalculateMetricsStep(PipelineStep):
         else:
             mape = np.nan
 
-        results = {
+        return {
             "MAE": str(mae),
             "RMSE": str(rmse),
             "R^2": str(r2),
@@ -55,6 +51,62 @@ class CalculateMetricsStep(PipelineStep):
             "Max Error": str(max_error),
             "Median Absolute Error": str(median_absolute_error),
         }
-        self.logger.info(results)
-        data.metrics = results
+
+    def _get_predictions(
+        self, model: Model, df: pd.DataFrame, target: str, drop_columns: Optional[List[str]] = None
+    ) -> pd.Series:
+        drop_columns = (drop_columns or []) + [target]
+        return model.predict(df.drop(columns=drop_columns))
+
+    def execute(self, data: DataContainer) -> DataContainer:
+        self.logger.debug("Starting metric calculation")
+
+        target_column_name = data.target
+        if target_column_name is None:
+            raise ValueError("Target column not found on any configuration.")
+
+        metrics = {}
+
+        if data.is_train:
+            for dataset_name in ["train", "validation", "test"]:
+                start_time = time.time()
+                dataset = getattr(data, dataset_name, None)
+
+                if dataset is None:
+                    self.logger.warning(
+                        f"Dataset '{dataset_name}' not found. Skipping metric calculation."
+                    )
+                    continue
+
+                predictions = self._get_predictions(
+                    model=data.model,
+                    df=dataset,
+                    target=target_column_name,
+                    drop_columns=data._drop_columns,
+                )
+                metrics[dataset_name] = self._calculate_metrics(
+                    true_values=dataset[target_column_name],
+                    predictions=predictions,
+                )
+                elapsed_time = time.time() - start_time
+                self.logger.info(
+                    f"Elapsed time for {dataset_name} dataset: {elapsed_time:.2f} seconds"
+                )
+        else:
+            true_values = data.flow.get(target_column_name)
+            predictions = data.predictions
+
+            if true_values is not None:
+                metrics["prediction"] = self._calculate_metrics(true_values, predictions)
+            else:
+                self.logger.warning(
+                    f"True values ({target_column_name}) not found in prediction data. Skipping"
+                    " metric calculation."
+                )
+
+        # pretty print metrics
+        self.logger.info(f"Metrics: {json.dumps(metrics, indent=4)}")
+
+        data.metrics = metrics
+
         return data
