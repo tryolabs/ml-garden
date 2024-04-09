@@ -1,9 +1,50 @@
-from typing import Optional
+from typing import Iterable, Optional
 
+import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
+
+
+def _concatenate_columns(
+    df: pd.DataFrame,
+    cols: Iterable[str],
+    sep: str = " ",
+    na_rep: str = "",
+) -> pd.Series:
+    """Concatenates the specified `cols` of a DataFrame into a single column.
+
+    This function fills NaN values with a specified string, converts the columns to string type,
+    concatenates them with a specified separator and returns the concatenated values.
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'A': ['a', 'b', np.nan],
+        ...     'B': ['c', np.nan, 'd'],
+        ...     'C': ['e', 'f', 'g']
+        ... })
+        >>> concatenate_columns(df, ['A', 'B', 'C'])
+           D
+        0  a c e
+        1  b f
+        2  d g
+
+    Args:
+        df (pd.DataFrame): The DataFrame to process.
+        cols (Iterable[str] | None, optional): An iterable of column names to concatenate. If None,
+            will chose all columns like `into_col` with `df.filter`. Defaults to None.
+        sep (str, optional): The separator to use when concatenating. Defaults to " ".
+        na_rep (str, optional): The string to use to replace NaN values. Defaults to "".
+
+    Returns:
+        pd.DataFrame: The processed DataFrame, which includes the new column and excludes the
+            original columns.
+    """
+    to_concat = df[cols].fillna(na_rep).astype(str)
+    concatted = to_concat.iloc[:, 0].str.cat(others=to_concat.iloc[:, 1:], sep=sep)
+
+    return concatted
 
 
 class TabularSplitStep(PipelineStep):
@@ -17,12 +58,14 @@ class TabularSplitStep(PipelineStep):
         train_percentage: float,
         validation_percentage: Optional[float] = None,
         test_percentage: Optional[float] = None,
+        group_by_columns: Optional[list[str]] = None,
     ) -> None:
         """Initialize SplitStep."""
         self.init_logger()
         self.train_percentage = train_percentage
         self.validation_percentage = validation_percentage
         self.test_percentage = test_percentage
+        self.group_by_columns = group_by_columns
 
         if self.train_percentage <= 0 or self.train_percentage >= 1:
             raise ValueError("train_percentage must be between 0 and 1.")
@@ -54,24 +97,39 @@ class TabularSplitStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the random train-validation-test split."""
         self.logger.info("Splitting tabular data...")
-
         df = data.flow
 
+        if self.group_by_columns is not None:
+            concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
+            split_values = concatted_groupby_columns.unique().tolist()
+        else:
+            concatted_groupby_columns = None
+            split_values = df.index.tolist()
+
         if self.test_percentage is not None:
-            train_val_df, test_df = train_test_split(
-                df, test_size=self.test_percentage, random_state=42
+            train_val_values, test_values = train_test_split(
+                split_values, test_size=self.test_percentage, random_state=42
             )
-            train_df, validation_df = train_test_split(
-                train_val_df,
+            train_values, validation_values = train_test_split(
+                train_val_values,
                 train_size=self.train_percentage
                 / (self.train_percentage + self.validation_percentage),
                 random_state=42,
             )
         else:
-            train_df, validation_df = train_test_split(
-                df, train_size=self.train_percentage, random_state=42
+            train_values, validation_values = train_test_split(
+                split_values, train_size=self.train_percentage, random_state=42
             )
-            test_df = None
+            test_values = None
+
+        if self.group_by_columns is not None:
+            train_df = df[concatted_groupby_columns.isin(set(train_values))]
+            validation_df = df[concatted_groupby_columns.isin(set(validation_values))]
+
+            if test_values:
+                test_df = df[concatted_groupby_columns.isin(set(test_values))]
+            else:
+                test_df = None
 
         train_rows = len(train_df)
         validation_rows = len(validation_df)
@@ -79,15 +137,15 @@ class TabularSplitStep(PipelineStep):
         total_rows = train_rows + validation_rows + test_rows
 
         self.logger.info(
-            f"Number of rows in training set: {train_rows} | {train_rows/total_rows:.2%}"
+            f"Number of rows in training set: {train_rows} | {train_rows / total_rows:.2%}"
         )
         self.logger.info(
             f"Number of rows in validation set: {validation_rows} |"
-            f" {validation_rows/total_rows:.2%}"
+            f" {validation_rows / total_rows:.2%}"
         )
         if test_df is not None:
             self.logger.info(
-                f"Number of rows in test set: {test_rows} | {test_rows/total_rows:.2%}"
+                f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
             )
 
         data.train = train_df
