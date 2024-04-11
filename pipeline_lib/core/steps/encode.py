@@ -71,6 +71,11 @@ class EncodeStep(PipelineStep):
             column_transformer,
             data.is_train,
         )
+
+        # add target column back if existed, check if df had target
+        if target_column_name in df.columns:
+            encoded_data[target_column_name] = df[target_column_name]
+
         encoded_data = self._restore_column_order(df, encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
         encoded_data = self._convert_float64_to_float32(encoded_data)
@@ -87,10 +92,6 @@ class EncodeStep(PipelineStep):
             high_cardinality_features,
             feature_encoder_map,
         )
-
-        # add target column back if existed, check if df had target
-        if target_column_name in df.columns:
-            encoded_data[target_column_name] = df[target_column_name]
 
         data.flow = encoded_data
 
@@ -197,7 +198,9 @@ class EncodeStep(PipelineStep):
             column_transformer.fit(X, y)
         transformed_data = column_transformer.transform(df)
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
-        return pd.DataFrame(transformed_data, columns=column_transformer.get_feature_names_out())
+        return pd.DataFrame(
+            transformed_data, columns=column_transformer.get_feature_names_out(), index=df.index
+        )
 
     def _restore_column_order(self, df: pd.DataFrame, encoded_data: pd.DataFrame) -> pd.DataFrame:
         """Restore the original column order."""
