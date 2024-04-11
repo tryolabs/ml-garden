@@ -24,8 +24,10 @@ class OptunaOptimizer:
         self, X_train, y_train, X_valid, y_valid, model_class: Type[Model], model_params: dict
     ) -> dict:
         def objective(trial):
-            param = self._create_trial_params(trial)
+            # Create a copy of model_params, then update with the optuna suggested hyperparameters
+            param = {}
             param.update(model_params)
+            param.update(self._create_trial_params(trial))
 
             model = model_class(**param)
             model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=False)
@@ -113,10 +115,10 @@ class FitModelStep(PipelineStep):
 
         if self.optuna_params:
             optimizer = OptunaOptimizer(self.optuna_params, self.logger)
-            model_params = optimizer.optimize(
+            optuna_model_params = optimizer.optimize(
                 X_train, y_train, X_valid, y_valid, self.model_class, model_params
             )
-            model_params.update(self.model_params)
+            model_params.update(optuna_model_params)
             self.logger.info(f"Optimized model parameters: \n{json.dumps(model_params)}")
             self.logger.info("Re-fitting the model with optimized parameters")
 
