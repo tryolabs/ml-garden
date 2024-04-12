@@ -18,9 +18,14 @@ class GenerateStep(PipelineStep):
     used_for_training = True
 
     def __init__(
-        self, train_path: Optional[str] = None, predict_path: Optional[str] = None, **kwargs
+        self,
+        target: str,
+        train_path: Optional[str] = None,
+        predict_path: Optional[str] = None,
+        **kwargs,
     ):
         self.init_logger()
+        self.target = target
         self.train_path = train_path
         self.predict_path = predict_path
         self.kwargs = kwargs
@@ -58,6 +63,7 @@ class GenerateStep(PipelineStep):
 
         data.raw = df
         data.flow = df
+        data.target = self.target
 
         self.logger.info(f"Generated DataFrame with shape: {df.shape}")
 

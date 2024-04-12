@@ -90,7 +90,6 @@ class FitModelStep(PipelineStep):
     def __init__(
         self,
         model_class: Type[Model],
-        target: str,
         model_params: Optional[dict] = None,
         drop_columns: Optional[list[str]] = None,
         optuna_params: Optional[dict] = None,
@@ -99,7 +98,6 @@ class FitModelStep(PipelineStep):
         super().__init__()
         self.init_logger()
         self.model_class = model_class
-        self.target = target
         self.model_params = model_params or {}
         self.drop_columns = drop_columns or []
         self.optuna_params = optuna_params
@@ -109,7 +107,7 @@ class FitModelStep(PipelineStep):
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
 
         df_train, df_valid = self._prepare_data(data)
-        X_train, y_train, X_valid, y_valid = self._extract_target(df_train, df_valid)
+        X_train, y_train, X_valid, y_valid = self._extract_target(df_train, df_valid, data.target)
 
         model_params = self.model_params
 
@@ -126,7 +124,6 @@ class FitModelStep(PipelineStep):
         model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=True)
 
         data.model = model
-        data.target = self.target
         data._drop_columns = self.drop_columns
 
         if self.save_path:
@@ -146,13 +143,13 @@ class FitModelStep(PipelineStep):
         return df_train, df_valid
 
     def _extract_target(
-        self, df_train: pd.DataFrame, df_valid: pd.DataFrame
+        self, df_train: pd.DataFrame, df_valid: pd.DataFrame, target: str
     ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
         """Extract target column from the dataframes, to be used in model fitting."""
-        X_train = df_train.drop(columns=[self.target])
-        y_train = df_train[self.target]
+        X_train = df_train.drop(columns=[target])
+        y_train = df_train[target]
 
-        X_valid = df_valid.drop(columns=[self.target])
-        y_valid = df_valid[self.target]
+        X_valid = df_valid.drop(columns=[target])
+        y_valid = df_valid[target]
 
         return X_train, y_train, X_valid, y_valid

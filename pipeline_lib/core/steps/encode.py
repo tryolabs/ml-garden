@@ -27,13 +27,11 @@ class EncodeStep(PipelineStep):
 
     def __init__(
         self,
-        target: Optional[str] = None,
         cardinality_threshold: float = 0.3,
         feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
         self.init_logger()
-        self.target = target
         self.cardinality_threshold = cardinality_threshold
         self.feature_encoders = feature_encoders or {}
 
@@ -42,10 +40,10 @@ class EncodeStep(PipelineStep):
         self.logger.info("Encoding data")
         df = data.flow
 
-        if not data.target and not self.target:
+        if not data.target:
             raise ValueError("Target column not found in any parameter before encoding.")
 
-        target_column_name = self.target or data.target
+        target_column_name = data.target
 
         categorical_features, numeric_features = self._get_feature_types(df, target_column_name)
         low_cardinality_features, high_cardinality_features = self._split_categorical_features(
