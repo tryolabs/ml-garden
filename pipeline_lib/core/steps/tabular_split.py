@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -105,37 +105,21 @@ class TabularSplitStep(PipelineStep):
                     "validation_percentage must be provided when test_percentage is specified."
                 )
 
-    def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the random train-validation-test split."""
-        self.logger.info("Splitting tabular data...")
-        df = data.flow
-
+    def perform_split(
+        self,
+        df: pd.DataFrame,
+        data: DataContainer,
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
         if self.group_by_columns is not None:
             concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
-            split_values = concatted_groupby_columns.unique().tolist()
         else:
             concatted_groupby_columns = None
-            split_values = df.index.tolist()
 
-        if self.test_percentage is not None:
-            train_val_values, test_values = train_test_split(
-                split_values,
-                test_size=self.test_percentage,
-                random_state=get_random_state(),
-            )
-            train_values, validation_values = train_test_split(
-                train_val_values,
-                train_size=self.train_percentage
-                / (self.train_percentage + self.validation_percentage),
-                random_state=get_random_state(),
-            )
-        else:
-            train_values, validation_values = train_test_split(
-                split_values,
-                train_size=self.train_percentage,
-                random_state=get_random_state(),
-            )
-            test_values = None
+        train_values, validation_values, test_values = (
+            data.split_values["train"],
+            data.split_values["validation"],
+            data.split_values["test"],
+        )
 
         if self.group_by_columns is not None:
             train_df = df[concatted_groupby_columns.isin(set(train_values))]
@@ -188,9 +172,42 @@ class TabularSplitStep(PipelineStep):
                 f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
             )
 
-        data.train = train_df
-        data.validation = validation_df
-        if test_df is not None:
-            data.test = test_df
+        return train_df, validation_df, test_df
+
+    def execute(self, data: DataContainer) -> DataContainer:
+        """Execute the random train-validation-test split."""
+        self.logger.info("Splitting tabular data...")
+        df = data.flow
+
+        if self.group_by_columns is not None:
+            concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
+            split_values = concatted_groupby_columns.unique().tolist()
+        else:
+            concatted_groupby_columns = None
+            split_values = df.index.tolist()
+
+        if self.test_percentage is not None:
+            train_val_split_values, test_split_values = train_test_split(
+                split_values, test_size=self.test_percentage, random_state=42
+            )
+            train_split_values, validation_split_values = train_test_split(
+                train_val_split_values,
+                train_size=self.train_percentage
+                / (self.train_percentage + self.validation_percentage),
+                random_state=42,
+            )
+        else:
+            train_split_values, validation_split_values = train_test_split(
+                split_values, train_size=self.train_percentage, random_state=42
+            )
+            test_split_values = []
+
+        data.split_values = {
+            "train": train_split_values,
+            "validation": validation_split_values,
+            "test": test_split_values,
+        }
+
+        data.train, data.validation, data.test = self.perform_split(df, data)
 
         return data

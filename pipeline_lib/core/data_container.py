@@ -333,6 +333,34 @@ class DataContainer:
         self["raw"] = value
 
     @property
+    def split_values(self) -> dict[str, list[Any]]:
+        """
+        Get the split values used in the SplitStep from the DataContainer.
+
+        Returns
+        -------
+        dict[str, list[Any]]
+            A dictionary with keys "train", "validation" and "test", where each key maps to the list
+            of values used for performing the train, validation and test splits respectively.
+            Test set values may be empty
+        """
+        return self["split_values"]
+
+    @split_values.setter
+    def split_values(self, value: dict[str, list[Any]]):
+        """
+        Set the split values used in the SplitStep in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            A dictionary with keys "train", "validation" and "test", where each key maps to the list
+            of values used for performing the train, validation and test splits respectively.
+            Test set values may be empty
+        """
+        self["split_values"] = value
+
+    @property
     def train(self) -> pd.DataFrame:
         """
         Get the train data from the DataContainer.
@@ -381,7 +409,7 @@ class DataContainer:
         self["validation"] = value
 
     @property
-    def test(self) -> pd.DataFrame:
+    def test(self) -> Optional[pd.DataFrame]:
         """
         Get the test data from the DataContainer.
 
@@ -393,7 +421,7 @@ class DataContainer:
         return self["test"]
 
     @test.setter
-    def test(self, value: pd.DataFrame):
+    def test(self, value: Optional[pd.DataFrame]):
         """
         Set the test data in the DataContainer.
 
