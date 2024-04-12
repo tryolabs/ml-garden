@@ -146,7 +146,13 @@ class EncodeStep(PipelineStep):
         low_cardinality_features: List[str],
         numeric_features: List[str],
     ) -> ColumnTransformer:
-        """Create a ColumnTransformer for encoding."""
+        """Create a ColumnTransformer for encoding.
+
+        If `feature_encoders` is not provided, use the default encoders based on cardinality.
+        * For low cardinality features, use OrdinalEncoder.
+        * For high cardinality features, use TargetEncoder.
+        * For numeric features, pass them as is.
+        """
         transformers = []
 
         if not self.feature_encoders:
