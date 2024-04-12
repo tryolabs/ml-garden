@@ -28,7 +28,7 @@ class EncodeStep(PipelineStep):
     def __init__(
         self,
         target: Optional[str] = None,
-        cardinality_threshold: float = 0.2,
+        cardinality_threshold: float = 0.3,
         feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
@@ -216,15 +216,20 @@ class EncodeStep(PipelineStep):
         ]
         for col in ordinal_encoded_features:
             if col in encoded_data.columns:
-                n_unique = encoded_data[col].nunique()
-                if n_unique <= 2**8:
-                    encoded_data[col] = encoded_data[col].astype(np.int8)
-                elif n_unique <= 2**16:
-                    encoded_data[col] = encoded_data[col].astype(np.int16)
-                elif n_unique <= 2**32:
-                    encoded_data[col] = encoded_data[col].astype(np.int32)
-                else:
-                    encoded_data[col] = encoded_data[col].astype(np.int64)
+                try:
+                    encoded_data[col] = pd.to_numeric(encoded_data[col].values, downcast="unsigned")
+                except ValueError:
+                    try:
+                        encoded_data[col] = pd.to_numeric(
+                            encoded_data[col].values, downcast="integer"
+                        )
+                    except ValueError:
+                        try:
+                            encoded_data[col] = pd.to_numeric(
+                                encoded_data[col].values, downcast="float"
+                            )
+                        except ValueError:
+                            encoded_data[col] = encoded_data[col].astype(pd.StringDtype())
 
         return encoded_data
 
