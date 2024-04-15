@@ -154,13 +154,10 @@ class TabularSplitStep(PipelineStep):
         split_step: TabularSplitStep = [
             step for step in pipeline.steps if isinstance(step, TabularSplitStep)
         ][0]
+
+        # Perform the split
         train, val, test = split_step.perform_split(data.raw, data)
         """
-
-        if self.group_by_columns is not None:
-            concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
-        else:
-            concatted_groupby_columns = None
 
         train_values, validation_values, test_values = (
             data.split_values["train"],
@@ -169,6 +166,8 @@ class TabularSplitStep(PipelineStep):
         )
 
         if self.group_by_columns is not None:
+            # Group based split
+            concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
             train_df = df[concatted_groupby_columns.isin(set(train_values))]
             validation_df = df[concatted_groupby_columns.isin(set(validation_values))]
 
@@ -177,11 +176,13 @@ class TabularSplitStep(PipelineStep):
             else:
                 test_df = None
         else:
+            # Simple random sampling based split
             train_df = df[df.index.isin(set(train_values))]
             validation_df = df[df.index.isin(set(validation_values))]
             if test_values:
                 test_df = df[df.index.isin(set(test_values))]
 
+        # Logging
         if self.group_by_columns is not None:
             train_groups = len(train_values)
             validation_groups = len(validation_values)
