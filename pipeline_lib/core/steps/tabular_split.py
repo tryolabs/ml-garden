@@ -110,6 +110,53 @@ class TabularSplitStep(PipelineStep):
         df: pd.DataFrame,
         data: DataContainer,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
+        """
+        Perform the split that was fit during pipeline training on a potentially new dataframe.
+
+        During pipeline training, this step will store in the DataContainer necessary information to
+        determine which set (train/val/test) a row belongs to.
+        - If using simple random splitting, it will store the postprocessed df indices
+        - If using group based splitting, it will store the group columns' concattenated values, ie
+            - if groups are identified by the id, timestamp columns, the DataContainer will store:
+                - "train": [<id_train_1_timestamp_train_1>, <id_train_1_timestamp_train_2>, ...]
+                - "validation": [<id_validation_1_timestamp_validation_1>, ...]
+                - "test": [<id_test_1_timestamp_test_1>, <id_test_1_timestamp_test_2>, ...]
+
+        These values will be compared to the rows' values to determine the set the row belongs to.
+        For example in the below df:
+            row         id              timestamp             ...
+            0           id_train_1      timestamp_train_1     ...
+            1           id_train_1      timestamp_train_2      ...
+            2           id_validation_1  timestamp_validation_1 ...
+            3           id_test_1       timestamp_test_1        ...
+
+        running this method would result in 3 dataframes:
+        - train, having rows 0 and 1
+        - validation, having row w
+        - test, having row 3
+
+        Args:
+            df (pd.DataFrame): the dataframe to be split
+            data (DataContainer): the training DataContainer object, with the stored split values
+
+        Returns:
+            Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]: _description_
+
+
+        Example usage:
+        # %%
+        from pipeline_lib import Pipeline
+
+        # Load a trained pipeline from it's config
+        pipeline = Pipeline.from_json("example.json")
+
+        # Retrieve the split step from the pipeline
+        split_step: TabularSplitStep = [
+            step for step in pipeline.steps if isinstance(step, TabularSplitStep)
+        ][0]
+        train, val, test = split_step.perform_split(data.raw, data)
+        """
+
         if self.group_by_columns is not None:
             concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
         else:
