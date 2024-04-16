@@ -7,6 +7,9 @@ import time
 from datetime import datetime
 from typing import Any, Optional
 
+import mlflow
+from mlflow.data import from_pandas
+
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
 from pipeline_lib.core.random_state_generator import initialize_random_state
@@ -155,11 +158,105 @@ class Pipeline:
         pipeline.add_steps(steps)
         return pipeline
 
+    def log_experiment(
+        self,
+        data: DataContainer,
+        experiment_name: str,
+        run_name: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+    ) -> None:
+        """
+        Log the pipeline run to MLflow.
+
+        Parameters
+        ----------
+        data : DataContainer
+            The data container object containing the pipeline data.
+        experiment_name : str
+            The name of the MLflow experiment.
+        run_name : str, optional
+            The name of the MLflow run. If not provided, a default run name will be generated
+            based on the pipeline class name, mode (train or predict), and current timestamp.
+        dataset_name : str, optional
+            The name of the dataset to be logged as an input to MLflow. If provided, the input
+            data will be logged with the specified dataset name.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This function logs various aspects of the pipeline run to MLflow, including:
+        - Top-level pipeline parameters from the configuration
+        - Step-level parameters from the configuration
+        - Input data (if `dataset_name` is provided)
+        - Training metrics (if available in the `data` object)
+        - Trained model (if available in the `data` object)
+
+        The function sets the MLflow experiment using the provided `experiment_name` and starts
+        a new MLflow run with the specified `run_name` (or a default run name if not provided).
+
+        The top-level pipeline parameters and step-level parameters are logged as MLflow parameters.
+        If `dataset_name` is provided, the input data is logged as an MLflow input using the
+            specified name.
+        If training metrics are available in the `data` object, they are logged as MLflow metrics.
+        If a trained model is available in the `data` object, it is logged as an MLflow artifact.
+
+        Examples
+        --------
+        >>> data = DataContainer(...)
+        >>> pipeline.log_experiment(data, experiment_name='my_experiment', run_name='run_1',
+            dataset_name='input_data')
+        """
+
+        def log_params_from_config(config):
+            # Log top-level parameters
+            for key in ["name", "description", "save_data_path"]:
+                if key in config["pipeline"]:
+                    mlflow.log_param(f"pipeline.{key}", config["pipeline"][key])
+
+            # Log step-level parameters
+            for i, step in enumerate(config["pipeline"]["steps"]):
+                mlflow.log_param(f"pipeline.steps_{i}.step_type", step["step_type"])
+                for key, value in step.get("parameters", {}).items():
+                    mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
+
+        mlflow.set_experiment(experiment_name)
+
+        if not run_name:
+            mode_name = "train" if data.is_train else "predict"
+            run_name = (
+                f"{self.__class__.__name__}_{mode_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            )
+            self.logger.info(f"Run name not provided. Using default run name: {run_name}")
+
+        with mlflow.start_run(run_name=run_name):
+
+            mlflow.set_tag("name", self.config["pipeline"]["name"])
+            mlflow.set_tag("description", self.config["pipeline"]["description"])
+
+            log_params_from_config(self.config)
+
+            if dataset_name:
+                self.logger.info(f"Logging input data to MLflow with dataset name: {dataset_name}")
+                mlflow.log_input(from_pandas(data.raw), dataset_name)
+
+            # Log the training metrics
+            if data.metrics:
+                self.logger.debug("Logging the training metrics to MLflow")
+                for metric_name, metric_value in data.metrics["prediction"].items():
+                    mlflow.log_metric(metric_name, metric_value)
+
+            # Log the model
+            if data.model:
+                self.logger.debug("Logging the model to MLflow")
+                mlflow.sklearn.log_model(data.model, artifact_path="model")
+
     def save_run(
         self,
         data: DataContainer,
         parent_folder: str = "runs",
-        logs: Optional[logging.LogRecord] = None,
     ) -> None:
         """Save the pipeline run."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -176,7 +273,7 @@ class Pipeline:
         # Save the training metrics
         if data.metrics:
             with open(os.path.join(run_folder, "metrics.json"), "w") as f:
-                json.dump(data.metrics, f, indent=4)
+                json.dumps({k: str(v) for k, v in data.metrics.items()}, indent=4)
 
         self.logger.info(f"Pipeline run saved to {run_folder}")
 
