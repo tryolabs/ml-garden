@@ -13,6 +13,12 @@ __pycache__/
 # ignore examples folder
 examples/
 
+# ignore mlflow folder
+mlruns/
+
+# ignore runs folder
+runs/
+
 # Distribution / packaging
 .Python
 build/
