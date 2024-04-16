@@ -7,7 +7,9 @@ import time
 from datetime import datetime
 from typing import Any, Optional
 
+import matplotlib.pyplot as plt
 import mlflow
+import pandas as pd
 from mlflow.data import from_pandas
 
 from pipeline_lib.core.data_container import DataContainer
@@ -222,6 +224,17 @@ class Pipeline:
                 for key, value in step.get("parameters", {}).items():
                     mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
+        def plot_feature_importance(df: pd.DataFrame) -> None:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.barh(df["feature"], df["importance"])
+            ax.set_xlabel("Importance")
+            ax.set_ylabel("Feature")
+            ax.set_title("Feature Importance")
+            # add grid
+            ax.grid(axis="x")
+            plt.tight_layout()
+            mlflow.log_figure(fig, "feature_importance.png")
+
         mlflow.set_experiment(experiment_name)
 
         if not run_name:
@@ -242,9 +255,9 @@ class Pipeline:
                 self.logger.info(f"Logging input data to MLflow with dataset name: {dataset_name}")
                 mlflow.log_input(from_pandas(data.raw), dataset_name)
 
-            # Log the training metrics
+            # Log prediction metrics
             if data.metrics:
-                self.logger.debug("Logging the training metrics to MLflow")
+                self.logger.debug("Logging prediction metrics to MLflow")
                 for metric_name, metric_value in data.metrics["prediction"].items():
                     mlflow.log_metric(metric_name, metric_value)
 
@@ -252,6 +265,11 @@ class Pipeline:
             if data.model:
                 self.logger.debug("Logging the model to MLflow")
                 mlflow.sklearn.log_model(data.model, artifact_path="model")
+
+            # Save feature importance as a png artifact
+            if data.feature_importance is not None:
+                self.logger.debug("Plotting feature importance for MLflow")
+                plot_feature_importance(data.feature_importance)
 
     def save_run(
         self,

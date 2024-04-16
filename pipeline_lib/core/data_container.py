@@ -927,6 +927,30 @@ class DataContainer:
         """
         self["encoder"] = value
 
+    @property
+    def feature_importance(self) -> pd.DataFrame:
+        """
+        Get the feature_importance from the DataContainer.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing feature importance values.
+        """
+        return self["feature_importance"]
+
+    @feature_importance.setter
+    def feature_importance(self, value: pd.DataFrame):
+        """
+        Set the feature_importance in the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The feature importance DataFrame to be stored in the DataContainer.
+        """
+        self["feature_importance"] = value
+
     def __eq__(self, other) -> bool:
         """
         Compare this DataContainer with another for equality.
