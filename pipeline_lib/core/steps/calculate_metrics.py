@@ -42,7 +42,7 @@ class CalculateMetricsStep(PipelineStep):
         return {
             "MAE": str(mae),
             "RMSE": str(rmse),
-            "R^2": str(r2),
+            "R_2": str(r2),
             "Mean Error": str(me),
             "MAPE": str(mape),
             "Max Error": str(max_error),
