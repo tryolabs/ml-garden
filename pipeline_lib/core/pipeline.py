@@ -271,6 +271,19 @@ class Pipeline:
                 self.logger.debug("Plotting feature importance for MLflow")
                 plot_feature_importance(data.feature_importance)
 
+            if self.config:
+                self.logger.debug("Logging pipeline configuration to MLflow as a JSON file")
+                # convert model_class to string
+                fit_step = next(
+                    step
+                    for step in self.config["pipeline"]["steps"]
+                    if step["step_type"] == "FitModelStep"
+                )
+                fit_step["parameters"]["model_class"] = fit_step["parameters"][
+                    "model_class"
+                ].__name__
+                mlflow.log_dict(self.config, "config.json")
+
     def save_run(
         self,
         data: DataContainer,
