@@ -166,6 +166,7 @@ class Pipeline:
         experiment_name: str,
         run_name: Optional[str] = None,
         dataset_name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         """
         Log the pipeline run to MLflow.
@@ -182,6 +183,8 @@ class Pipeline:
         dataset_name : str, optional
             The name of the dataset to be logged as an input to MLflow. If provided, the input
             data will be logged with the specified dataset name.
+        description : str, optional
+            The description of the MLflow run.
 
         Returns
         -------
@@ -247,9 +250,13 @@ class Pipeline:
         with mlflow.start_run(run_name=run_name):
 
             mlflow.set_tag("name", self.config["pipeline"]["name"])
-            mlflow.set_tag("description", self.config["pipeline"]["description"])
+            mode_str = "train" if data.is_train else "prediction"
+            mlflow.set_tag("mode", mode_str)
 
             log_params_from_config(self.config)
+
+            if description:
+                mlflow.set_tag("mlflow.note.content", description)
 
             if dataset_name:
                 self.logger.info(f"Logging input data to MLflow with dataset name: {dataset_name}")
@@ -258,11 +265,15 @@ class Pipeline:
             # Log prediction metrics
             if data.metrics:
                 self.logger.debug("Logging prediction metrics to MLflow")
-                for metric_name, metric_value in data.metrics["prediction"].items():
-                    mlflow.log_metric(metric_name, metric_value)
+                if data.is_train:
+                    for dataset_name, metrics in data.metrics.items():
+                        for metric_name, metric_value in metrics.items():
+                            mlflow.log_metric(f"{dataset_name}_{metric_name}", metric_value)
+                else:
+                    mlflow.log_metrics(data.metrics["prediction"])
 
             # Log the model
-            if data.model:
+            if data.is_train and data.model:
                 self.logger.debug("Logging the model to MLflow")
                 mlflow.sklearn.log_model(data.model, artifact_path="model")
 
