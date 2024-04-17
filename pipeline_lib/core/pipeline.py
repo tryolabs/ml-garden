@@ -295,6 +295,11 @@ class Pipeline:
                 ].__name__
                 mlflow.log_dict(self.config, "config.json")
 
+            # save data container pickle as an artifact
+            if self.save_data_path:
+                self.logger.debug("Logging the data container to MLflow")
+                mlflow.log_artifact(self.save_data_path)
+
     def save_run(
         self,
         data: DataContainer,
