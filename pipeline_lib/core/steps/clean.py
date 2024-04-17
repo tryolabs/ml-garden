@@ -17,6 +17,7 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
+        filter: Optional[dict] = None
     ):
         self.init_logger()
         self.fill_missing = fill_missing
@@ -24,6 +25,7 @@ class CleanStep(PipelineStep):
         self.convert_dtypes = convert_dtypes
         self.drop_na_columns = drop_na_columns
         self.drop_ids = drop_ids
+        self.filter = filter
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
@@ -57,31 +59,38 @@ class CleanStep(PipelineStep):
 
         return df
 
-    def _remove_outliers(self, df: pd.DataFrame) -> pd.DataFrame:
-        if self.remove_outliers:
-            for column, method in self.remove_outliers.items():
-                if column in df.columns:
-                    if method == "clip":
-                        q1 = df[column].quantile(0.25)
-                        q3 = df[column].quantile(0.75)
-                        iqr = q3 - q1
-                        lower_bound = q1 - (1.5 * iqr)
-                        upper_bound = q3 + (1.5 * iqr)
-                        df[column] = df[column].clip(lower=lower_bound, upper=upper_bound)
-                        self.logger.info(f"Clipped outliers in column '{column}'")
-                    elif method == "drop":
-                        q1 = df[column].quantile(0.25)
-                        q3 = df[column].quantile(0.75)
-                        iqr = q3 - q1
-                        lower_bound = q1 - (1.5 * iqr)
-                        upper_bound = q3 + (1.5 * iqr)
-                        outliers = (df[column] < lower_bound) | (df[column] > upper_bound)
-                        df = df[~outliers]
-                        self.logger.info(f"Dropped outliers in column '{column}'")
-                    else:
-                        self.logger.warning(f"Unsupported outlier removal method '{method}'")
+        return data
+
+    def _filter(self, df):
+        for key, value in self.filter.items():
+            df = df[df[key] != value]
+            self.logger.info(f"Dropped values by filter '{key}: {value}'")
+        return df
+
+    def _remove_outliers(self, df):
+        for column, method in self.remove_outliers.items():
+            if column in df.columns:
+                if method == "clip":
+                    q1 = df[column].quantile(0.25)
+                    q3 = df[column].quantile(0.75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - (1.5 * iqr)
+                    upper_bound = q3 + (1.5 * iqr)
+                    df[column] = df[column].clip(lower=lower_bound, upper=upper_bound)
+                    self.logger.info(f"Clipped outliers in column '{column}'")
+                elif method == "drop":
+                    q1 = df[column].quantile(0.25)
+                    q3 = df[column].quantile(0.75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - (1.5 * iqr)
+                    upper_bound = q3 + (1.5 * iqr)
+                    outliers = (df[column] < lower_bound) | (df[column] > upper_bound)
+                    df = df[~outliers]
+                    self.logger.info(f"Dropped outliers in column '{column}'")
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning(f"Unsupported outlier removal method '{method}'")
+            else:
+                self.logger.warning(f"Column '{column}' not found in the DataFrame")
         return df
 
     def _fill_missing(self, df: pd.DataFrame) -> pd.DataFrame:
