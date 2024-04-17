@@ -15,6 +15,7 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
+        filter: Optional[dict] = None
     ):
         self.init_logger()
         self.fill_missing = fill_missing
@@ -22,11 +23,15 @@ class CleanStep(PipelineStep):
         self.convert_dtypes = convert_dtypes
         self.drop_na_columns = drop_na_columns
         self.drop_ids = drop_ids
+        self.filter = filter
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
 
         df = data.raw
+
+        if self.filter:
+            df = self._filter(df)
 
         if self.remove_outliers:
             df = self._remove_outliers(df)
@@ -47,6 +52,12 @@ class CleanStep(PipelineStep):
         data.flow = df
 
         return data
+
+    def _filter(self, df):
+        for key, value in self.filter.items():
+            df = df[df[key] != value]
+            self.logger.info(f"Dropped values by filter '{key}: {value}'")
+        return df
 
     def _remove_outliers(self, df):
         for column, method in self.remove_outliers.items():
