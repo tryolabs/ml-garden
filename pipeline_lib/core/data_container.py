@@ -336,8 +336,8 @@ class DataContainer:
     def split_indices(self) -> dict[str, pd.Index]:
         """
         Get the indices for each split.
-        Indices refer to the dataframe used as input for the SplitStep, usually the output of
-        preprocessing. Users of the library must make sure that the indices are valid.
+        Indices refer to the dataframe used as input for the SplitStep. Users of the library must
+        make sure that the indices are valid.
 
         Returns
         -------
@@ -351,9 +351,9 @@ class DataContainer:
     @split_indices.setter
     def split_indices(self, value: dict[str, pd.Index]):
         """
-        Get the indices for each split.
-        Indices refer to the dataframe used as input for the SplitStep, usually the output of
-        preprocessing. Users of the library must make sure that the indices are valid.
+        Set the indices for each split.
+        Indices refer to the dataframe used as input for the SplitStep Users of the library must
+        make sure that the indices are valid.
 
         Parameters
         ----------
