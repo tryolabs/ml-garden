@@ -68,7 +68,6 @@ class TabularSplitStep(PipelineStep):
         validation_percentage: Optional[float] = None,
         test_percentage: Optional[float] = None,
         group_by_columns: Optional[list[str]] = None,
-        random_seed: Optional[int] = 42,
     ) -> None:
         """
         Initialize the TabularSplitStep
@@ -98,7 +97,6 @@ class TabularSplitStep(PipelineStep):
         self.validation_percentage = validation_percentage
         self.test_percentage = test_percentage
         self.group_by_columns = group_by_columns
-        self.random_seed = random_seed
 
         if self.train_percentage <= 0 or self.train_percentage >= 1:
             raise ValueError("train_percentage must be between 0 and 1.")
@@ -145,6 +143,25 @@ class TabularSplitStep(PipelineStep):
 
         self.logger.info("Splitting tabular data...")
         df = data.flow
+
+        # Since we'll be using the dataframe indices for splitting, we need to make sure there are
+        # no duplicates, otherwise slicing may produce more rows than expected.
+        # For example if you have:
+        # df=
+        # idx,  A,  B
+        # 0     a   b
+        # 0     b   c
+        # 1     d   e
+        # and do df.loc[0] you get:
+        # idx,  A,  B
+        # 0      a   b
+        # 0      b   c
+        # But if you do df.loc[1] you get:
+        # pd.Series(A=d, B=e)
+        # Return types are different, since one returns a DataFrame and the other a Series, which
+        # may break downstream code.
+        # Also if idx = pd.Index(data=[0]), len(idx)==1 but len(df.loc[idx])==2, which can cause
+        # inconsistencies and make interpretation difficult to understand
         assert not df.index.duplicated().any(), (
             "Duplicate indices found in the dataframe before split. Please ensure dataframe indices"
             "are unique before feeding them to the SplitStep."
@@ -162,18 +179,18 @@ class TabularSplitStep(PipelineStep):
         if self.test_percentage is not None:
             # Train, Validation and Test split
             train_val_split_values, test_split_values = train_test_split(
-                split_values, test_size=self.test_percentage, random_state=42
+                split_values, test_size=self.test_percentage, random_state=get_random_state()
             )
             train_split_values, validation_split_values = train_test_split(
                 train_val_split_values,
                 train_size=self.train_percentage
                 / (self.train_percentage + self.validation_percentage),
-                random_state=42,
+                random_state=get_random_state(),
             )
         else:
             # Train and Validation split only
             train_split_values, validation_split_values = train_test_split(
-                split_values, train_size=self.train_percentage, random_state=42
+                split_values, train_size=self.train_percentage, random_state=get_random_state()
             )
             test_split_values = []
 
