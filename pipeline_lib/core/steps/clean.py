@@ -17,7 +17,7 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
-        apply_validation: Optional[bool] = False,
+        apply_validation: Optional[bool] = True,
         apply_test: Optional[bool] = False,
     ):
         self.init_logger()
