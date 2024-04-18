@@ -333,32 +333,36 @@ class DataContainer:
         self["raw"] = value
 
     @property
-    def split_values(self) -> dict[str, list[Any]]:
+    def split_indices(self) -> dict[str, pd.Index]:
         """
-        Get the split values used in the SplitStep from the DataContainer.
+        Get the indices for each split.
+        Indices refer to the dataframe used as input for the SplitStep, usually the output of
+        preprocessing. Users of the library must make sure that the indices are valid.
 
         Returns
         -------
-        dict[str, list[Any]]
-            A dictionary with keys "train", "validation" and "test", where each key maps to the list
-            of values used for performing the train, validation and test splits respectively.
+        dict[str, pd.Index]
+            A dictionary with keys "train", "validation" and "test", where each key maps to the
+            indices of values corresponding to the train, validation and test splits respectively.
             Test set values may be empty
         """
-        return self["split_values"]
+        return self["split_indices"]
 
-    @split_values.setter
-    def split_values(self, value: dict[str, list[Any]]):
+    @split_indices.setter
+    def split_indices(self, value: dict[str, pd.Index]):
         """
-        Set the split values used in the SplitStep in the DataContainer.
+        Get the indices for each split.
+        Indices refer to the dataframe used as input for the SplitStep, usually the output of
+        preprocessing. Users of the library must make sure that the indices are valid.
 
         Parameters
         ----------
         value
-            A dictionary with keys "train", "validation" and "test", where each key maps to the list
-            of values used for performing the train, validation and test splits respectively.
+            A dictionary with keys "train", "validation" and "test", where each key maps to the
+            indices of values corresponding to the train, validation and test splits respectively.
             Test set values may be empty
         """
-        self["split_values"] = value
+        self["split_indices"] = value
 
     @property
     def train(self) -> pd.DataFrame:
