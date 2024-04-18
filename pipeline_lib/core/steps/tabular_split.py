@@ -73,7 +73,6 @@ class TabularSplitStep(PipelineStep):
         """
         Initialize the TabularSplitStep
 
-
         Parameters
         ----------
         train_percentage : float
