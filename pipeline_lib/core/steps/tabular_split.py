@@ -70,7 +70,30 @@ class TabularSplitStep(PipelineStep):
         group_by_columns: Optional[list[str]] = None,
         random_seed: Optional[int] = 42,
     ) -> None:
-        """Initialize SplitStep."""
+        """
+        Initialize the TabularSplitStep
+
+
+        Parameters
+        ----------
+        train_percentage : float
+            The percentage of data to use for the training set.
+        validation_percentage : Optional[float], optional
+            The percentage of data to use for the validation set. If not provided it will default to
+            1 - (validation_percentage - test_percentage), by default None
+        test_percentage : Optional[float], optional
+            The percentage of data to use for the test set. If not provided it will default to no
+            test set, by default None
+        group_by_columns : Optional[list[str]], optional
+            Columns defining the groups by which the splits will be performed, by default None
+            Useful for time series data. By providing the series identifiers in this parameter,
+            the splits will be performed so that entire series are not split across different splits
+
+        Raises
+        ------
+        ValueError
+            In case the parameters are invalid
+        """
         self.init_logger()
         self.train_percentage = train_percentage
         self.validation_percentage = validation_percentage
@@ -105,136 +128,36 @@ class TabularSplitStep(PipelineStep):
                     "validation_percentage must be provided when test_percentage is specified."
                 )
 
-    def perform_split(
-        self,
-        df: pd.DataFrame,
-        data: DataContainer,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
-        """
-        Perform the split that was fit during pipeline training on a potentially new dataframe.
-
-        During pipeline training, this step will store in the DataContainer necessary information to
-        determine which set (train/val/test) a row belongs to.
-        - If using simple random splitting, it will store the postprocessed df indices
-        - If using group based splitting, it will store the group columns' concattenated values, ie
-            - if groups are identified by the id, timestamp columns, the DataContainer will store:
-                - "train": [<id_train_1_timestamp_train_1>, <id_train_1_timestamp_train_2>, ...]
-                - "validation": [<id_validation_1_timestamp_validation_1>, ...]
-                - "test": [<id_test_1_timestamp_test_1>, <id_test_1_timestamp_test_2>, ...]
-
-        These values will be compared to the rows' values to determine the set the row belongs to.
-        For example in the below df:
-            row         id              timestamp             ...
-            0           id_train_1      timestamp_train_1     ...
-            1           id_train_1      timestamp_train_2      ...
-            2           id_validation_1  timestamp_validation_1 ...
-            3           id_test_1       timestamp_test_1        ...
-
-        running this method would result in 3 dataframes:
-        - train, having rows 0 and 1
-        - validation, having row w
-        - test, having row 3
-
-        Args:
-            df (pd.DataFrame): the dataframe to be split
-            data (DataContainer): the training DataContainer object, with the stored split values
-
-        Returns:
-            Tuple[pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]: _description_
-
-
-        Example usage:
-        # %%
-        from pipeline_lib import Pipeline
-
-        # Load a trained pipeline from it's config
-        pipeline = Pipeline.from_json("example.json")
-
-        # Retrieve the split step from the pipeline
-        split_step: TabularSplitStep = [
-            step for step in pipeline.steps if isinstance(step, TabularSplitStep)
-        ][0]
-
-        # Perform the split
-        train, val, test = split_step.perform_split(data.raw, data)
-        """
-
-        train_values, validation_values, test_values = (
-            data.split_values["train"],
-            data.split_values["validation"],
-            data.split_values["test"],
-        )
-
-        if self.group_by_columns is not None:
-            # Group based split
-            concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
-            train_df = df[concatted_groupby_columns.isin(set(train_values))]
-            validation_df = df[concatted_groupby_columns.isin(set(validation_values))]
-
-            if test_values:
-                test_df = df[concatted_groupby_columns.isin(set(test_values))]
-            else:
-                test_df = None
-        else:
-            # Simple random sampling based split
-            train_df = df[df.index.isin(set(train_values))]
-            validation_df = df[df.index.isin(set(validation_values))]
-            if test_values:
-                test_df = df[df.index.isin(set(test_values))]
-
-        # Logging
-        if self.group_by_columns is not None:
-            train_groups = len(train_values)
-            validation_groups = len(validation_values)
-            test_groups = len(test_values) if test_values is not None else 0
-            total_groups = train_groups + validation_groups + test_groups
-
-            self.logger.info(f"Using group by columns for splits based on: {self.group_by_columns}")
-            self.logger.info(
-                f"Number of groups in train set: {train_groups} | {train_groups / total_groups:.2%}"
-            )
-            self.logger.info(
-                f"Number of groups in validation set: {validation_groups} |"
-                f" {validation_groups / total_groups:.2%}"
-            )
-            if test_df is not None:
-                self.logger.info(
-                    f"Number of groups in test set: {test_groups} |"
-                    f" {test_groups / total_groups:.2%}"
-                )
-
-        train_rows = len(train_df)
-        validation_rows = len(validation_df)
-        test_rows = len(test_df) if test_df is not None else 0
-        total_rows = train_rows + validation_rows + test_rows
-
-        self.logger.info(
-            f"Number of rows in training set: {train_rows} | {train_rows / total_rows:.2%}"
-        )
-        self.logger.info(
-            f"Number of rows in validation set: {validation_rows} |"
-            f" {validation_rows / total_rows:.2%}"
-        )
-        if test_df is not None:
-            self.logger.info(
-                f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
-            )
-
-        return train_df, validation_df, test_df
-
     def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the random train-validation-test split."""
+        """
+        Execute the random train-validation-test split.
+
+        After training, users can obtain the train/validation/test sets from a stored DataContainer
+        with the following code:
+
+        train, validation, test = (
+            df.loc[data.split_indices["train"]],
+            df.loc[data.split_indices["validation"]],
+            df.loc[data.split_indices["test"]] if len(data.split_indices["test"]) > 0 else None,
+        )
+
+        Where df is the DataFrame used as input to the SplitStep
+        """
+
         self.logger.info("Splitting tabular data...")
         df = data.flow
 
         if self.group_by_columns is not None:
+            # Group based splits
             concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
             split_values = concatted_groupby_columns.unique().tolist()
         else:
+            # Simple Random Split
             concatted_groupby_columns = None
             split_values = df.index.tolist()
 
         if self.test_percentage is not None:
+            # Train, Validation and Test split
             train_val_split_values, test_split_values = train_test_split(
                 split_values, test_size=self.test_percentage, random_state=42
             )
@@ -245,17 +168,46 @@ class TabularSplitStep(PipelineStep):
                 random_state=42,
             )
         else:
+            # Train and Validation split only
             train_split_values, validation_split_values = train_test_split(
                 split_values, train_size=self.train_percentage, random_state=42
             )
             test_split_values = []
 
-        data.split_values = {
-            "train": train_split_values,
-            "validation": validation_split_values,
-            "test": test_split_values,
+        if self.group_by_columns is not None:
+            # Group based splits
+            train_split_indices = df[concatted_groupby_columns.isin(set(train_split_values))].index
+            validation_split_indices = df[
+                concatted_groupby_columns.isin(set(validation_split_values))
+            ].index
+            test_split_indices = (
+                df[concatted_groupby_columns.isin(set(test_split_values))].index
+                if len(test_split_values) > 0
+                else pd.Index(data=[], dtype=df.index.dtype)
+            )
+        else:
+            # Simple Random Split
+            train_split_indices = df[df.index.isin(set(train_split_values))].index
+            validation_split_indices = df[df.index.isin(set(validation_split_values))].index
+            test_split_indices = (
+                df[df.index.isin(set(test_split_values))].index
+                if len(test_split_values) > 0
+                else pd.Index(data=[], dtype=df.index.dtype)
+            )
+
+        # Store the split indices in the DataContainer for later use
+        data.split_indices = {
+            "train": train_split_indices,
+            "validation": validation_split_indices,
+            "test": test_split_indices,
         }
 
-        data.train, data.validation, data.test = self.perform_split(df, data)
+        # Perform the actual split of the DataFrame into train/validation/test sets and store them
+        # in the DataContainer
+        data.train, data.validation, data.test = (
+            df.loc[data.split_indices["train"]],
+            df.loc[data.split_indices["validation"]],
+            df.loc[data.split_indices["test"]] if len(data.split_indices["test"]) > 0 else None,
+        )
 
         return data
