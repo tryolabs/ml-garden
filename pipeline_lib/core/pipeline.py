@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import glob
 import json
 import logging
 import os
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 import mlflow
 import pandas as pd
 from mlflow.data import from_pandas
+from mlflow.tracking import MlflowClient
 
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
@@ -298,7 +300,40 @@ class Pipeline:
             # save data container pickle as an artifact
             if self.save_data_path:
                 self.logger.debug("Logging the data container to MLflow")
-                mlflow.log_artifact(self.save_data_path)
+                # change name to data_container.pkl
+                mlflow.log_artifact(self.save_data_path, artifact_path="data")
+
+    @classmethod
+    def from_mlflow_experiment(cls, run_id: str) -> Pipeline:
+        """Load a pipeline from an MLflow run."""
+        # Create an instance of MlflowClient
+
+        client = MlflowClient()
+        run = client.get_run(run_id)
+        artifacts_dir = run.info.artifact_uri
+
+        print(artifacts_dir)
+
+        # Download the config.json artifact
+        config_path = os.path.join(artifacts_dir, "config.json")
+        config_path = config_path.replace("file://", "")  # Remove the "file://" prefix if present
+
+        # Search for the data container file in the "data" folder
+        data_folder_path = os.path.join(artifacts_dir, "data")
+        data_folder_path = data_folder_path.replace("file://", "")
+        data_container_files = glob.glob(os.path.join(data_folder_path, "*.pkl"))
+
+        if len(data_container_files) == 0:
+            raise FileNotFoundError("No data container file found in the 'data' folder.")
+        elif len(data_container_files) > 1:
+            raise ValueError("Multiple data container files found in the 'data' folder.")
+
+        data_container_path = data_container_files[0]
+
+        # Use the existing from_json function to load the pipeline
+        pipeline = cls.from_json(config_path)
+        pipeline.save_data_path = data_container_path
+        return pipeline
 
     def save_run(
         self,
