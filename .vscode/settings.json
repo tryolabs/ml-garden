@@ -50,4 +50,5 @@
     "jupyter.interactiveWindow.textEditor.executeSelection": true,
     // TODO: this setting is showing a deprecation warning. Maybe we should drop it?
     "jupyter.generateSVGPlots": true,
+    "autoDocstring.docstringFormat": "numpy",
 }
