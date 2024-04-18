@@ -22,19 +22,27 @@ class GenerateStep(PipelineStep):
         target: str,
         train_path: Optional[str] = None,
         predict_path: Optional[str] = None,
+        test_path: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> None:
         self.init_logger()
         self.target = target
         self.train_path = train_path
         self.predict_path = predict_path
+        self.test_path = test_path
         self.kwargs = kwargs
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Generate the data from the file."""
 
-        if data.is_train and not self.train_path:
-            raise ValueError("train_path must be provided for training.")
+        if data.is_train:
+            if not self.train_path:
+                raise ValueError("train_path must be provided for training.")
+            if self.test_path:
+                self.logger.info(f"Test path provided: {self.test_path}")
+                # Load test data and add it to the DataContainer
+                test_df = self._load_data_from_file(self.test_path)
+                data.test = test_df
 
         if not data.is_train and not self.predict_path:
             raise ValueError("predict_path must be provided for prediction.")
@@ -46,20 +54,7 @@ class GenerateStep(PipelineStep):
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        file_type = self._infer_file_type(file_path)
-
-        kwargs = self.kwargs.copy()
-        if data.is_train:
-            kwargs.pop("predict_path", None)  # Remove prediction_path if in train mode
-        else:
-            kwargs.pop("train_path", None)  # Remove train_path if in predict mode
-
-        if file_type == FileType.CSV:
-            df = self._read_csv(file_path, **kwargs)
-        elif file_type == FileType.PARQUET:
-            df = self._read_parquet(file_path, **kwargs)
-        else:
-            raise ValueError(f"Unsupported file type: {file_type}")
+        df = self._load_data_from_file(file_path)
 
         data.raw = df
         data.flow = df
@@ -93,3 +88,13 @@ class GenerateStep(PipelineStep):
         if index_col is not None:
             df.set_index(index_col, inplace=True)
         return df
+
+    def _load_data_from_file(self, file_path: str) -> pd.DataFrame:
+        file_type = self._infer_file_type(file_path)
+
+        if file_type == FileType.CSV:
+            return self._read_csv(file_path, **self.kwargs)
+        elif file_type == FileType.PARQUET:
+            return self._read_parquet(file_path, **self.kwargs)
+        else:
+            raise ValueError(f"Unsupported file type: {file_type}")

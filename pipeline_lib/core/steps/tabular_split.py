@@ -107,6 +107,12 @@ class TabularSplitStep(PipelineStep):
         self.logger.info("Splitting tabular data...")
         df = data.flow
 
+        if self.test_percentage is not None and data.test is not None:
+            raise ValueError(
+                "Cannot set test_percentage in TabularSplitStep when data.test is already set. "
+                "If the test dataset was provided in the generate step, do not set test_percentage."
+            )
+
         if self.group_by_columns is not None:
             concatted_groupby_columns = _concatenate_columns(df, self.group_by_columns)
             split_values = concatted_groupby_columns.unique().tolist()
@@ -158,15 +164,21 @@ class TabularSplitStep(PipelineStep):
                 f"Number of groups in validation set: {validation_groups} |"
                 f" {validation_groups / total_groups:.2%}"
             )
-            if test_df is not None:
+            if test_values is not None:
                 self.logger.info(
                     f"Number of groups in test set: {test_groups} |"
                     f" {test_groups / total_groups:.2%}"
                 )
 
-        train_rows = len(train_df)
-        validation_rows = len(validation_df)
-        test_rows = len(test_df) if test_df is not None else 0
+        data.train = train_df
+        data.validation = validation_df
+        if test_values is not None:
+            data.test = test_df
+
+        train_rows = len(data.train)
+        validation_rows = len(data.validation)
+        test_rows = len(data.test) if test_values is not None or data.test is not None else 0
+
         total_rows = train_rows + validation_rows + test_rows
 
         self.logger.info(
@@ -176,14 +188,9 @@ class TabularSplitStep(PipelineStep):
             f"Number of rows in validation set: {validation_rows} |"
             f" {validation_rows / total_rows:.2%}"
         )
-        if test_df is not None:
+        if test_values is not None or data.test is not None:
             self.logger.info(
                 f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
             )
-
-        data.train = train_df
-        data.validation = validation_df
-        if test_df is not None:
-            data.test = test_df
 
         return data
