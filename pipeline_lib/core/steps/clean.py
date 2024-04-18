@@ -1,5 +1,7 @@
 from typing import Optional
 
+import pandas as pd
+
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
 
@@ -15,6 +17,8 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
+        apply_validation: Optional[bool] = False,
+        apply_test: Optional[bool] = False,
     ):
         self.init_logger()
         self.fill_missing = fill_missing
@@ -22,12 +26,27 @@ class CleanStep(PipelineStep):
         self.convert_dtypes = convert_dtypes
         self.drop_na_columns = drop_na_columns
         self.drop_ids = drop_ids
+        self.apply_validation = apply_validation
+        self.apply_test = apply_test
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
 
-        df = data.raw
+        df_train = self._clean_df(data.train)
+        data.train = df_train
 
+        if data.validation is not None and self.apply_validation:
+            df_validation = self._clean_df(data.validation)
+            data.validation = df_validation
+
+        if data.test is not None and self.apply_test:
+            df_test = self._clean_df(data.test)
+            data.test = df_test
+
+        return data
+
+    def _clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Clean the DataFrame."""
         if self.remove_outliers:
             df = self._remove_outliers(df)
 
@@ -43,10 +62,7 @@ class CleanStep(PipelineStep):
         if self.drop_ids:
             df = self._drop_ids(df)
 
-        data.clean = df
-        data.flow = df
-
-        return data
+        return df
 
     def _remove_outliers(self, df):
         for column, method in self.remove_outliers.items():
