@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -145,6 +145,10 @@ class TabularSplitStep(PipelineStep):
 
         self.logger.info("Splitting tabular data...")
         df = data.flow
+        assert not df.index.duplicated().any(), (
+            "Duplicate indices found in the dataframe before split. Please ensure dataframe indices"
+            "are unique before feeding them to the SplitStep."
+        )
 
         if self.group_by_columns is not None:
             # Group based splits
