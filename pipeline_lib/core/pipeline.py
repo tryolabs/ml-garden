@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
-from pipeline_lib.core.random_generator import initialize_generator
+from pipeline_lib.core.random_state_generator import initialize_random_state
 from pipeline_lib.core.step_registry import StepRegistry
 from pipeline_lib.core.steps import PipelineStep
 
@@ -100,7 +100,7 @@ class Pipeline:
             seed = config["pipeline"]["seed"]
         else:
             seed = 42
-        initialize_generator(seed)
+        initialize_random_state(seed)
 
         steps = []
 

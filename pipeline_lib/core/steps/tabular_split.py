@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.random_generator import get_random_generator
+from pipeline_lib.core.random_state_generator import get_random_state
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -119,17 +119,21 @@ class TabularSplitStep(PipelineStep):
 
         if self.test_percentage is not None:
             train_val_values, test_values = train_test_split(
-                split_values, test_size=self.test_percentage, random_state=42
+                split_values,
+                test_size=self.test_percentage,
+                random_state=get_random_state(),
             )
             train_values, validation_values = train_test_split(
                 train_val_values,
                 train_size=self.train_percentage
                 / (self.train_percentage + self.validation_percentage),
-                random_state=get_random_generator().integers(0, 100),
+                random_state=get_random_state(),
             )
         else:
             train_values, validation_values = train_test_split(
-                split_values, train_size=self.train_percentage, random_state=42
+                split_values,
+                train_size=self.train_percentage,
+                random_state=get_random_state(),
             )
             test_values = None
 
