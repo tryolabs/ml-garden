@@ -1,7 +1,7 @@
 from explainerdashboard import RegressionExplainer
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.random_generator import get_random_generator
+from pipeline_lib.core.random_state_generator import get_random_state
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -44,7 +44,7 @@ class ExplainerDashboardStep(PipelineStep):
                 f" {self.max_samples}."
             )
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
-            df = df.sample(n=self.max_samples, random_state=get_random_generator().integers(0, 100))
+            df = df.sample(n=self.max_samples, random_state=get_random_state())
 
         drop_columns = (
             data._drop_columns + ["predictions"] if data._drop_columns else ["predictions"]
