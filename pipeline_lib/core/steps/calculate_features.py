@@ -131,6 +131,6 @@ class CalculateFeaturesStep(PipelineStep):
         if self.datetime_columns:
             df = df.drop(columns=self.datetime_columns)
             if log:
-                self.logger.info("Dropped datetime columns: {self.datetime_columns}")
+                self.logger.info(f"Dropped datetime columns: {self.datetime_columns}")
 
         return df
