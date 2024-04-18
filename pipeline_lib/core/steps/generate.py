@@ -58,7 +58,13 @@ class GenerateStep(PipelineStep):
 
         data.raw = df
         data.flow = df
+
         data.target = self.target
+
+        # remove target if it doesn't exist in the DataFrame for prediction
+        if not data.is_train:
+            if self.target not in df.columns:
+                data.target = None
 
         self.logger.info(f"Generated DataFrame with shape: {df.shape}")
 

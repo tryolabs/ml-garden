@@ -32,16 +32,18 @@ class CleanStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
 
-        df_train = self._clean_df(data.train)
-        data.train = df_train
+        if not data.is_train:
+            data.flow = self._clean_df(data.flow)
+            return data
+
+        if data.train is not None:
+            data.train = self._clean_df(data.train)
 
         if data.validation is not None and self.apply_validation:
-            df_validation = self._clean_df(data.validation)
-            data.validation = df_validation
+            data.validation = self._clean_df(data.validation)
 
         if data.test is not None and self.apply_test:
-            df_test = self._clean_df(data.test)
-            data.test = df_test
+            data.test = self._clean_df(data.test)
 
         return data
 

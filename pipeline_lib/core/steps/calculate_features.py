@@ -86,7 +86,11 @@ class CalculateFeaturesStep(PipelineStep):
         """Execute the step."""
         self.logger.info("Calculating features")
 
-        data.train = self._create_datetime_features(data.train, log=True)
+        if not data.is_train:
+            data.flow = self._create_datetime_features(data.flow, log=True)
+
+        if data.train is not None:
+            data.train = self._create_datetime_features(data.train, log=True)
 
         if data.validation is not None:
             data.validation = self._create_datetime_features(data.validation)

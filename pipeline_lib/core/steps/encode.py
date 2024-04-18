@@ -39,10 +39,20 @@ class EncodeStep(PipelineStep):
         """Execute the encoding step."""
         self.logger.info("Encoding data")
 
-        if not data.target:
-            raise ValueError("Target column not found in any parameter before encoding.")
+        if not data.is_train:
+            categorical_features, numeric_features = self._get_feature_types(data.flow, data.target)
+            data.flow, _ = self._apply_encoding(
+                data.flow,
+                data.target,
+                categorical_features,
+                numeric_features,
+                saved_encoder=data._encoder,
+                log=True,
+            )
+            return data
 
         target_column_name = data.target
+
         categorical_features, numeric_features = self._get_feature_types(
             data.train, target_column_name
         )
@@ -53,6 +63,7 @@ class EncodeStep(PipelineStep):
             categorical_features,
             numeric_features,
             fit_encoders=True,
+            log=True,
         )
 
         if data.validation is not None:
@@ -83,6 +94,7 @@ class EncodeStep(PipelineStep):
         numeric_features: List[str],
         fit_encoders: Optional[bool] = False,
         saved_encoder: Optional[ColumnTransformer] = None,
+        log: Optional[bool] = False,
     ) -> Tuple[pd.DataFrame, Optional[ColumnTransformer]]:
         """Apply the encoding to the data."""
         if not fit_encoders and not saved_encoder:
@@ -127,7 +139,7 @@ class EncodeStep(PipelineStep):
             encoded_data, feature_encoder_map
         )
 
-        if fit_encoders:
+        if log:
             self._log_feature_info(
                 categorical_features,
                 numeric_features,
@@ -139,9 +151,12 @@ class EncodeStep(PipelineStep):
         return encoded_data, encoder
 
     def _get_feature_types(
-        self, df: pd.DataFrame, target_column_name: str
+        self, df: pd.DataFrame, target_column_name: Optional[str] = None
     ) -> Tuple[List[str], List[str]]:
         """Get categorical and numeric feature lists."""
+        if target_column_name is None:
+            target_column_name = ""
+
         categorical_features = [
             col for col in df.columns if df[col].dtype == "object" and col != target_column_name
         ]
@@ -150,6 +165,7 @@ class EncodeStep(PipelineStep):
             for col in df.columns
             if col not in categorical_features and col != target_column_name
         ]
+
         return categorical_features, numeric_features
 
     def _split_categorical_features(
