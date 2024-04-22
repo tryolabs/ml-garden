@@ -22,11 +22,11 @@ class PredictStep(PipelineStep):
         if not data.model:
             raise ValueError("Model is not present on the data container.")
 
+        df = data.flow
         drop_columns = data._drop_columns.copy()
+        drop_columns += [data.target] if data.target in df.columns else []
 
-        drop_columns = drop_columns + [data.target]
-
-        missing_columns = [col for col in drop_columns if col not in data.flow.columns]
+        missing_columns = [col for col in drop_columns if col not in df]
         if missing_columns:
             error_message = (
                 f"The following columns do not exist in the DataFrame: {', '.join(missing_columns)}"
@@ -34,7 +34,7 @@ class PredictStep(PipelineStep):
             self.logger.warning(error_message)
             raise KeyError(error_message)
 
-        data.predictions = data.model.predict(data.flow.drop(columns=drop_columns))
+        data.predictions = data.model.predict(df.drop(columns=drop_columns))
 
         data.flow["predictions"] = data.predictions
 
