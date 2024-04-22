@@ -12,8 +12,8 @@ from pipeline_lib.core.steps.base import PipelineStep
 class CalculateReportsStep(PipelineStep):
     """Calculate reports."""
 
-    used_for_prediction = True
-    used_for_training = False
+    used_for_prediction = False
+    used_for_training = True
 
     def __init__(self, max_samples: int = 1000) -> None:
         """Initialize CalculateReportsStep."""
@@ -28,7 +28,16 @@ class CalculateReportsStep(PipelineStep):
         if model is None:
             raise ValueError("Model not found in data container.")
 
-        df = data.flow
+        df = (
+            data.test
+            if data.test is not None
+            else data.validation if data.validation is not None else None
+        )
+        if df is None:
+            raise ValueError(
+                "Both test and validation are None. A validation or test set is required."
+            )
+
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples
             self.logger.info(
@@ -38,10 +47,7 @@ class CalculateReportsStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        drop_columns = (
-            data._drop_columns + ["predictions"] if data._drop_columns else ["predictions"]
-        )
-        df = df.drop(columns=drop_columns)
+        df = df.drop(columns=data._drop_columns)
         X = df.drop(columns=[data.target])
 
         # Calculate SHAP values with progress tracking and logging
