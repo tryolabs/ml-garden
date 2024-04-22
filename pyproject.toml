@@ -37,6 +37,8 @@ flake8 = "^7.0.0"
 black = "^23.12.1"
 isort = "^5.13.2"
 ipykernel = "^6.29.3"
+memray = "^1.12.0"
+pyinstrument = "^4.6.2"
 
 
 [build-system]

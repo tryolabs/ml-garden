@@ -164,5 +164,14 @@ data = Pipeline.from_json("config.json").run(is_train=False)
 
 The library allows users to define custom steps for data generation, cleaning, and preprocessing, which can be seamlessly integrated into the pipeline.
 
+
+## Performance and Memory Profiling
+
+We've added pyinsytrument and memray as development dependencies for optimizing performance and memory usage of the library.
+Refer to the tools documentation for usage notes:
+- [memray](https://github.com/bloomberg/memray?tab=readme-ov-file#usage)
+- [pyinstrument](https://pyinstrument.readthedocs.io/en/latest/guide.html#profile-a-python-cli-command)
+
+
 ## Contributing
 Contributions to the Pipeline Library are welcome! If you encounter any issues, have suggestions for improvements, or want to add new features, please open an issue or submit a pull request on the GitHub repository.
