@@ -22,6 +22,7 @@ class GenerateStep(PipelineStep):
         target: str,
         train_path: Optional[str] = None,
         predict_path: Optional[str] = None,
+        drop_columns: Optional[list[str]] = None,
         **kwargs,
     ):
         self.init_logger()
@@ -29,6 +30,7 @@ class GenerateStep(PipelineStep):
         self.train_path = train_path
         self.predict_path = predict_path
         self.kwargs = kwargs
+        self.drop_columns = drop_columns
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Generate the data from the file."""
@@ -60,6 +62,9 @@ class GenerateStep(PipelineStep):
             df = self._read_parquet(file_path, **kwargs)
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
+
+        if self.drop_columns is not None:
+            df.drop(columns=self.drop_columns, inplace=True)
 
         data.raw = df
         data.flow = df
