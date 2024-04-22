@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from pprint import pformat
 from typing import Optional
 
 import pandas as pd
@@ -22,8 +23,8 @@ class GenerateStep(PipelineStep):
         self,
         target: str,
         train_path: Optional[str] = None,
-        predict_path: Optional[str] = None,
         test_path: Optional[str] = None,
+        predict_path: Optional[str] = None,
         drop_columns: Optional[list[str]] = None,
         optimize_dtypes: bool = False,
         optimize_dtypes_skip_cols: list[str] = [],
@@ -32,8 +33,8 @@ class GenerateStep(PipelineStep):
         self.init_logger()
         self.target = target
         self.train_path = train_path
-        self.predict_path = predict_path
         self.test_path = test_path
+        self.predict_path = predict_path
         self.kwargs = kwargs
         self.drop_columns = drop_columns
         self.optimize_dtypes = optimize_dtypes
@@ -63,19 +64,54 @@ class GenerateStep(PipelineStep):
 
         df = self._load_data_from_file(file_path)
 
-        if data.generate_schema is None:
+        if data.is_train:
+            # We'll infer the schema from the concatenation of the train, test and prediction sets
+            # (if any).
+            # This is to maximize the chance of observing all possible values in each column.
+            # For example if an integer column has no NA values in the train set but has a NA on
+            # the test set, we need to include it in the schema inference so that the column is
+            # assigned a float dtype, instead of int, so that NA values are properly handled
+            opt_df = pd.concat([df, data.test]) if data.test is not None else df
+            if self.predict_path:
+                opt_df = pd.concat([df, self._load_data_from_file(self.predict_path)])
+
             if self.drop_columns is not None:
-                df.drop(columns=self.drop_columns, inplace=True)
+                opt_df.drop(columns=self.drop_columns, inplace=True)
 
             if self.optimize_dtypes:
-                apply_all_dtype_conversions(df=df, skip_cols=set(self.optimize_dtypes_skip_cols))
+                apply_all_dtype_conversions(
+                    df=opt_df, skip_cols=set(self.optimize_dtypes_skip_cols)
+                )
 
             # Save the schema for future use in predictions
-            data.generate_schema = df.dtypes.to_dict()
+            data.generate_schema = opt_df.dtypes.to_dict()
+            if self.train_path.endswith(".csv") or self.optimize_dtypes:
+                # Log the inferred schema for csvs or if we optimized dtypes
+                self.logger.info(f"Inferred Schema for raw data:\n {pformat(data.generate_schema)}")
+
+            # Re-split the optimized df into train/test, discard prediction since we're doing
+            # training for now
+            df = opt_df.iloc[0 : len(df)]
+            if data.test is not None:
+                data.test = opt_df.iloc[len(df) :]
         else:
-            # Apply the saved schema to the DataFrame
+            # Apply the schema saved during training to the DataFrame
             for key, value in data.generate_schema.items():
-                df[key] = df[key].astype(value)
+                try:
+                    if key in df.columns:
+                        df[key] = df[key].astype(value)
+                    elif key != data.target:
+                        # Target column may not be in the prediction dataframe
+                        raise ValueError(
+                            f"Column {key} from training schema not found in DataFrame"
+                        )
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to convert column {key} to type {value}: {e}. "
+                        "Verifiy all possible values for the column are observed in the "
+                        "concatenation of train, test and prediction sets, or specify the dataset "
+                        "dtypes manually"
+                    )
 
         data.raw = df
         data.flow = df
