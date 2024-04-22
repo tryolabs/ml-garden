@@ -5,6 +5,7 @@ from typing import Optional
 import pandas as pd
 
 from pipeline_lib.core import DataContainer
+from pipeline_lib.core.df_type_conversions import apply_all_dtype_conversions
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -23,6 +24,9 @@ class GenerateStep(PipelineStep):
         train_path: Optional[str] = None,
         predict_path: Optional[str] = None,
         test_path: Optional[str] = None,
+        drop_columns: Optional[list[str]] = None,
+        optimize_dtypes: bool = False,
+        optimize_dtypes_skip_cols: list[str] = [],
         **kwargs,
     ) -> None:
         self.init_logger()
@@ -31,6 +35,9 @@ class GenerateStep(PipelineStep):
         self.predict_path = predict_path
         self.test_path = test_path
         self.kwargs = kwargs
+        self.drop_columns = drop_columns
+        self.optimize_dtypes = optimize_dtypes
+        self.optimize_dtypes_skip_cols = optimize_dtypes_skip_cols
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Generate the data from the file."""
@@ -55,6 +62,20 @@ class GenerateStep(PipelineStep):
             raise FileNotFoundError(f"File not found: {file_path}")
 
         df = self._load_data_from_file(file_path)
+
+        if data.generate_schema is None:
+            if self.drop_columns is not None:
+                df.drop(columns=self.drop_columns, inplace=True)
+
+            if self.optimize_dtypes:
+                apply_all_dtype_conversions(df=df, skip_cols=set(self.optimize_dtypes_skip_cols))
+
+            # Save the schema for future use in predictions
+            data.generate_schema = df.dtypes.to_dict()
+        else:
+            # Apply the saved schema to the DataFrame
+            for key, value in data.generate_schema.items():
+                df[key] = df[key].astype(value)
 
         data.raw = df
         data.flow = df

@@ -332,6 +332,36 @@ class DataContainer:
         """
         self["raw"] = value
 
+    # FIXME: make type hints more specific than Any, however I don't know the return type of the
+    # values in dtypes.
+    @property
+    def generate_schema(self) -> dict[str, Any]:
+        """
+        Get the schema of the raw data produced by the GenerateStep during training.
+        This schema is a dictionary mapping dataframe columns (after drops) to their observed types
+        during training
+
+        Returns
+        -------
+        dict[str, Any]
+            A dictionary with columns in keys and their training types in values
+        """
+        return self["generate_schema"]
+
+    @generate_schema.setter
+    def generate_schema(self, value: dict[str, Any]):
+        """
+        Set the schema of the raw data produced by the GenerateStep during training.
+        This schema is a dictionary mapping dataframe columns (after drops) to their observed types
+        during training
+
+        Returns
+        -------
+        dict[str, Any]
+            A dictionary with columns in keys and their training types in values
+        """
+        self["generate_schema"] = value
+
     @property
     def train(self) -> pd.DataFrame:
         """
