@@ -20,7 +20,7 @@ class Pipeline:
     step_registry = StepRegistry()
     model_registry = ModelRegistry()
 
-    KEYS_TO_SAVE = ["model", "encoder", "_drop_columns", "target"]
+    KEYS_TO_SAVE = ["target", "model", "encoder", "_drop_columns", "target"]
 
     def __init__(self, initial_data: Optional[DataContainer] = None):
         self.steps = []
