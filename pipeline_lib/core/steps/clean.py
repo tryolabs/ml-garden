@@ -17,8 +17,7 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
-        filter: Optional[dict] = None
-        filter: Optional[dict] = None
+        filter: Optional[dict] = None,
     ):
         self.init_logger()
         self.fill_missing = fill_missing
