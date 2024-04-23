@@ -13,6 +13,9 @@ __pycache__/
 # ignore examples folder
 examples/
 
+# ignore runs
+runs/
+
 # Distribution / packaging
 .Python
 build/
