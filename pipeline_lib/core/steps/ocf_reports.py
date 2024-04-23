@@ -9,8 +9,6 @@ from pipeline_lib.core.model import Model
 from pipeline_lib.core.steps.base import PipelineStep
 
 # setting Tryo colors to use in plots
-
-# primary Tryo colors
 matplotlib.colors.ColorConverter.colors["tryo_eucalyptus"] = "#2CDDB3"
 matplotlib.colors.ColorConverter.colors["tryo_ultramarine"] = "#4056F4"
 
@@ -29,21 +27,66 @@ class ocfReportsStep(PipelineStep):
     def _get_predictions(
         self, model: Model, df: pd.DataFrame, target: str, drop_columns: Optional[List[str]] = None
     ) -> pd.Series:
+        """
+        Get model predictions.
+
+        Args:
+            model (Model): The trained model for making predictions.
+            df (pd.DataFrame): The input data to predict on.
+            target (str): The target column to predict.
+            drop_columns (Optional[List[str]]): A list of columns to drop from the input data.
+
+        Returns:
+            pd.Series: The predicted values from the model.
+        """
         drop_columns = (drop_columns or []) + [target]
         return model.predict(df.drop(columns=drop_columns))
 
-    def _calculate_abs_errors(self, y_true, y_pred):
-        abs_errors = abs(y_true - y_pred)
+    def _calculate_abs_errors(self, true_values: pd.Series, predictions: pd.Series) -> pd.Series:
+        """
+        Calculate absolute errors.
+
+        Args:
+            true_values: The true values of the target variable.
+            predictions: The predicted values of the target variable.
+
+        Returns:
+            pd.Series: The absolute errors between true and predicted values.
+        """
+        abs_errors = abs(true_values - predictions)
         return abs_errors
 
-    def _group_errors(self, df, target_column, criterion):
-        average_error = df.groupby(criterion)["abs_error"].mean()
-        average_value = df.groupby(criterion)[target_column].mean()
-        grouped_errors = pd.merge(average_error, average_value, on=criterion)
+    def _group_errors(
+        self, df: pd.DataFrame, target_column: str, grouping_criteria: str
+    ) -> pd.DataFrame:
+        """
+        Group errors by criteria.
+
+        Args:
+            df: The DataFrame containing predictions and true values.
+            target_column: The name of the target column.
+            grouping_criteria: The criteria to group errors by.
+
+        Returns:
+            pd.DataFrame: The grouped errors DataFrame.
+        """
+        average_error = df.groupby(grouping_criteria)["abs_error"].mean()
+        average_value = df.groupby(grouping_criteria)[target_column].mean()
+        grouped_errors = pd.merge(average_error, average_value, on=grouping_criteria)
         return grouped_errors
 
-    def _plot_grouped_mae(self, df, target_column, criterion):
-        # Plot for Average Generation and Average Error
+    def _plot_grouped_mae(self, df: pd.DataFrame, target_column: str, grouping_criteria: str):
+        """
+        Plot grouped mean absolute errors.
+
+        Args:
+            df: The DataFrame containing grouped errors.
+            target_column: The name of the target column.
+            grouping_criteria: The criteria used for grouping errors.
+
+        Returns:
+            None
+        """
         bar_width = 0.35
         index = range(df.shape[0])
         plt.figure(figsize=(30, 20))
@@ -60,27 +103,46 @@ class ocfReportsStep(PipelineStep):
             [i + bar_width for i in index],
             df["abs_error"],
             bar_width,
-            label=f"MAE by {criterion}",
+            label=f"MAE by {grouping_criteria}",
             color="tryo_ultramarine",
         )
 
-        plt.xlabel(f"{criterion}", fontsize=30)
-        plt.title(f"MAE by {criterion}", fontsize=40)
+        plt.xlabel(f"{grouping_criteria}", fontsize=30)
+        plt.title(f"MAE by {grouping_criteria}", fontsize=40)
         if len(index) > 500:
             plt.xticks([])
         else:
-            plt.xticks([i + bar_width / 2 for i in index], df.index, rotation=45)
+            plt.xticks([i + bar_width / 2 for i in index], list(df.index), rotation=45)
         plt.legend(fontsize=30)
 
         plt.show()
 
-    def _generate_report(self, df, target_column_name):
+    def _generate_report(self, df: pd.DataFrame, target_column_name: str):
+        """
+        Generate reports for predictions.
+
+        Args:
+            df: The DataFrame containing predictions and true values.
+            target_column_name: The name of the target column.
+
+        Returns:
+            None
+        """
         df["abs_error"] = self._calculate_abs_errors(df[target_column_name], df["predictions"])
-        for criterion in ["date_month", "ss_id"]:
-            mae_df = self._group_errors(df, target_column_name, criterion)
-            self._plot_grouped_mae(mae_df, target_column_name, criterion)
+        for grouping_criteria in ["date_month", "ss_id"]:
+            mae_df = self._group_errors(df, target_column_name, grouping_criteria)
+            self._plot_grouped_mae(mae_df, target_column_name, grouping_criteria)
 
     def execute(self, data: DataContainer) -> DataContainer:
+        """
+        Execute report generation.
+
+        Args:
+            data (DataContainer): The input data container.
+
+        Returns:
+            DataContainer: The data container to be used by following steps.
+        """
         self.logger.debug("Starting report generation")
         target_column_name = data.target
         if target_column_name is None:
