@@ -14,7 +14,7 @@ from pipeline_lib.core.steps.base import PipelineStep
 class CalculateMetricsStep(PipelineStep):
     """Calculate metrics."""
 
-    used_for_prediction = True
+    used_for_prediction = False
     used_for_training = True
 
     def __init__(self, mape_threshold: float = 0.01) -> None:
@@ -68,6 +68,7 @@ class CalculateMetricsStep(PipelineStep):
         metrics = {}
 
         if data.is_train:
+            # Metrics are only calculated during training
             for dataset_name in ["train", "validation", "test"]:
                 start_time = time.time()
                 dataset = getattr(data, dataset_name, None)
@@ -92,21 +93,10 @@ class CalculateMetricsStep(PipelineStep):
                 self.logger.info(
                     f"Elapsed time for {dataset_name} dataset: {elapsed_time:.2f} seconds"
                 )
-        else:
-            true_values = data.flow.get(target_column_name)
-            predictions = data.predictions
 
-            if true_values is not None:
-                metrics["prediction"] = self._calculate_metrics(true_values, predictions)
-            else:
-                self.logger.warning(
-                    f"True values ({target_column_name}) not found in prediction data. Skipping"
-                    " metric calculation."
-                )
+            # pretty print metrics
+            self.logger.info(f"Metrics: {json.dumps(metrics, indent=4)}")
 
-        # pretty print metrics
-        self.logger.info(f"Metrics: {json.dumps(metrics, indent=4)}")
-
-        data.metrics = metrics
+            data.metrics = metrics
 
         return data
