@@ -27,7 +27,6 @@ explainerdashboard = "^0.4.5"
 xgboost = { version = "^2.0.3", optional = true }
 category-encoders = "^2.6.3"
 tqdm = "^4.66.2"
-pvlib = "^0.10.4"
 
 [tool.poetry.extras]
 xgboost = ["xgboost"]
