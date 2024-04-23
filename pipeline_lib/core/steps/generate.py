@@ -6,8 +6,8 @@ from typing import Optional
 import pandas as pd
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.df_type_conversions import apply_all_dtype_conversions
 from pipeline_lib.core.steps.base import PipelineStep
+from pipeline_lib.utils.df_type_conversions import apply_all_dtype_conversions
 
 
 class FileType(Enum):
@@ -27,7 +27,7 @@ class GenerateStep(PipelineStep):
         predict_path: Optional[str] = None,
         drop_columns: Optional[list[str]] = None,
         optimize_dtypes: bool = False,
-        optimize_dtypes_skip_cols: list[str] = [],
+        optimize_dtypes_skip_cols: Optional[list[str]] = None,
         **kwargs,
     ) -> None:
         self.init_logger()
@@ -38,7 +38,7 @@ class GenerateStep(PipelineStep):
         self.kwargs = kwargs
         self.drop_columns = drop_columns
         self.optimize_dtypes = optimize_dtypes
-        self.optimize_dtypes_skip_cols = optimize_dtypes_skip_cols
+        self.optimize_dtypes_skip_cols = optimize_dtypes_skip_cols or []
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Generate the data from the file."""
@@ -84,10 +84,12 @@ class GenerateStep(PipelineStep):
                 )
 
             # Save the schema for future use in predictions
-            data.generate_schema = opt_df.dtypes.to_dict()
+            data._generate_step_dtypes = opt_df.dtypes.to_dict()
             if self.train_path.endswith(".csv") or self.optimize_dtypes:
                 # Log the inferred schema for csvs or if we optimized dtypes
-                self.logger.info(f"Inferred Schema for raw data:\n {pformat(data.generate_schema)}")
+                self.logger.info(
+                    f"Inferred Schema for raw data:\n {pformat(data._generate_step_dtypes)}"
+                )
 
             # Re-split the optimized df into train/test, discard prediction since we're doing
             # training for now
@@ -96,7 +98,7 @@ class GenerateStep(PipelineStep):
                 data.test = opt_df.iloc[len(df) :]
         else:
             # Apply the schema saved during training to the DataFrame
-            for key, value in data.generate_schema.items():
+            for key, value in data._generate_step_dtypes.items():
                 try:
                     if key in df.columns:
                         df[key] = df[key].astype(value)
