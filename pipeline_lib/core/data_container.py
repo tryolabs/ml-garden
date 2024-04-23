@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
-import pickle
 import sys
 from typing import Any, List, Optional, Union
 
+import dill as pickle
 import pandas as pd
 import yaml
 from sklearn.compose import ColumnTransformer
@@ -335,7 +335,7 @@ class DataContainer:
     # FIXME: make type hints more specific than Any, however I don't know the return type of the
     # values in dtypes.
     @property
-    def generate_schema(self) -> dict[str, Any]:
+    def _generate_step_dtypes(self) -> dict[str, Any]:
         """
         Get the schema of the raw data produced by the GenerateStep during training.
         This schema is a dictionary mapping dataframe columns (after drops) to their observed types
@@ -346,10 +346,10 @@ class DataContainer:
         dict[str, Any]
             A dictionary with columns in keys and their training types in values
         """
-        return self["generate_schema"]
+        return self["_generate_step_dtypes"]
 
-    @generate_schema.setter
-    def generate_schema(self, value: dict[str, Any]):
+    @_generate_step_dtypes.setter
+    def _generate_step_dtypes(self, value: dict[str, Any]):
         """
         Set the schema of the raw data produced by the GenerateStep during training.
         This schema is a dictionary mapping dataframe columns (after drops) to their observed types
@@ -360,7 +360,7 @@ class DataContainer:
         dict[str, Any]
             A dictionary with columns in keys and their training types in values
         """
-        self["generate_schema"] = value
+        self["_generate_step_dtypes"] = value
 
     @property
     def train(self) -> pd.DataFrame:
