@@ -1,9 +1,8 @@
 import json
 import logging
-from typing import Optional, Tuple, Type
+from typing import Optional, Type
 
 import optuna
-import pandas as pd
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,

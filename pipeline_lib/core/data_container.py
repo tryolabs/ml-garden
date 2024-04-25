@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import dill as pickle
 import pandas as pd
