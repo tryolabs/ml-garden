@@ -1,5 +1,3 @@
-import time
-
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
 
