@@ -1,13 +1,10 @@
 import json
-import time
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.model import Model
 from pipeline_lib.core.steps.base import PipelineStep
 
 
@@ -52,25 +49,13 @@ class CalculateMetricsStep(PipelineStep):
             "Median Absolute Error": str(median_absolute_error),
         }
 
-    def _get_predictions(
-        self, model: Model, df: pd.DataFrame, target: str, drop_columns: Optional[List[str]] = None
-    ) -> pd.Series:
-        drop_columns = (drop_columns or []) + [target]
-        return model.predict(df.drop(columns=drop_columns))
-
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.debug("Starting metric calculation")
 
-        target_column_name = data.target
-        if target_column_name is None:
-            raise ValueError("Target column not found on any configuration.")
-
         metrics = {}
-
         if data.is_train:
             # Metrics are only calculated during training
             for dataset_name in ["train", "validation", "test"]:
-                start_time = time.time()
                 dataset = getattr(data, dataset_name, None)
 
                 if dataset is None:
@@ -79,19 +64,9 @@ class CalculateMetricsStep(PipelineStep):
                     )
                     continue
 
-                predictions = self._get_predictions(
-                    model=data.model,
-                    df=dataset,
-                    target=target_column_name,
-                    drop_columns=data._drop_columns,
-                )
                 metrics[dataset_name] = self._calculate_metrics(
-                    true_values=dataset[target_column_name],
-                    predictions=predictions,
-                )
-                elapsed_time = time.time() - start_time
-                self.logger.info(
-                    f"Elapsed time for {dataset_name} dataset: {elapsed_time:.2f} seconds"
+                    true_values=dataset[data.target],
+                    predictions=dataset[data.prediction_column],
                 )
 
             # pretty print metrics

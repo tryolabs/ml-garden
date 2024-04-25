@@ -21,7 +21,6 @@ class GenerateStep(PipelineStep):
 
     def __init__(
         self,
-        target: str,
         train_path: Optional[str] = None,
         test_path: Optional[str] = None,
         predict_path: Optional[str] = None,
@@ -31,7 +30,6 @@ class GenerateStep(PipelineStep):
         **kwargs,
     ) -> None:
         self.init_logger()
-        self.target = target
         self.train_path = train_path
         self.test_path = test_path
         self.predict_path = predict_path
@@ -115,15 +113,9 @@ class GenerateStep(PipelineStep):
                         "dtypes manually"
                     )
 
+        df.reset_index(drop=True, inplace=True)  # Reset index for consistency
         data.raw = df
         data.flow = df
-
-        data.target = self.target
-
-        # remove target if it doesn't exist in the DataFrame for prediction
-        if not data.is_train:
-            if self.target not in df.columns:
-                data.target = None
 
         self.logger.info(f"Generated DataFrame with shape: {df.shape}")
 

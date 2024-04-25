@@ -127,10 +127,4 @@ class CalculateFeaturesStep(PipelineStep):
             if log:
                 self.logger.warning("No datetime columns specified. Skipping feature extraction.")
 
-        # drop original datetime columns
-        if self.datetime_columns:
-            df = df.drop(columns=self.datetime_columns)
-            if log:
-                self.logger.info(f"Dropped datetime columns: {self.datetime_columns}")
-
         return df
