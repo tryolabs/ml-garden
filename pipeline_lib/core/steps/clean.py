@@ -55,7 +55,7 @@ class CleanStep(PipelineStep):
 
     def _filter(self, df):
         for key, value in self.filter.items():
-            df = df[eval(value)(df[key])]
+            df = df.query(value)
             self.logger.info(f"Dropped values by filter '{key}: {value}'")
         return df
 
