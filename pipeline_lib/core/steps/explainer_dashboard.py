@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from explainerdashboard import RegressionExplainer
 
@@ -38,44 +39,40 @@ class ExplainerDashboardStep(PipelineStep):
             raise ValueError("Target column not found in any parameter.")
 
         if data.is_train:
-            df = data.train
+            # Explainer dashboard is calculated only during training
+            # We use all the available data for this purpose, optionally a sample if the data is too
+            # large
+            X = data.X_train
+            y = data.y_train
             if data.validation is not None:
-                df = pd.concat([df, data.validation])
+                X = pd.concat([X, data.X_validation])
+                y = pd.concat([y, data.y_validation])
             if data.test is not None:
-                df = pd.concat([df, data.test])
-
-            if target not in df.columns:
-                raise ValueError(
-                    f"Target column `{target}` not found in the dataset. It must be present for the"
-                    " explainer dashboard."
-                )
+                X = pd.concat([X, data.X_test])
+                y = pd.concat([y, data.y_test])
 
             # Some Shap explainers require a "background dataset" with the original distribution
             # of the data.
-            if self.X_background_samples > 0 and len(df) > self.X_background_samples:
-                X_backround = df.sample(n=self.max_samples, random_state=42)
+            if self.X_background_samples > 0 and len(X) > self.X_background_samples:
+                X_backround = X.sample(n=self.max_samples, random_state=42, replace=False)
             else:
-                X_backround = df
+                X_backround = X
 
-            if self.max_samples > 0 and len(df) > self.max_samples:
+            if self.max_samples > 0 and len(X) > self.max_samples:
                 # Randomly sample a subset of data points if the dataset is larger than max_samples
                 self.logger.info(
-                    f"Dataset contains {len(df)} data points and max_samples is set to"
+                    f"Dataset contains {len(X)} data points and max_samples is set to"
                     f" {self.max_samples}."
                 )
                 self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
-                df = df.sample(n=self.max_samples, random_state=42)
+                sample_rows = np.random.choice(range(len(X)), replace=False, size=self.max_samples)
+                X = X.iloc[sample_rows, :]
+                y = y.iloc[sample_rows]
 
-            drop_columns = (
-                data._drop_columns + ["predictions"] if data._drop_columns else ["predictions"]
-            )
-            drop_columns = [col for col in drop_columns if col in df.columns]
-
-            df = df.drop(columns=drop_columns)
-            X_backround = X_backround.drop(columns=drop_columns + [target])
-
-            X = df.drop(columns=[target])
-            y = df[target]
+            # This can happen if there are duplicate indices, the Shap values will run, taking a
+            # long time, but it will crash when calculating the shap dependence plots.
+            # To avoid this potential long wait to a crash we add this assertion here
+            assert len(X) == len(y), "Mismatch in number of samples and labels"
 
             explainer = RegressionExplainer(
                 model,

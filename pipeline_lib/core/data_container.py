@@ -435,6 +435,180 @@ class DataContainer:
         self["test"] = value
 
     @property
+    def X_train(self) -> pd.DataFrame:
+        """
+        Get the encoded training data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Returns
+        -------
+        pd.DataFrame
+            The encoded train data stored in the DataContainer.
+        """
+        return self["X_train"]
+
+    @X_train.setter
+    def X_train(self, value: pd.DataFrame):
+        """
+        Set the encoded training data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Parameters
+        ----------
+        value
+            The encoded train data stored in the DataContainer.
+        """
+        self["X_train"] = value
+
+    @property
+    def y_train(self) -> pd.Series:
+        """
+        Get the encoded training labels from the DataContainer.
+
+        Returns
+        -------
+        pd.Series
+            The encoded training labels stored in the DataContainer.
+        """
+        return self["y_train"]
+
+    @y_train.setter
+    def y_train(self, value: pd.Series):
+        """
+        Set the encoded training labels to the DataContainer.
+
+        Parameters
+        ----------
+        value
+            The encoded training labels stored in the DataContainer.
+        """
+        self["y_train"] = value
+
+    @property
+    def X_validation(self) -> pd.DataFrame:
+        """
+        Get the encoded validation data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Returns
+        -------
+        pd.DataFrame
+            The encoded validation data stored in the DataContainer.
+        """
+        return self["X_validation"]
+
+    @X_validation.setter
+    def X_validation(self, value: pd.DataFrame):
+        """
+        Set the encoded validation data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+        Parameters
+        ----------
+        value
+            The encoded validation data stored in the DataContainer.
+        """
+        self["X_validation"] = value
+
+    @property
+    def y_validation(self) -> pd.Series:
+        """
+        Get the encoded validation labels from the DataContainer.
+
+        Returns
+        -------
+        pd.Series
+            The encoded validation labels stored in the DataContainer.
+        """
+        return self["y_validation"]
+
+    @y_validation.setter
+    def y_validation(self, value: pd.Series):
+        """
+        Set the encoded validation labels to the DataContainer.
+        Parameters
+        ----------
+        value
+            The encoded validation labels stored in the DataContainer.
+        """
+        self["y_validation"] = value
+
+    @property
+    def X_test(self) -> pd.DataFrame:
+        """
+        Get the encoded test data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Returns
+        -------
+        pd.DataFrame
+            The encoded test data stored in the DataContainer.
+        """
+        return self["X_test"]
+
+    @X_test.setter
+    def X_test(self, value: pd.DataFrame):
+        """
+        Set the encoded test data to the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Parameters
+        ----------
+        value
+            The encoded test data stored in the DataContainer.
+        """
+        self["X_test"] = value
+
+    @property
+    def y_test(self) -> pd.Series:
+        """
+        Get the encoded test labels from the DataContainer.
+
+        Returns
+        -------
+        pd.Series
+            The encoded test labels stored in the DataContainer.
+        """
+        return self["y_test"]
+
+    @y_test.setter
+    def y_test(self, value: pd.Series):
+        """
+        Set the encoded test labels to the DataContainer.
+
+        Parameters
+        -------
+        value
+           The encoded test labels stored in the DataContainer.
+        """
+        self["y_test"] = value
+
+    @property
+    def X_prediction(self) -> pd.DataFrame:
+        """
+        Get the encoded prediction data from the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Returns
+        -------
+        pd.DataFrame
+            The encoded prediction data stored in the DataContainer.
+        """
+        return self["X_prediction"]
+
+    @X_prediction.setter
+    def X_prediction(self, value: pd.DataFrame):
+        """
+        Set the encoded prediction data to the DataContainer. This is data after passing through
+        the encoder step, ready to be used as input for the model.
+
+        Parameters
+        -------
+        value
+           The encoded prediction data stored in the DataContainer.
+        """
+        self["X_prediction"] = value
+
+    @property
     def model(self) -> Model:
         """
         Get the model from the DataContainer.
@@ -584,6 +758,50 @@ class DataContainer:
         self["target"] = value
 
     @property
+    def prediction_column(self) -> str:
+        """
+        Get the prediction column from the DataContainer.
+        """
+        return self["prediction_column"]
+
+    @prediction_column.setter
+    def prediction_column(self, value: str):
+        """
+        Set the prediction column in the DataContainer.
+        """
+        self["prediction_column"] = value
+
+    @property
+    def columns_to_ignore_for_training(self) -> list[str]:
+        """
+        Get the columns to ignore for training from the DataContainer.
+        This is useful for specifying id columns, which we don't want to include in the model
+        training to avoid overfitting, but we want to keep them in the pipeline for metric/reporting
+        calculation.
+
+        Returns
+        -------
+        str
+            The columns to ignore for training stored in the DataContainer.
+        """
+        return self["columns_to_ignore_for_training"]
+
+    @columns_to_ignore_for_training.setter
+    def columns_to_ignore_for_training(self, value: list[str]):
+        """
+        Set the columns to ignore for training from the DataContainer.
+        This is useful for specifying id columns, which we don't want to include in the model
+        training to avoid overfitting, but we want to keep them in the pipeline for metric/reporting
+        calculation.
+
+        Returns
+        -------
+        str
+            The columns to ignore for training stored in the DataContainer.
+        """
+        self["columns_to_ignore_for_training"] = value
+
+    @property
     def flow(self) -> pd.DataFrame:
         """
         Get the flow from the DataContainer.
@@ -606,30 +824,6 @@ class DataContainer:
             The flow to be stored in the DataContainer.
         """
         self["flow"] = value
-
-    @property
-    def _drop_columns(self) -> List[str]:
-        """
-        Get the drop columns from the DataContainer.
-
-        Returns
-        -------
-        List[str]
-            The drop columns stored in the DataContainer.
-        """
-        return self["_drop_columns"]
-
-    @_drop_columns.setter
-    def _drop_columns(self, value: List[str]):
-        """
-        Set the drop columns in the DataContainer.
-
-        Parameters
-        ----------
-        value
-            The drop columns to be stored in the DataContainer.
-        """
-        self["_drop_columns"] = value
 
     @property
     def is_train(self) -> bool:

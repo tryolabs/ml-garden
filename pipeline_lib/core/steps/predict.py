@@ -1,3 +1,5 @@
+import time
+
 from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps.base import PipelineStep
 
@@ -6,7 +8,7 @@ class PredictStep(PipelineStep):
     """Obtain the predictions."""
 
     used_for_prediction = True
-    used_for_training = False
+    used_for_training = True
 
     def __init__(
         self,
@@ -22,20 +24,20 @@ class PredictStep(PipelineStep):
         if not data.model:
             raise ValueError("Model is not present on the data container.")
 
-        df = data.flow
-        drop_columns = data._drop_columns.copy()
-        drop_columns += [data.target] if data.target in df.columns else []
+        if data.is_train:
+            # Metrics are only calculated during training
+            for dataset_name in ["train", "validation", "test"]:
+                dataset = getattr(data, dataset_name, None)
+                encoded_dataset = getattr(data, f"X_{dataset_name}", None)
 
-        missing_columns = [col for col in drop_columns if col not in df]
-        if missing_columns:
-            error_message = (
-                f"The following columns do not exist in the DataFrame: {', '.join(missing_columns)}"
-            )
-            self.logger.warning(error_message)
-            raise KeyError(error_message)
+                if dataset is None or encoded_dataset is None:
+                    self.logger.warning(
+                        f"Dataset '{dataset_name}' not found. Skipping metric calculation."
+                    )
+                    continue
 
-        data.predictions = data.model.predict(df.drop(columns=drop_columns))
-
-        data.flow["predictions"] = data.predictions
+                dataset[data.prediction_column] = data.model.predict(encoded_dataset)
+        else:
+            data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
 
         return data

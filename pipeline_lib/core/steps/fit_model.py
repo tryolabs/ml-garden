@@ -21,7 +21,13 @@ class OptunaOptimizer:
         self.logger = logger
 
     def optimize(
-        self, X_train, y_train, X_valid, y_valid, model_class: Type[Model], model_params: dict
+        self,
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        model_class: Type[Model],
+        model_params: dict,
     ) -> dict:
         def objective(trial):
             # Create a copy of model_params, then update with the optuna suggested hyperparameters
@@ -30,11 +36,11 @@ class OptunaOptimizer:
             param.update(self._create_trial_params(trial))
 
             model = model_class(**param)
-            model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=False)
-            preds = model.predict(X_valid)
+            model.fit(X_train, y_train, eval_set=[(X_validation, y_validation)], verbose=False)
+            preds = model.predict(X_validation)
 
             objective_metric = self.optuna_params.get("objective_metric", "mean_absolute_error")
-            error = self._calculate_error(y_valid, preds, objective_metric)
+            error = self._calculate_error(y_validation, preds, objective_metric)
             return error
 
         study = self._create_study()
@@ -93,7 +99,6 @@ class FitModelStep(PipelineStep):
         self,
         model_class: Type[Model],
         model_params: Optional[dict] = None,
-        drop_columns: Optional[list[str]] = None,
         optuna_params: Optional[dict] = None,
         save_path: Optional[str] = None,
     ) -> None:
@@ -101,57 +106,39 @@ class FitModelStep(PipelineStep):
         self.init_logger()
         self.model_class = model_class
         self.model_params = model_params or {}
-        self.drop_columns = drop_columns or []
         self.optuna_params = optuna_params
         self.save_path = save_path
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
-
-        df_train, df_valid = self._prepare_data(data)
-        X_train, y_train, X_valid, y_valid = self._extract_target(df_train, df_valid, data.target)
-
         model_params = self.model_params
 
         if self.optuna_params:
             optimizer = OptunaOptimizer(self.optuna_params, self.logger)
             optuna_model_params = optimizer.optimize(
-                X_train, y_train, X_valid, y_valid, self.model_class, model_params
+                data.X_train,
+                data.y_train,
+                data.X_validation,
+                data.y_validation,
+                self.model_class,
+                model_params,
             )
             model_params.update(optuna_model_params)
             self.logger.info(f"Optimized model parameters: \n{json.dumps(model_params)}")
             self.logger.info("Re-fitting the model with optimized parameters")
 
         model = self.model_class(**model_params)
-        model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=True)
+        model.fit(
+            data.X_train,
+            data.y_train,
+            eval_set=[(data.X_validation, data.y_validation)],
+            verbose=True,
+        )
 
         data.model = model
-        data._drop_columns = self.drop_columns
 
         if self.save_path:
             self.logger.info(f"Saving the model to {self.save_path}")
             model.save(self.save_path)
 
         return data
-
-    def _prepare_data(self, data: DataContainer) -> tuple:
-        df_train = data.train
-        df_valid = data.validation
-
-        if self.drop_columns:
-            df_train = df_train.drop(columns=self.drop_columns)
-            df_valid = df_valid.drop(columns=self.drop_columns)
-
-        return df_train, df_valid
-
-    def _extract_target(
-        self, df_train: pd.DataFrame, df_valid: pd.DataFrame, target: str
-    ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
-        """Extract target column from the dataframes, to be used in model fitting."""
-        X_train = df_train.drop(columns=[target])
-        y_train = df_train[target]
-
-        X_valid = df_valid.drop(columns=[target])
-        y_valid = df_valid[target]
-
-        return X_train, y_train, X_valid, y_valid

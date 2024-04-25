@@ -89,18 +89,18 @@ class TabularSplitStep(PipelineStep):
             test_values = None
 
         if self.group_by_columns is not None:
-            train_df = df[concatted_groupby_columns.isin(set(train_values))]
-            validation_df = df[concatted_groupby_columns.isin(set(validation_values))]
+            train_df = df[concatted_groupby_columns.isin(set(train_values))].copy()
+            validation_df = df[concatted_groupby_columns.isin(set(validation_values))].copy()
 
             if test_values:
-                test_df = df[concatted_groupby_columns.isin(set(test_values))]
+                test_df = df[concatted_groupby_columns.isin(set(test_values))].copy()
             else:
                 test_df = None
         else:
-            train_df = df[df.index.isin(set(train_values))]
-            validation_df = df[df.index.isin(set(validation_values))]
+            train_df = df[df.index.isin(set(train_values))].copy()
+            validation_df = df[df.index.isin(set(validation_values))].copy()
             if test_values:
-                test_df = df[df.index.isin(set(test_values))]
+                test_df = df[df.index.isin(set(test_values))].copy()
 
         if self.group_by_columns is not None:
             train_groups = len(train_values)

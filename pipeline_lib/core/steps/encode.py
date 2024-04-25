@@ -33,11 +33,13 @@ class EncodeStep(PipelineStep):
     def __init__(
         self,
         cardinality_threshold: float = 0.3,
+        drop_columns: Optional[List[str]] = None,
         feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
         self.init_logger()
         self.cardinality_threshold = cardinality_threshold
+        self.drop_columns = drop_columns or []
         self.feature_encoders = feature_encoders or {}
 
     def execute(self, data: DataContainer) -> DataContainer:
@@ -47,10 +49,13 @@ class EncodeStep(PipelineStep):
         target_column_name = data.target
 
         if not data.is_train:
-            categorical_features, numeric_features = self._get_feature_types(data.flow, data.target)
-            data.flow, _ = self._apply_encoding(
+            categorical_features, numeric_features = self._get_feature_types(
+                data.flow.drop(columns=data.columns_to_ignore_for_training), data.target
+            )
+            data.X_prediction, _, _ = self._apply_encoding(
                 data.flow,
                 target_column_name,
+                data.columns_to_ignore_for_training,
                 categorical_features,
                 numeric_features,
                 saved_encoder=data._encoder,
@@ -59,12 +64,13 @@ class EncodeStep(PipelineStep):
             return data
 
         categorical_features, numeric_features = self._get_feature_types(
-            data.train, target_column_name
+            data.train.drop(columns=data.columns_to_ignore_for_training), target_column_name
         )
 
-        data.train, data._encoder = self._apply_encoding(
+        data.X_train, data.y_train, data._encoder = self._apply_encoding(
             data.train,
             target_column_name,
+            data.columns_to_ignore_for_training,
             categorical_features,
             numeric_features,
             fit_encoders=True,
@@ -72,18 +78,20 @@ class EncodeStep(PipelineStep):
         )
 
         if data.validation is not None:
-            data.validation, _ = self._apply_encoding(
+            data.X_validation, data.y_validation, _ = self._apply_encoding(
                 data.validation,
                 target_column_name,
+                data.columns_to_ignore_for_training,
                 categorical_features,
                 numeric_features,
                 saved_encoder=data._encoder,
             )
 
         if data.test is not None:
-            data.test, _ = self._apply_encoding(
+            data.X_test, data.y_test, _ = self._apply_encoding(
                 data.test,
                 target_column_name,
+                data.columns_to_ignore_for_training,
                 categorical_features,
                 numeric_features,
                 saved_encoder=data._encoder,
@@ -95,20 +103,22 @@ class EncodeStep(PipelineStep):
         self,
         df: pd.DataFrame,
         target_column_name: str,
+        columns_to_ignore_for_training: List[str],
         categorical_features: List[str],
         numeric_features: List[str],
         fit_encoders: Optional[bool] = False,
         saved_encoder: Optional[ColumnTransformer] = None,
         log: Optional[bool] = False,
-    ) -> Tuple[pd.DataFrame, Optional[ColumnTransformer]]:
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series], Optional[ColumnTransformer]]:
         """Apply the encoding to the data."""
         if not fit_encoders and not saved_encoder:
             raise ValueError("saved_encoder must be provided when fit_encoders is False.")
 
+        df = df.drop(columns=columns_to_ignore_for_training)
+
         low_cardinality_features, high_cardinality_features = self._split_categorical_features(
             df, categorical_features
         )
-
         original_numeric_dtypes = {col: df[col].dtype for col in numeric_features}
 
         encoder = None
@@ -124,16 +134,12 @@ class EncodeStep(PipelineStep):
         else:
             column_transformer = saved_encoder
 
-        encoded_data = self._transform_data(
+        encoded_data, targets = self._transform_data(
             df,
             target_column_name,
             column_transformer,
             fit_encoders,
         )
-
-        # add target column back if existed, check if df had target
-        if target_column_name in df.columns:
-            encoded_data[target_column_name] = df[target_column_name]
 
         encoded_data = self._restore_column_order(df, encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
@@ -153,7 +159,7 @@ class EncodeStep(PipelineStep):
                 feature_encoder_map,
             )
 
-        return encoded_data, encoder
+        return encoded_data, targets, encoder
 
     def _get_feature_types(
         self, df: pd.DataFrame, target_column_name: Optional[str] = None
@@ -272,17 +278,26 @@ class EncodeStep(PipelineStep):
         target_column_name: str,
         column_transformer: ColumnTransformer,
         is_train: Optional[bool] = False,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, Optional[pd.Series]]:
         """Transform the data using the ColumnTransformer."""
-        if is_train:
+        if target_column_name in df.columns:
             X = df.drop(columns=[target_column_name])  # Drop the target column
-            y = df[target_column_name]
+            y = df[target_column_name]  # Target column for training data
+        else:
+            X = df  # All columns for prediction data
+            y = None  # No target in the prediction data
+
+        if is_train:
             self.logger.info("Fitting encoders")
             column_transformer.fit(X, y)
-        transformed_data = column_transformer.transform(df)
+
+        transformed_data = column_transformer.transform(X)
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
-        return pd.DataFrame(
-            transformed_data, columns=column_transformer.get_feature_names_out(), index=df.index
+        return (
+            pd.DataFrame(
+                transformed_data, columns=column_transformer.get_feature_names_out(), index=df.index
+            ),
+            y,
         )
 
     def _restore_column_order(self, df: pd.DataFrame, encoded_data: pd.DataFrame) -> pd.DataFrame:

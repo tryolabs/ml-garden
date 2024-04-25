@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from typing import Any, Optional
 
@@ -26,14 +27,16 @@ class Pipeline:
         "encoder",
         "_drop_columns",
         "target",
+        "prediction_column",
         "_generate_step_dtypes",
         "explainer",
+        "columns_to_ignore_for_training",
     ]
 
     def __init__(self, initial_data: Optional[DataContainer] = None):
         self.steps = []
         self.initial_data = initial_data
-        self.config = None
+        self.config = {}
         self.save_data_path = None
 
     def add_steps(self, steps: list[PipelineStep]):
@@ -43,12 +46,29 @@ class Pipeline:
     def run(self, is_train: bool, save: bool = True) -> DataContainer:
         """Run the pipeline on the given data."""
 
-        if not self.save_data_path:
+        if "parameters" not in self.config["pipeline"]:
+            raise ValueError("Missing pipeline parameters section in the config file.")
+
+        if "save_data_path" not in self.config["pipeline"]["parameters"]:
             raise ValueError(
-                "A path for saving the data must be provided. Use the `save_data_path` attribute."
+                "A path for saving the data must be provided. Use the `save_data_path` attribute "
+                'of the pipeline parameters" section in the config.'
+            )
+
+        if "target" not in self.config["pipeline"]["parameters"]:
+            raise ValueError(
+                "A target column must be provided. Use the `target` attribute of the pipeline"
+                ' "parameters" section in the config.'
             )
 
         data = DataContainer()
+
+        self.save_data_path = self.config["pipeline"]["parameters"]["save_data_path"]
+        data.target = self.config["pipeline"]["parameters"]["target"]
+        data.prediction_column = f"{data.target}_prediction"
+        data.columns_to_ignore_for_training = self.config["pipeline"]["parameters"].get(
+            "columns_to_ignore_for_training", []
+        )
 
         if is_train:
             steps_to_run = [step for step in self.steps if step.used_for_training]
@@ -61,10 +81,13 @@ class Pipeline:
         data.is_train = is_train
 
         for i, step in enumerate(steps_to_run):
-            Pipeline.logger.info(
-                f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
-            )
+            start_time = time.time()
+            log_str = f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
+            Pipeline.logger.info(log_str)
+
             data = step.execute(data)
+
+            Pipeline.logger.info(f"{log_str} done. Took: {time.time() - start_time:.2f}s")
 
         if is_train:
             data.save(self.save_data_path, keys=self.KEYS_TO_SAVE)
@@ -96,13 +119,9 @@ class Pipeline:
         if custom_steps_path:
             cls.step_registry.load_and_register_custom_steps(custom_steps_path)
 
-        save_data_path = config["pipeline"].get("save_data_path")
-
         pipeline = Pipeline()
 
         pipeline.config = config
-        pipeline.save_data_path = save_data_path
-
         steps = []
 
         for step_config in config["pipeline"]["steps"]:
