@@ -1,3 +1,4 @@
+from math import isclose
 from typing import Optional
 
 from sklearn.model_selection import train_test_split
@@ -40,7 +41,9 @@ class TabularSplitStep(PipelineStep):
                         " test_percentage is not specified."
                     )
             else:
-                if self.train_percentage + self.validation_percentage + self.test_percentage != 1:
+                if not isclose(
+                    self.train_percentage + self.validation_percentage + self.test_percentage, 1
+                ):
                     raise ValueError(
                         "The sum of train_percentage, validation_percentage, and test_percentage"
                         " must equal 1."
