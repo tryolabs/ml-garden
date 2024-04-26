@@ -38,6 +38,17 @@ class DataContainer:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"{self.__class__.__name__} initialized")
 
+    def update(self, other: DataContainer) -> None:
+        """
+        Update the data in this container with another DataContainer's data.
+
+        Parameters
+        =========
+        other : DataContainer
+            The DataContainer to copy data from.
+        """
+        self.data.update(other.data)
+
     def add(self, key: str, value):
         """
         Add a new item to the container.
