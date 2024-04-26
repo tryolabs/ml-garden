@@ -33,13 +33,11 @@ class EncodeStep(PipelineStep):
     def __init__(
         self,
         cardinality_threshold: float = 0.3,
-        drop_columns: Optional[List[str]] = None,
         feature_encoders: Optional[dict] = None,
     ) -> None:
         """Initialize EncodeStep."""
         self.init_logger()
         self.cardinality_threshold = cardinality_threshold
-        self.drop_columns = drop_columns or []
         self.feature_encoders = feature_encoders or {}
 
     def execute(self, data: DataContainer) -> DataContainer:

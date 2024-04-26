@@ -22,15 +22,10 @@ class Pipeline:
     model_registry = ModelRegistry()
 
     KEYS_TO_SAVE = [
-        "target",
         "model",
         "encoder",
-        "_drop_columns",
-        "target",
-        "prediction_column",
         "_generate_step_dtypes",
         "explainer",
-        "columns_to_ignore_for_training",
     ]
 
     def __init__(self, initial_data: Optional[DataContainer] = None):
