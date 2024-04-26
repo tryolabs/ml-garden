@@ -22,7 +22,9 @@
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.7
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
                 }
             },
             {
@@ -41,7 +43,7 @@
                     },
                     "optuna_params": {
                         "trials": 100,
-                        "study_name": "ocf_ames_housing_study_1",
+                        "study_name": "ames_housing_study_1",
                         "storage": "sqlite:///db.sqlite3",
                         "load_if_exists": true,
                         "objective_metric": "rmse",

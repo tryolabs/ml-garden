@@ -4,8 +4,7 @@
         "description": "Training pipeline for XGBoost models.",
         "parameters": {
             "save_data_path": "ames_housing.pkl",
-            "target": "SalePrice",
-            "columns_to_ignore_for_traing": null
+            "target": "SalePrice"
         },
         "steps": [
             {
@@ -23,7 +22,9 @@
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.7
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
                 }
             },
             {
