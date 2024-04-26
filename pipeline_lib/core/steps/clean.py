@@ -30,7 +30,7 @@ class CleanStep(PipelineStep):
 
         df = data.raw
 
-        if self.filter:
+        if self.filter and data.is_train:
             df = self._filter(df)
 
         if self.remove_outliers:
