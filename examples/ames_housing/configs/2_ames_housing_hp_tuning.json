@@ -16,16 +16,16 @@
                 }
             },
             {
-                "step_type": "CleanStep",
-                "parameters": {}
-            },
-            {
                 "step_type": "TabularSplitStep",
                 "parameters": {
                     "train_percentage": 0.7,
                     "validation_percentage": 0.2,
                     "test_percentage": 0.1
                 }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {}
             },
             {
                 "step_type": "EncodeStep",
