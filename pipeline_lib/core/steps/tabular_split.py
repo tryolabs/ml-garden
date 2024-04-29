@@ -105,6 +105,12 @@ class TabularSplitStep(PipelineStep):
             if test_values:
                 test_df = df[df.index.isin(set(test_values))].copy()
 
+        data.train = train_df
+        data.validation = validation_df
+        if test_values is not None:
+            data.test = test_df
+
+        # Logging
         if self.group_by_columns is not None:
             train_groups = len(train_values)
             validation_groups = len(validation_values)
@@ -124,11 +130,6 @@ class TabularSplitStep(PipelineStep):
                     f"Number of groups in test set: {test_groups} |"
                     f" {test_groups / total_groups:.2%}"
                 )
-
-        data.train = train_df
-        data.validation = validation_df
-        if test_values is not None:
-            data.test = test_df
 
         train_rows = len(data.train)
         validation_rows = len(data.validation)
