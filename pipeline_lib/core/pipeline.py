@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import pprint
 import time
 from datetime import datetime
 from typing import Any, Optional
@@ -59,9 +58,6 @@ class Pipeline:
             self.logger.info("Predicting with the pipeline")
 
         self.data.is_train = is_train
-
-        pprint.pprint(self.data.data)
-
         for i, step in enumerate(steps_to_run):
             start_time = time.time()
             log_str = f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"

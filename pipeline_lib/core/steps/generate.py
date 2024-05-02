@@ -69,20 +69,29 @@ class GenerateStep(PipelineStep):
             # For example if an integer column has no NA values in the train set but has a NA on
             # the test set, we need to include it in the schema inference so that the column is
             # assigned a float dtype, instead of int, so that NA values are properly handled
-            opt_df = pd.concat([df, data.test]) if data.test is not None else df
+            # Handle the target column separately, since the prediction df won't have a target
+            opt_X = pd.concat([df, data.test]) if data.test is not None else df
+            opt_y = opt_X[[data.target]]
+            opt_X = opt_X.drop(columns=[data.target])
+
             if self.predict_path:
-                opt_df = pd.concat([df, self._load_data_from_file(self.predict_path)])
+                predict_df = self._load_data_from_file(self.predict_path)
+                if data.target in predict_df.columns:
+                    opt_y = pd.concat([opt_y, predict_df[[data.target]]])
+                    opt_X = pd.concat([opt_X, predict_df.drop(columns=[data.target])])
+                else:
+                    opt_X = pd.concat([opt_X, predict_df])
 
             if self.drop_columns is not None:
-                opt_df.drop(columns=self.drop_columns, inplace=True)
+                opt_X.drop(columns=self.drop_columns, inplace=True)
 
             if self.optimize_dtypes:
-                apply_all_dtype_conversions(
-                    df=opt_df, skip_cols=set(self.optimize_dtypes_skip_cols)
-                )
+                apply_all_dtype_conversions(df=opt_X, skip_cols=set(self.optimize_dtypes_skip_cols))
+                apply_all_dtype_conversions(df=opt_y, skip_cols=set(self.optimize_dtypes_skip_cols))
 
             # Save the schema for future use in predictions
-            data._generate_step_dtypes = opt_df.dtypes.to_dict()
+            data._generate_step_dtypes = opt_X.dtypes.to_dict()
+            data._generate_step_dtypes.update(opt_y.dtypes.to_dict())
             if self.train_path.endswith(".csv") or self.optimize_dtypes:
                 # Log the inferred schema for csvs or if we optimized dtypes
                 self.logger.info(
@@ -91,9 +100,13 @@ class GenerateStep(PipelineStep):
 
             # Re-split the optimized df into train/test, discard prediction since we're doing
             # training for now
-            df = opt_df.iloc[0 : len(df)]
+            i_max_row = len(df) + len(data.test) if data.test is not None else len(df)
+            opt_X = opt_X.iloc[:i_max_row, :]
+            opt_y = opt_y.iloc[:i_max_row, :]
+            opt_X = pd.concat([opt_X, opt_y], axis=1)
+            df = opt_X.iloc[0 : len(df)]
             if data.test is not None:
-                data.test = opt_df.iloc[len(df) :]
+                data.test = opt_X.iloc[len(df) :]
         else:
             # Apply the schema saved during training to the DataFrame
             for key, value in data._generate_step_dtypes.items():
