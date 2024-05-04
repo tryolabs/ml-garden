@@ -12,13 +12,16 @@
     // Hide .venv from explorer and searchbar
     //
     "files.watcherExclude": {
-        "**/.venv/**": true
+        "**/.venv/**": true,
+        "**/__pycache__/**": true
     },
     "files.exclude": {
-        "**/.venv/": true
+        "**/.venv/": true,
+        "**/__pycache__/**": true
     },
     "search.exclude": {
-        "**/.venv/": true
+        "**/.venv/": true,
+        "**/__pycache__/**": true
     },
     //
     // Linting and formatting
