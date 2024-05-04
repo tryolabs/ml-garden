@@ -73,7 +73,7 @@ def load_compressed_xgb_booster(filename: str) -> xgb.Booster:
     return model
 
 
-class XGBoostModel(Model):
+class XGBoost(Model):
     def __init__(self, **params):
         self.model = xgb.XGBRegressor(**params)
 
