@@ -98,6 +98,10 @@ class CalculateFeaturesStep(PipelineStep):
         if data.test is not None:
             data.test = self._create_datetime_features(data.test)
 
+        ## add datetime columns to ignore columns for training
+        if self.datetime_columns:
+            data.columns_to_ignore_for_training.extend(self.datetime_columns)
+
         return data
 
     def _create_datetime_features(
