@@ -24,7 +24,10 @@ class ModelRegistry:
         if model_name in self._model_registry:
             return self._model_registry[model_name]
         else:
-            raise ModelClassNotFoundError(f"Model class '{model_name}' not found in registry.")
+            raise ModelClassNotFoundError(
+                f"Model class '{model_name}' not found in registry. Available models:"
+                f" {list(self._model_registry.keys())}"
+            )
 
     def get_all_model_classes(self) -> dict:
         return self._model_registry
