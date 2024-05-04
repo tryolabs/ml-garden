@@ -90,9 +90,9 @@ class OptunaOptimizer:
         return metrics[metric](y_true, y_pred)
 
 
-class FitModelStep(PipelineStep):
+class ModelStep(PipelineStep):
     used_for_training = True
-    used_for_prediction = False
+    used_for_prediction = True
 
     def __init__(
         self,
@@ -109,6 +109,12 @@ class FitModelStep(PipelineStep):
         self.save_path = save_path
 
     def execute(self, data: DataContainer) -> DataContainer:
+        if data.is_train:
+            return self.train(data)
+
+        return self.predict(data)
+
+    def train(self, data: DataContainer) -> DataContainer:
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
         model_params = self.model_params
 
@@ -145,4 +151,26 @@ class FitModelStep(PipelineStep):
             self.logger.info(f"Saving the model to {self.save_path}")
             model.save(self.save_path)
 
+        # save dataset predictions for metrics calculation
+        self._save_datasets_predictions(data)
+
+        return data
+
+    def _save_datasets_predictions(self, data: DataContainer) -> None:
+        """Save the predictions for each dataset (train, val, test) in the DataContainer."""
+        for dataset_name in ["train", "validation", "test"]:
+            dataset = getattr(data, dataset_name, None)
+            encoded_dataset = getattr(data, f"X_{dataset_name}", None)
+
+            if dataset is None or encoded_dataset is None:
+                self.logger.warning(
+                    f"Dataset '{dataset_name}' not found. Skipping metric calculation."
+                )
+                continue
+
+            dataset[data.prediction_column] = data.model.predict(encoded_dataset)
+
+    def predict(self, data: DataContainer) -> DataContainer:
+        self.logger.info(f"Predicting with {self.model_class.__name__} model")
+        data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
         return data
