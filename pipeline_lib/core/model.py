@@ -16,7 +16,7 @@ class Model(ABC):
         y: pd.Series,
         eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
         verbose: Optional[bool] = True,
-    ):
+    ) -> None:
         """Abstract method for fitting the model."""
 
     @abstractmethod
