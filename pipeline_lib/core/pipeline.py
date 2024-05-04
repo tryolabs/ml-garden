@@ -156,7 +156,7 @@ class Pipeline:
             )
 
             # change model from string to class
-            if step_type == "FitModelStep":
+            if step_type == "ModelStep":
                 model_class_name = parameters.pop("model_class")
                 model_class = cls.model_registry.get_model_class(model_class_name)
                 parameters["model_class"] = model_class
