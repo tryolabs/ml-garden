@@ -26,12 +26,12 @@ class OptunaOptimizer:
         X_validation,
         y_validation,
         model_class: Type[Model],
-        model_params: dict,
+        model_parameters: dict,
     ) -> dict:
         def objective(trial):
-            # Create a copy of model_params, then update with the optuna suggested hyperparameters
+            # Create a copy of model_parameters, then update with the optuna hyperparameters
             param = {}
-            param.update(model_params)
+            param.update(model_parameters)
             param.update(self._create_trial_params(trial))
 
             model = model_class(**param)
@@ -97,14 +97,14 @@ class ModelStep(PipelineStep):
     def __init__(
         self,
         model_class: Type[Model],
-        model_params: Optional[dict] = None,
+        model_parameters: Optional[dict] = None,
         optuna_params: Optional[dict] = None,
         save_path: Optional[str] = None,
     ) -> None:
         super().__init__()
         self.init_logger()
         self.model_class = model_class
-        self.model_params = model_params or {}
+        self.model_parameters = model_parameters or {}
         self.optuna_params = optuna_params
         self.save_path = save_path
 
@@ -116,7 +116,7 @@ class ModelStep(PipelineStep):
 
     def train(self, data: DataContainer) -> DataContainer:
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
-        model_params = self.model_params
+        model_parameters = self.model_parameters
 
         assert data.X_train is not None and data.y_train is not None, (
             "Encoded train data not found in the DataContainer, make sure the EncodeStep was"
@@ -131,13 +131,13 @@ class ModelStep(PipelineStep):
                 data.X_validation,
                 data.y_validation,
                 self.model_class,
-                model_params,
+                model_parameters,
             )
-            model_params.update(optuna_model_params)
-            self.logger.info(f"Optimized model parameters: \n{json.dumps(model_params)}")
+            model_parameters.update(optuna_model_params)
+            self.logger.info(f"Optimized model parameters: \n{json.dumps(model_parameters)}")
             self.logger.info("Re-fitting the model with optimized parameters")
 
-        model = self.model_class(**model_params)
+        model = self.model_class(**model_parameters)
         model.fit(
             data.X_train,
             data.y_train,
