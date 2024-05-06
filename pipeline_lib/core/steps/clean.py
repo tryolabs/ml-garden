@@ -69,7 +69,8 @@ class CleanStep(PipelineStep):
             dropped_rows = before_filter_rows - len(df)
             dropped_percentage = (dropped_rows / before_filter_rows) * 100
             self.logger.info(
-                f"Filter '{key}': {value} | Dropped rows: {dropped_rows} ({dropped_percentage:.2f}%)"
+                f"Filter '{key}': {value} | Dropped rows:"
+                f" {dropped_rows} ({dropped_percentage:.2f}%)"
             )
         total_dropped_rows = original_rows - len(df)
         total_dropped_percentage = (total_dropped_rows / original_rows) * 100
