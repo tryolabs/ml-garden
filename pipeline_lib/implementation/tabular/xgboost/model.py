@@ -16,7 +16,7 @@ logger = logging.getLogger(__file__)
 # %%
 # Function to save and compress an XGBoost model
 def save_and_compress_xgb_booster(
-    model: xgb.Booster, filename: str, compresslevel: int = 9
+    model: xgb.Booster, filename: str, compression=zipfile.ZIP_BZIP2, compresslevel: int = 9
 ) -> None:
     """
     Saves an XGBoost model into a compressed file using BZ2 compression.
@@ -26,7 +26,9 @@ def save_and_compress_xgb_booster(
     model : xgb.Booster
         The XGBoost model to save.
     filename : str
-        The name of the file where to store the model. File extension should be .ubj or .json
+        The name of the file where to store the model. File extension should be .ubj or .json.
+        Use ".ubj" extension for Binary JSON format (more efficient, non-human-readable) or ".json"
+        extension for JSON format.
     compresslevel : int, optional
         Compression level (1-9) to use, higher is more compression. , by default 9
     """
@@ -39,14 +41,14 @@ def save_and_compress_xgb_booster(
     start_time = time.time()
     compression_utils.compress_zipfile(
         filename,
-        compression=zipfile.ZIP_BZIP2,
+        compression=compression,
         compresslevel=compresslevel,
         delete_uncompressed=True,
     )
     logger.debug(f"Model bzip2 compressed in {time.time() - start_time:.2f} seconds.")
 
 
-def load_bz2_compressed_xgb_booster(filename: str) -> xgb.Booster:
+def load_compressed_xgb_booster(filename: str) -> xgb.Booster:
     """
     Loads an XGBoost model from a BZ2 compressed UBJSON file.
 

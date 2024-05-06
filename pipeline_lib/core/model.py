@@ -26,7 +26,7 @@ class Model(ABC):
     def save(self, path: str) -> None:
         """Save the model."""
         if not path.endswith(".joblib"):
-            raise ValueError("The path must end with .joblib")
+            raise ValueError(f"The model path must end with .joblib. Received: {path}")
         joblib.dump(self, path)
 
     @classmethod
@@ -36,6 +36,6 @@ class Model(ABC):
             raise FileNotFoundError(f"File not found: {path}")
 
         if not path.endswith(".joblib"):
-            raise ValueError("The path must end with .joblib")
+            raise ValueError(f"The model path must end with .joblib. Received: {path}")
 
         return joblib.load(path)
