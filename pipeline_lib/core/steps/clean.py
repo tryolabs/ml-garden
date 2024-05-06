@@ -54,9 +54,21 @@ class CleanStep(PipelineStep):
         return data
 
     def _filter(self, df):
+        original_rows = len(df)
         for key, value in self.filter.items():
+            before_filter_rows = len(df)
             df = df.query(value)
-            self.logger.info(f"Dropped values by filter '{key}: {value}'")
+            dropped_rows = before_filter_rows - len(df)
+            dropped_percentage = (dropped_rows / before_filter_rows) * 100
+            self.logger.info(
+                f"Filter '{key}': {value} | Dropped rows: {dropped_rows} ({dropped_percentage:.2f}%)"
+            )
+        total_dropped_rows = original_rows - len(df)
+        total_dropped_percentage = (total_dropped_rows / original_rows) * 100
+        self.logger.info(
+            f"Total rows dropped: {total_dropped_rows} ({total_dropped_percentage:.2f}%) | Final"
+            f" number of rows: {len(df)}"
+        )
         return df
 
     def _remove_outliers(self, df):
