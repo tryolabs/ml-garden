@@ -112,6 +112,11 @@ class FitModelStep(PipelineStep):
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
         model_params = self.model_params
 
+        assert data.X_train is not None and data.y_train is not None, (
+            "Encoded train data not found in the DataContainer, make sure the EncodeStep was"
+            " executed before FitModelStep"
+        )
+
         if self.optuna_params:
             optimizer = OptunaOptimizer(self.optuna_params, self.logger)
             optuna_model_params = optimizer.optimize(
