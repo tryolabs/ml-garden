@@ -47,7 +47,7 @@ class CalculateReportsStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        df = df.drop(columns=data._drop_columns)
+        df = df.drop(columns=data.columns_to_ignore_for_training)
         X = df.drop(columns=[data.target])
 
         # Calculate SHAP values with progress tracking and logging
