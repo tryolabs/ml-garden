@@ -218,6 +218,8 @@ class Pipeline:
         >>> pipeline.log_experiment(data, experiment_name='my_experiment', run_name='run_1',
             dataset_name='input_data')
         """
+        if not data.is_train:
+            raise ValueError("Logging to MLflow is only supported for training runs.")
 
         def log_params_from_config(config):
             # Log top-level parameters
@@ -271,17 +273,9 @@ class Pipeline:
             # Log prediction metrics
             if data.metrics:
                 self.logger.debug("Logging prediction metrics to MLflow")
-                if data.is_train:
-                    for dataset_name, metrics in data.metrics.items():
-                        for metric_name, metric_value in metrics.items():
-                            mlflow.log_metric(f"{dataset_name}_{metric_name}", metric_value)
-                else:
-                    mlflow.log_metrics(data.metrics["prediction"])
-
-            # Log the model
-            if data.is_train and data.model:
-                self.logger.debug("Logging the model to MLflow")
-                mlflow.sklearn.log_model(data.model, artifact_path="model")
+                for dataset_name, metrics in data.metrics.items():
+                    for metric_name, metric_value in metrics.items():
+                        mlflow.log_metric(f"{dataset_name}_{metric_name}", metric_value)
 
             # Save feature importance as a png artifact
             if data.feature_importance is not None:
@@ -304,7 +298,6 @@ class Pipeline:
             # save data container pickle as an artifact
             if self.save_data_path:
                 self.logger.debug("Logging the data container to MLflow")
-                # change name to data_container.pkl
                 mlflow.log_artifact(self.save_data_path, artifact_path="data")
 
     def save_run(
