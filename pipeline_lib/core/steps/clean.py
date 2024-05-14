@@ -51,8 +51,6 @@ class CleanStep(PipelineStep):
         if self.filter:
             df = self._filter(df)
 
-        print(df)
-
         df = self._remove_outliers(df)
 
         df = self._fill_missing(df)
@@ -65,7 +63,7 @@ class CleanStep(PipelineStep):
 
         return df
 
-    def _filter(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _filter(self, df):
         original_rows = len(df)
         for key, value in self.filter.items():
             before_filter_rows = len(df)
