@@ -11,6 +11,7 @@ __pycache__/
 *.json
 *.pkl
 
+
 # ignore examples folder
 examples/
 
