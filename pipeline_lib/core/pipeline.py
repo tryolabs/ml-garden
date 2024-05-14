@@ -223,7 +223,7 @@ class Pipeline:
 
         def log_params_from_config(config):
             # Log top-level parameters
-            for key in ["name", "description", "save_data_path"]:
+            for key in ["name", "description", "parameters"]:
                 if key in config["pipeline"]:
                     mlflow.log_param(f"pipeline.{key}", config["pipeline"][key])
 
