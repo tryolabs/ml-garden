@@ -39,6 +39,7 @@ class Pipeline:
         save_data_path: str,
         target: str,
         columns_to_ignore_for_training: Optional[list[str]] = None,
+        tracking: Optional[dict] = None,
     ):
         self.data = DataContainer()
         self.steps = []
@@ -46,6 +47,7 @@ class Pipeline:
         self.data.target = target
         self.data.prediction_column = f"{target}_prediction"
         self.data.columns_to_ignore_for_training = columns_to_ignore_for_training or []
+        self.tracking = tracking or {}
         self.config = {}
 
     def add_steps(self, steps: list[PipelineStep]):
@@ -78,6 +80,18 @@ class Pipeline:
 
         if save:
             self.save_run(data)
+
+        if self.tracking and is_train:
+            self.logger.info("Logging pipeline run to MLflow")
+            self.log_experiment(
+                data,
+                experiment_name=self.tracking["experiment"],
+                run_name=self.tracking.get("run_name"),
+                dataset_name=self.tracking.get("dataset_name"),
+                description=self.tracking.get("description"),
+                tracking_uri=self.tracking.get("tracking_uri"),
+            )
+            self.logger.info("Finished logging pipeline run to MLflow")
 
         return data
 
@@ -128,6 +142,7 @@ class Pipeline:
             columns_to_ignore_for_training=config["pipeline"]["parameters"].get(
                 "columns_to_ignore_for_training", []
             ),
+            tracking=config["pipeline"]["parameters"].get("tracking"),
         )
         pipeline.config = config
 
@@ -298,7 +313,8 @@ class Pipeline:
             # save data container pickle as an artifact
             if self.save_data_path:
                 self.logger.debug("Logging the data container to MLflow")
-                mlflow.log_artifact(self.save_data_path, artifact_path="data")
+                compressed_data_path = self.save_data_path + ".zip"
+                mlflow.log_artifact(compressed_data_path, artifact_path="data")
 
     def save_run(
         self,
