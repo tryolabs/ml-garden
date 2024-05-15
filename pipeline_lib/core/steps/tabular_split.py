@@ -154,14 +154,8 @@ class TabularSplitStep(PipelineStep):
             train_split_values, validation_split_values = train_test_split(
                 split_values, train_size=self.train_percentage, random_state=get_random_state()
             )
-            if data.test is not None:
-                # Test dataset provided manually
-                concatted_test_groupby_columns = concatenate_columns(
-                    data.test, self.group_by_columns
-                )
-                test_split_values = concatted_test_groupby_columns.unique().tolist()
-            else:
-                test_split_values = []
+
+            test_split_values = []
 
         if concatted_groupby_columns is not None:
             # Group based splits
