@@ -29,9 +29,9 @@ class CalculateReportsStep(PipelineStep):
             raise ValueError("Model not found in data container.")
 
         df = (
-            data.test
-            if data.test is not None
-            else data.validation if data.validation is not None else None
+            data.X_test
+            if data.X_test is not None
+            else data.X_validation if data.X_validation is not None else None
         )
         if df is None:
             raise ValueError(
@@ -47,8 +47,7 @@ class CalculateReportsStep(PipelineStep):
             self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
             df = df.sample(n=self.max_samples, random_state=42)
 
-        df = df.drop(columns=data.columns_to_ignore_for_training)
-        X = df.drop(columns=[data.target])
+        X = df
 
         # Calculate SHAP values with progress tracking and logging
         explainer = shap.TreeExplainer(model.model)
