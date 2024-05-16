@@ -17,6 +17,7 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
+        filter: Optional[dict] = None,
     ):
         self.init_logger()
         self.fill_missing = fill_missing
@@ -24,6 +25,7 @@ class CleanStep(PipelineStep):
         self.convert_dtypes = convert_dtypes
         self.drop_na_columns = drop_na_columns
         self.drop_ids = drop_ids
+        self.filter = filter
 
     def execute(self, data: DataContainer) -> DataContainer:
         self.logger.info("Cleaning tabular data...")
@@ -45,6 +47,9 @@ class CleanStep(PipelineStep):
 
     def _clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """Clean the DataFrame."""
+
+        df = self._filter(df)
+
         df = self._remove_outliers(df)
 
         df = self._fill_missing(df)
@@ -55,6 +60,26 @@ class CleanStep(PipelineStep):
 
         df = self._drop_ids(df)
 
+        return df
+
+    def _filter(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self.filter:
+            original_rows = len(df)
+            for key, value in self.filter.items():
+                before_filter_rows = len(df)
+                df = df.query(value)
+                dropped_rows = before_filter_rows - len(df)
+                dropped_percentage = (dropped_rows / before_filter_rows) * 100
+                self.logger.info(
+                    f"Filter '{key}': {value} | Dropped rows:"
+                    f" {dropped_rows} ({dropped_percentage:.2f}%)"
+                )
+            total_dropped_rows = original_rows - len(df)
+            total_dropped_percentage = (total_dropped_rows / original_rows) * 100
+            self.logger.info(
+                f"Total rows dropped: {total_dropped_rows} ({total_dropped_percentage:.2f}%) |"
+                f"Final number of rows: {len(df)}"
+            )
         return df
 
     def _remove_outliers(self, df: pd.DataFrame) -> pd.DataFrame:
