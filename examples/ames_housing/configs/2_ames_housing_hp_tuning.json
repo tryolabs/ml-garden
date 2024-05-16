@@ -1,0 +1,113 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "ames_housing.pkl",
+            "target": "SalePrice"
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "examples/ames_housing/data/train.csv",
+                    "predict_path": "examples/ames_housing/data/test.csv",
+                    "drop_columns": ["Id"]
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
+                }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "EncodeStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "FitModelStep",
+                "parameters": {
+                    "model_class": "XGBoostModel",
+                    "model_params": {
+                        "objective": "reg:squarederror",
+                        "eval_metric": "rmse",
+                        "early_stopping_rounds": 20,
+                        "tree_method":"hist"
+                    },
+                    "optuna_params": {
+                        "trials": 100,
+                        "study_name": "ames_housing_study_1",
+                        "storage": "sqlite:///db.sqlite3",
+                        "load_if_exists": true,
+                        "objective_metric": "rmse",
+                        "search_space": {
+                            "max_depth": {
+                                "type": "int",
+                                "args": [
+                                    1,
+                                    15
+                                ]
+                            },
+                            "eta": {
+                                "type": "float",
+                                "args": [
+                                    0.01,
+                                    0.3
+                                ]
+                            },
+                            "n_estimators": {
+                                "type": "int",
+                                "args": [
+                                    20,
+                                    2500
+                                ]
+                            },
+                            "min_child_weight": {
+                                "type": "int",
+                                "args": [
+                                    0,
+                                    10
+                                ]
+                            },
+                            "subsample": {
+                                "type": "float",
+                                "args": [
+                                    0.5,
+                                    1.0
+                                ]
+                            },
+                            "colsample_bytree": {
+                                "type": "float",
+                                "args": [
+                                    0.5,
+                                    1.0
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "step_type": "PredictStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "CalculateMetricsStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
+            }
+        ]
+    }
+}
