@@ -83,14 +83,7 @@ class Pipeline:
 
         if self.tracking and is_train:
             self.logger.info("Logging pipeline run to MLflow")
-            self.log_experiment(
-                data,
-                experiment_name=self.tracking["experiment"],
-                run_name=self.tracking.get("run_name"),
-                dataset_name=self.tracking.get("dataset_name"),
-                description=self.tracking.get("description"),
-                tracking_uri=self.tracking.get("tracking_uri"),
-            )
+            self.log_experiment(data, **self.tracking)
             self.logger.info("Finished logging pipeline run to MLflow")
 
         return data
@@ -178,8 +171,8 @@ class Pipeline:
     def log_experiment(
         self,
         data: DataContainer,
-        experiment_name: str,
-        run_name: Optional[str] = None,
+        experiment: str,
+        run: Optional[str] = None,
         dataset_name: Optional[str] = None,
         description: Optional[str] = None,
         tracking_uri: Optional[str] = None,
@@ -191,9 +184,9 @@ class Pipeline:
         ----------
         data : DataContainer
             The data container object containing the pipeline data.
-        experiment_name : str
+        experiment : str
             The name of the MLflow experiment.
-        run_name : str, optional
+        run : str, optional
             The name of the MLflow run. If not provided, a default run name will be generated
             based on the pipeline class name, mode (train or predict), and current timestamp.
         dataset_name : str, optional
@@ -218,8 +211,8 @@ class Pipeline:
         - Training metrics (if available in the `data` object)
         - Trained model (if available in the `data` object)
 
-        The function sets the MLflow experiment using the provided `experiment_name` and starts
-        a new MLflow run with the specified `run_name` (or a default run name if not provided).
+        The function sets the MLflow experiment using the provided `experiment` and starts
+        a new MLflow run with the specified `run` (or a default run name if not provided).
 
         The top-level pipeline parameters and step-level parameters are logged as MLflow parameters.
         If `dataset_name` is provided, the input data is logged as an MLflow input using the
@@ -230,7 +223,7 @@ class Pipeline:
         Examples
         --------
         >>> data = DataContainer(...)
-        >>> pipeline.log_experiment(data, experiment_name='my_experiment', run_name='run_1',
+        >>> pipeline.log_experiment(data, experiment='my_experiment', run='run_1',
             dataset_name='input_data')
         """
         if not data.is_train:
@@ -263,16 +256,16 @@ class Pipeline:
             self.logger.info(f"Setting MLflow tracking URI to: {tracking_uri}")
             mlflow.set_tracking_uri(tracking_uri)
 
-        mlflow.set_experiment(experiment_name)
+        mlflow.set_experiment(experiment)
 
-        if not run_name:
+        if not run:
             mode_name = "train" if data.is_train else "predict"
-            run_name = (
+            run = (
                 f"{self.__class__.__name__}_{mode_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
-            self.logger.info(f"Run name not provided. Using default run name: {run_name}")
+            self.logger.info(f"Run name not provided. Using default run name: {run}")
 
-        with mlflow.start_run(run_name=run_name):
+        with mlflow.start_run(run_name=run):
 
             mlflow.set_tag("name", self.config["pipeline"]["name"])
 
