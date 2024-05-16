@@ -173,4 +173,5 @@ class ModelStep(PipelineStep):
     def predict(self, data: DataContainer) -> DataContainer:
         self.logger.info(f"Predicting with {self.model_class.__name__} model")
         data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
+        data.predictions = data.flow[data.prediction_column]
         return data
