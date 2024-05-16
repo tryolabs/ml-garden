@@ -1,0 +1,60 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "ames_housing.pkl",
+            "target": "SalePrice",
+            "tracking": {
+                "experiment": "ames_housing",
+                "run_name": "baseline"
+            }
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "examples/ames_housing/data/train.csv",
+                    "predict_path": "examples/ames_housing/data/test.csv",
+                    "drop_columns": ["Id"]
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
+                }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "EncodeStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "FitModelStep",
+                "parameters": {
+                    "model_class": "XGBoostModel"
+                }
+            },
+            {
+                "step_type": "PredictStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "CalculateMetricsStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
+            }
+        ]
+    }
+}

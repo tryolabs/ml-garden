@@ -1,0 +1,75 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "ames_housing.pkl",
+            "target": "SalePrice",
+            "tracking": {
+                "experiment": "ames_housing",
+                "run_name": "hp_tuned"
+            }
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "examples/ames_housing/data/train.csv",
+                    "predict_path": "examples/ames_housing/data/test.csv",
+                    "drop_columns": ["Id"]
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
+                }
+            },
+            {
+                "step_type": "CleanStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "EncodeStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "FitModelStep",
+                "parameters": {
+                    "model_class": "XGBoostModel",
+                    "model_params": {
+                        "max_depth": 13,
+                        "eta": 0.03239049988148554,
+                        "objective": "reg:squarederror",
+                        "eval_metric": "rmse",
+                        "n_jobs": -1,
+                        "n_estimators": 2230,
+                        "min_child_weight": 5,
+                        "subsample": 0.8178467889715423,
+                        "colsample_bytree": 0.6268890901817588,
+                        "early_stopping_rounds": 20,
+                        "tree_method": "hist"
+                    }
+                }
+            },
+            {
+                "step_type": "PredictStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "CalculateMetricsStep",
+                "parameters": {}
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "max_samples": 100,
+                    "X_background_samples": 50,
+                    "enable_step": true
+                }
+            }
+        ]
+    }
+}
