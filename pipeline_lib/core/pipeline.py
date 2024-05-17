@@ -296,7 +296,7 @@ class Pipeline:
                 fit_step = next(
                     step
                     for step in self.config["pipeline"]["steps"]
-                    if step["step_type"] == "FitModelStep"
+                    if step["step_type"] == "ModelStep"
                 )
                 fit_step["parameters"]["model_class"] = fit_step["parameters"][
                     "model_class"
