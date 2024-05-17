@@ -52,7 +52,7 @@ class Pipeline:
         """Add steps to the pipeline."""
         self.steps.extend(steps)
 
-    def run(self, is_train: bool) -> DataContainer:
+    def run(self, is_train: bool, df: Optional[pd.DataFrame] = None) -> DataContainer:
         """Run the pipeline on the given data."""
 
         if is_train:
@@ -60,6 +60,8 @@ class Pipeline:
             self.logger.info("Training the pipeline")
         else:
             self.data.update(DataContainer.from_pickle(self.save_data_path))
+            if df is not None:
+                self.data.raw = df
             steps_to_run = [step for step in self.steps if step.used_for_prediction]
             self.logger.info("Predicting with the pipeline")
 
@@ -84,12 +86,25 @@ class Pipeline:
         return data
 
     def train(self) -> DataContainer:
-        """Run the pipeline on the given data."""
+        """Run the pipeline in training mode."""
         return self.run(is_train=True)
 
-    def predict(self) -> DataContainer:
-        """Run the pipeline on the given data."""
-        return self.run(is_train=False)
+    def predict(self, df: Optional[pd.DataFrame] = None) -> DataContainer:
+        """Run the pipeline in inference mode.
+
+        Parameters
+        ----------
+        df : Optional[pd.DataFrame], optional
+            The input data to make predictions on. If not provided, the data is taken from the
+            `predict_path` attribute of the GenerateStep in the configuration JSON.
+
+        Returns
+        -------
+        DataContainer
+            The data container object containing the pipeline data after running the pipeline in
+            inference mode.
+        """
+        return self.run(is_train=False, df=df)
 
     @classmethod
     def _validate_configuration(cls, config: dict[str, Any]) -> None:

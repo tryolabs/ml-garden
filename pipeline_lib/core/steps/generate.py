@@ -41,6 +41,11 @@ class GenerateStep(PipelineStep):
     def execute(self, data: DataContainer) -> DataContainer:
         """Generate the data from the file."""
 
+        # Skip GenerateStep if the data is already loaded
+        if not data.is_train and data.raw is not None:
+            data.flow = data.raw
+            return data
+
         if data.is_train:
             if not self.train_path:
                 raise ValueError("train_path must be provided for training.")
@@ -50,8 +55,11 @@ class GenerateStep(PipelineStep):
                 test_df = self._load_data_from_file(self.test_path)
                 data.test = test_df
 
-        if not data.is_train and not self.predict_path:
-            raise ValueError("predict_path must be provided for prediction.")
+        if not data.is_train and not self.predict_path and data.raw is None:
+            raise ValueError(
+                "predict_path was not set in the configuration file, and no DataFrame was provided"
+                " for prediction. Please provide a predict_path or a DataFrame for prediction."
+            )
 
         file_path = self.train_path if data.is_train else self.predict_path
 
