@@ -7,7 +7,7 @@
             "target": "SalePrice",
             "tracking": {
                 "experiment": "ames_housing",
-                "run_name": "hp_tuned"
+                "run": "hp_tuned"
             }
         },
         "steps": [
@@ -16,7 +16,9 @@
                 "parameters": {
                     "train_path": "examples/ames_housing/data/train.csv",
                     "predict_path": "examples/ames_housing/data/test.csv",
-                    "drop_columns": ["Id"]
+                    "drop_columns": [
+                        "Id"
+                    ]
                 }
             },
             {
@@ -28,18 +30,16 @@
                 }
             },
             {
-                "step_type": "CleanStep",
-                "parameters": {}
+                "step_type": "CleanStep"
             },
             {
-                "step_type": "EncodeStep",
-                "parameters": {}
+                "step_type": "EncodeStep"
             },
             {
-                "step_type": "FitModelStep",
+                "step_type": "ModelStep",
                 "parameters": {
-                    "model_class": "XGBoostModel",
-                    "model_params": {
+                    "model_class": "XGBoost",
+                    "model_parameters": {
                         "max_depth": 13,
                         "eta": 0.03239049988148554,
                         "objective": "reg:squarederror",
@@ -55,12 +55,7 @@
                 }
             },
             {
-                "step_type": "PredictStep",
-                "parameters": {}
-            },
-            {
-                "step_type": "CalculateMetricsStep",
-                "parameters": {}
+                "step_type": "CalculateMetricsStep"
             },
             {
                 "step_type": "ExplainerDashboardStep",
