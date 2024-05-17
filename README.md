@@ -62,82 +62,53 @@ Here's an example of how to use the library to run an XGBoost pipeline:
     "pipeline": {
         "name": "XGBoostTrainingPipeline",
         "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "ames_housing.pkl",
+            "target": "SalePrice",
+            "tracking": {
+                "experiment": "ames_housing",
+                "run": "baseline"
+            }
+        },
         "steps": [
             {
                 "step_type": "GenerateStep",
                 "parameters": {
-                    "train_path": "examples/ocf/data/trainset_forecast.parquet",
-                    "predict_path": "examples/ocf/data/testset_forecast.parquet"
-                }
-            },
-            {
-                "step_type": "CleanStep",
-                "parameters": {
-                    "drop_na_columns": [
-                        "average_power_kw",
-                        "diffuse_radiation"
-                    ],
-                    "drop_ids": {
-                        "ss_id": [
-                            7759,
-                            7061
-                        ]
-                    }
-                }
-            },
-            {
-                "step_type": "CalculateFeaturesStep",
-                "parameters": {
-                    "datetime_columns": [
-                        "date"
-                    ],
-                    "features": [
-                        "year",
-                        "month",
-                        "day",
-                        "hour",
-                        "minute"
+                    "train_path": "examples/ames_housing/data/train.csv",
+                    "predict_path": "examples/ames_housing/data/test.csv",
+                    "drop_columns": [
+                        "Id"
                     ]
                 }
             },
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.95
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
                 }
             },
             {
-                "step_type": "FitModelStep",
+                "step_type": "CleanStep"
+            },
+            {
+                "step_type": "EncodeStep"
+            },
+            {
+                "step_type": "ModelStep",
                 "parameters": {
-                    "model_class": "XGBoostModel",
-                    "target": "average_power_kw",
-                    "drop_columns": [
-                        "ss_id",
-                        "operational_at",
-                        "total_energy_kwh"
-                    ],
-                    "model_params": {
-                        "max_depth": 12,
-                        "eta": 0.12410097733370863,
-                        "objective": "reg:squarederror",
-                        "eval_metric": "mae",
-                        "n_jobs": -1,
-                        "n_estimators": 40,
-                        "min_child_weight": 7,
-                        "subsample": 0.8057743223537057,
-                        "colsample_bytree": 0.6316852278944352,
-                        "early_stopping_rounds": 10
-                    },
-                    "save_path": "model_forecast.joblib"
+                    "model_class": "XGBoost"
                 }
             },
             {
-                "step_type": "PredictStep",
-                "parameters": {}
+                "step_type": "CalculateMetricsStep"
             },
             {
-                "step_type": "CalculateMetricsStep",
-                "parameters": {}
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
             }
         ]
     }
@@ -153,14 +124,22 @@ from pipeline_lib import Pipeline
 
 logging.basicConfig(level=logging.INFO)
 
-data = Pipeline.from_json("config.json").run(is_train=True)
+data = Pipeline.from_json("config.json").train()
 ```
 
-3. To run it in prediction mode you have to set `is_train` to `False`.
+3. Run the pipeline for inference using the following code:
 
 ```python
-data = Pipeline.from_json("config.json").run(is_train=False)
+data = Pipeline.from_json("config.json").predict()
 ```
+
+You can also set the prediction data as a DataFrame:
+
+```python
+data = Pipeline.from_json("config.json").predict(df)
+```
+
+This will use the DataFrame provided in code, not needing the `predict_path` file in the configuration parameters for the Generate step.
 
 The library allows users to define custom steps for data generation, cleaning, and preprocessing, which can be seamlessly integrated into the pipeline.
 
