@@ -12,7 +12,9 @@
                 "parameters": {
                     "train_path": "examples/ames_housing/data/train.csv",
                     "predict_path": "examples/ames_housing/data/test.csv",
-                    "drop_columns": ["Id"]
+                    "drop_columns": [
+                        "Id"
+                    ]
                 }
             },
             {
@@ -24,22 +26,20 @@
                 }
             },
             {
-                "step_type": "CleanStep",
-                "parameters": {}
+                "step_type": "CleanStep"
             },
             {
-                "step_type": "EncodeStep",
-                "parameters": {}
+                "step_type": "EncodeStep"
             },
             {
-                "step_type": "FitModelStep",
+                "step_type": "ModelStep",
                 "parameters": {
-                    "model_class": "XGBoostModel",
-                    "model_params": {
+                    "model_class": "XGBoost",
+                    "model_parameters": {
                         "objective": "reg:squarederror",
                         "eval_metric": "rmse",
                         "early_stopping_rounds": 20,
-                        "tree_method":"hist"
+                        "tree_method": "hist"
                     },
                     "optuna_params": {
                         "trials": 100,
@@ -95,12 +95,7 @@
                 }
             },
             {
-                "step_type": "PredictStep",
-                "parameters": {}
-            },
-            {
-                "step_type": "CalculateMetricsStep",
-                "parameters": {}
+                "step_type": "CalculateMetricsStep"
             },
             {
                 "step_type": "ExplainerDashboardStep",
