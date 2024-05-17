@@ -744,9 +744,9 @@ class DataContainer:
         BaseExplainer
             The explainer stored in the DataContainer.
         """
-        if self.is_train:
+        if not self.is_train:
             raise ValueError(
-                "Explainer is only available for prediction. Pipeline was executed on training"
+                "Explainer is only available for training. Pipeline was executed on prediction"
                 " mode."
             )
         return self["explainer"]
