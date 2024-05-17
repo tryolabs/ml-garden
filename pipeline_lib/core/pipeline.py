@@ -10,7 +10,6 @@ from typing import Any, Optional
 import matplotlib.pyplot as plt
 import mlflow
 import pandas as pd
-from mlflow.data import from_pandas
 
 from pipeline_lib.core.data_container import DataContainer
 from pipeline_lib.core.model_registry import ModelRegistry
@@ -54,7 +53,7 @@ class Pipeline:
         """Add steps to the pipeline."""
         self.steps.extend(steps)
 
-    def run(self, is_train: bool, save: bool = True) -> DataContainer:
+    def run(self, is_train: bool) -> DataContainer:
         """Run the pipeline on the given data."""
 
         if is_train:
@@ -77,9 +76,6 @@ class Pipeline:
 
         if is_train:
             data.save(self.save_data_path, keys=self.KEYS_TO_SAVE)
-
-        if save:
-            self.save_run(data)
 
         if self.tracking and is_train:
             self.logger.info("Logging pipeline run to MLflow")
@@ -173,7 +169,6 @@ class Pipeline:
         data: DataContainer,
         experiment: str,
         run: Optional[str] = None,
-        dataset_name: Optional[str] = None,
         description: Optional[str] = None,
         tracking_uri: Optional[str] = None,
     ) -> None:
@@ -189,9 +184,6 @@ class Pipeline:
         run : str, optional
             The name of the MLflow run. If not provided, a default run name will be generated
             based on the pipeline class name, mode (train or predict), and current timestamp.
-        dataset_name : str, optional
-            The name of the dataset to be logged as an input to MLflow. If provided, the input
-            data will be logged with the specified dataset name.
         description : str, optional
             The description of the MLflow run.
         tracking_uri : str, optional
@@ -223,8 +215,7 @@ class Pipeline:
         Examples
         --------
         >>> data = DataContainer(...)
-        >>> pipeline.log_experiment(data, experiment='my_experiment', run='run_1',
-            dataset_name='input_data')
+        >>> pipeline.log_experiment(data, experiment='ames_housing', run='baseline')
         """
         if not data.is_train:
             raise ValueError("Logging to MLflow is only supported for training runs.")
@@ -274,10 +265,6 @@ class Pipeline:
             if description:
                 mlflow.set_tag("mlflow.note.content", description)
 
-            if dataset_name:
-                self.logger.info(f"Logging input data to MLflow with dataset name: {dataset_name}")
-                mlflow.log_input(from_pandas(data.raw), dataset_name)
-
             # Log prediction metrics
             if data.metrics:
                 self.logger.debug("Logging prediction metrics to MLflow")
@@ -308,30 +295,6 @@ class Pipeline:
                 self.logger.debug("Logging the data container to MLflow")
                 compressed_data_path = self.save_data_path + ".zip"
                 mlflow.log_artifact(compressed_data_path, artifact_path="data")
-
-    def save_run(
-        self,
-        data: DataContainer,
-        parent_folder: str = "runs",
-    ) -> None:
-        """Save the pipeline run."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        folder_name = f"{self.__class__.__name__}_{timestamp}"
-        run_folder = os.path.join(parent_folder, folder_name)
-
-        # Create the run folder
-        os.makedirs(run_folder, exist_ok=True)
-
-        # Save the JSON configuration
-        with open(os.path.join(run_folder, "pipeline_config.json"), "w") as f:
-            json.dump(self.config, f, indent=4, cls=CustomJSONEncoder)
-
-        # Save the training metrics
-        if data.metrics:
-            with open(os.path.join(run_folder, "metrics.json"), "w") as f:
-                json.dumps({k: str(v) for k, v in data.metrics.items()}, indent=4)
-
-        self.logger.info(f"Pipeline run saved to {run_folder}")
 
     def __str__(self) -> str:
         step_names = [f"{i + 1}. {step.__class__.__name__}" for i, step in enumerate(self.steps)]
