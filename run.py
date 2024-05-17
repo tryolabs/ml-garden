@@ -1,42 +1,71 @@
-# %%
 import argparse
 import logging
 
-import pandas as pd
+from explainerdashboard import ExplainerDashboard
 
 from pipeline_lib import Pipeline
 
-pd.options.display.max_rows = 100
+# Constants
+DEFAULT_LOG_LEVEL = "INFO"
+LOG_LEVEL_CHOICES = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+DEFAULT_PORT = 8050
 
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger()
+def setup_logging(log_level: int) -> None:
+    """
+    Set up logging configuration.
 
-# Create an argument parser
-parser = argparse.ArgumentParser(description="Run pipeline from JSON file")
-parser.add_argument("json_path", help="Path to the JSON file")
+    Parameters
+    ----------
+    log_level : int
+        Logging level as defined in the logging module.
+    """
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
-# Add mutually exclusive group for train and predict arguments
-mode_group = parser.add_mutually_exclusive_group()
-mode_group.add_argument(
-    "--train", action="store_true", help="Run the pipeline in train mode (default)"
-)
-mode_group.add_argument("--predict", action="store_true", help="Run the pipeline in predict mode")
 
-# Parse the command-line arguments
-args = parser.parse_args()
+def main() -> None:
+    """
+    Main function to run the pipeline based on command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Run the pipeline.")
+    parser.add_argument("config_file", type=str, help="Path to the configuration JSON file.")
+    parser.add_argument(
+        "--predict", action="store_true", help="Run the pipeline in prediction mode."
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=DEFAULT_LOG_LEVEL,
+        choices=LOG_LEVEL_CHOICES,
+        help=f"Set the log level (default: {DEFAULT_LOG_LEVEL})",
+    )
+    parser.add_argument("--explainer", action="store_true", help="Run the explainer dashboard.")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help=f"Port for the explainer dashboard (default: {DEFAULT_PORT}).",
+    )
+    args = parser.parse_args()
 
-# Get the JSON file path from the command-line argument
-json_path = args.json_path
+    # Set up logging
+    log_level = getattr(logging, args.log_level.upper())
+    setup_logging(log_level)
 
-# Determine the mode based on the provided arguments
-is_train = not args.predict
+    logging.info(f"Loading pipeline from {args.config_file}")
+    pipeline = Pipeline.from_json(args.config_file)
 
-# Load and run the pipeline using the provided JSON file path
-data = Pipeline.from_json(json_path).run(is_train=is_train)
+    if args.predict:
+        pipeline.predict()
+    else:
+        data = pipeline.train()
+        if args.explainer and data.explainer is not None:
+            ExplainerDashboard(explainer=data.explainer).run(port=args.port)
 
-# %%
+
+if __name__ == "__main__":
+    main()
