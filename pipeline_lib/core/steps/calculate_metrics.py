@@ -14,11 +14,10 @@ class CalculateMetricsStep(PipelineStep):
     used_for_prediction = False
     used_for_training = True
 
-    def __init__(self, mape_threshold: float = 0.01) -> None:
+    def __init__(self) -> None:
         """Initialize CalculateMetricsStep."""
         super().__init__()
         self.init_logger()
-        self.mape_threshold = mape_threshold
 
     def _calculate_metrics(self, true_values: pd.Series, predictions: pd.Series) -> dict:
         mae = mean_absolute_error(true_values, predictions)
@@ -30,21 +29,11 @@ class CalculateMetricsStep(PipelineStep):
         max_error = np.max(np.abs(true_values - predictions))
         median_absolute_error = np.median(np.abs(true_values - predictions))
 
-        # MAPE calculation with threshold
-        mask = (true_values > self.mape_threshold) & (predictions > self.mape_threshold)
-        mape_true_values = true_values[mask]
-        mape_predictions = predictions[mask]
-        if len(mape_true_values) > 0:
-            mape = np.mean(np.abs((mape_true_values - mape_predictions) / mape_true_values)) * 100
-        else:
-            mape = np.nan
-
         return {
             "MAE": str(mae),
             "RMSE": str(rmse),
             "R_2": str(r2),
             "Mean Error": str(me),
-            "MAPE": str(mape),
             "Max Error": str(max_error),
             "Median Absolute Error": str(median_absolute_error),
         }
