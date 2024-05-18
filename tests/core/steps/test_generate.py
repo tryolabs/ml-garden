@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps.generate import GenerateStep
+from pipeline_lib.core.steps import GenerateStep
 
 
 # Fixture to create a sample CSV file for testing
