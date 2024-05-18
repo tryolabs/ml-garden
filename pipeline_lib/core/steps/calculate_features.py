@@ -80,7 +80,21 @@ class CalculateFeaturesStep(PipelineStep):
     def _extract_feature(self, df: pd.DataFrame, column: str, feature: str) -> None:
         """Extract a single feature from a datetime column."""
         extractor = self.feature_extractors[feature]
-        df.loc[:, f"{column}_{feature}"] = extractor(df[column])
+        feature_column = f"{column}_{feature}"
+
+        try:
+            if feature in ["year", "dayofyear"]:
+                df.loc[:, feature_column] = extractor(df[column]).astype("uint16")
+            elif feature in ["month", "day", "hour", "minute", "second", "weekday"]:
+                df.loc[:, feature_column] = extractor(df[column]).astype("uint8")
+            else:
+                raise ValueError(f"Unsupported feature: {feature}")
+        except AttributeError:
+            error_message = (
+                f"Column '{column}' contains invalid datetime values. Please ensure that the column"
+                " contains valid datetime values before extracting features."
+            )
+            raise ValueError(error_message)
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step."""
