@@ -7,7 +7,7 @@ from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import EncodeStep
 
 
-def input_data() -> pd.DataFrame:
+def train_data() -> pd.DataFrame:
     # Data as a dictionary
     data = {
         "year": np.array([2023, 2023, 2023, 2023, 2023, 2023, 2024, 2024], dtype=np.int64),
@@ -28,7 +28,7 @@ def input_data() -> pd.DataFrame:
 def train_data_container() -> DataContainer:
     data = DataContainer({"target": "target", "is_train": True})
     data.columns_to_ignore_for_training = []
-    data.train = input_data()
+    data.train = train_data()
     return data
 
 
