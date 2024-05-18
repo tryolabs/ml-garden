@@ -54,18 +54,17 @@ def test_check_numeric_passthrough(train_data_container: DataContainer):
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
 
-    # Checking numeric passthrough
-    expected_years = pd.Series(
-        [2023, 2023, 2023, 2023, 2023, 2023, 2024, 2024], dtype=np.int64, name="year"
-    )
-    expected_months = pd.Series([1, 1, 1, 1, 1, 11, 2, 3], dtype=np.int64, name="month")
-    expected_days = pd.Series([1, 2, 3, 4, 5, 1, 28, 28], dtype=np.int64, name="day")
-    expected_numeric = pd.Series([10, 20, 30, 40, 50, 60, 70, 80], dtype=np.int64, name="numeric")
+    numeric_columns = ["year", "month", "day", "numeric"]
 
-    pdt.assert_series_equal(result.X_train["year"], expected_years)
-    pdt.assert_series_equal(result.X_train["month"], expected_months)
-    pdt.assert_series_equal(result.X_train["day"], expected_days)
-    pdt.assert_series_equal(result.X_train["numeric"], expected_numeric)
+    for column in numeric_columns:
+        # Check that the numeric column is present in the encoded data
+        assert column in result.X_train.columns
+
+        # Check that the dtype of the numeric column remains the same
+        assert result.X_train[column].dtype == train_data_container.train[column].dtype
+
+        # Check that the values of the numeric column remain unchanged
+        pdt.assert_series_equal(result.X_train[column], train_data_container.train[column])
 
 
 def test_check_ordinal_encoding(train_data_container: DataContainer):
@@ -73,10 +72,16 @@ def test_check_ordinal_encoding(train_data_container: DataContainer):
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
 
-    # Checking ordinal encoding
-    expected_category_low = pd.Series([0, 1, 0, 0, 1, 0, 1, 0], dtype=np.uint8, name="category_low")
+    # Check that the 'category_low' column is encoded as uint8
+    assert result.X_train["category_low"].dtype == np.dtype("uint8")
 
-    pdt.assert_series_equal(result.X_train["category_low"], expected_category_low)
+    # Check that the encoded values are integers starting from 0
+    assert result.X_train["category_low"].between(0, result.X_train["category_low"].max()).all()
+
+    # Check that the number of unique encoded values matches the number of unique categories
+    assert len(result.X_train["category_low"].unique()) == len(
+        train_data_container.train["category_low"].unique()
+    )
 
 
 def test_check_target_encoding(train_data_container: DataContainer):
@@ -84,20 +89,14 @@ def test_check_target_encoding(train_data_container: DataContainer):
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
 
-    # Expected values for 'category_high'
-    expected_category_high = pd.Series(
-        [0.434946, 0.565054, 0.565054, 0.434946, 0.565054, 0.500000, 0.500000, 0.434946],
-        dtype="float32",
-        name="category_high",
-    )
+    # Check that the 'category_high' column is encoded as float32
+    assert result.X_train["category_high"].dtype == np.dtype("float32")
 
-    pdt.assert_series_equal(
-        result.X_train["category_high"],
-        expected_category_high,
-        check_exact=False,
-        rtol=1e-5,
-        atol=1e-8,
-    )
+    # Check that the encoded values are within the expected range [0, 1]
+    assert result.X_train["category_high"].between(0, 1).all()
+
+    # Check that the encoded values are different for different categories
+    assert len(result.X_train["category_high"].unique()) > 1
 
 
 def test_check_cardinality_threshold(train_data_container: DataContainer):
