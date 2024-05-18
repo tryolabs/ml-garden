@@ -78,6 +78,9 @@ class GenerateStep(PipelineStep):
             # the test set, we need to include it in the schema inference so that the column is
             # assigned a float dtype, instead of int, so that NA values are properly handled
             # Handle the target column separately, since the prediction df won't have a target
+            if data.target is None:
+                raise ValueError("Target not found in DataContainer at Generate step.")
+
             opt_X = pd.concat([df, data.test]) if data.test is not None else df
             opt_y = opt_X[[data.target]]
             opt_X = opt_X.drop(columns=[data.target])
@@ -117,6 +120,11 @@ class GenerateStep(PipelineStep):
                 data.test = opt_X.iloc[len(df) :]
         else:
             # Apply the schema saved during training to the DataFrame
+            if data._generate_step_dtypes is None:
+                raise AttributeError(
+                    "Training schema not found in DataContainer. "
+                    "Please train the pipeline before making predictions."
+                )
             for key, value in data._generate_step_dtypes.items():
                 try:
                     if key in df.columns:
