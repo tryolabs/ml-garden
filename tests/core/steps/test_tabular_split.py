@@ -66,10 +66,11 @@ def test_that_test_percentage_is_needed_with_validation():
         )
 
 
+# pyright: ignore[reportCallIssue]
 def test_that_train_percentage_is_needed():
     """Test to check if the train percentage is needed."""
     with pytest.raises(TypeError):
-        split_step = TabularSplitStep(  # noqa: F841
+        split_step = TabularSplitStep(  # pyright: ignore[reportCallIssue] # noqa: F841
             validation_percentage=0.1,
             test_percentage=0.1,
         )
