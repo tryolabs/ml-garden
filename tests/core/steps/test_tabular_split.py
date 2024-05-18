@@ -6,6 +6,7 @@ from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import TabularSplitStep
 
 
+@pytest.fixture
 def input_data() -> pd.DataFrame:
     # Data as a dictionary
     data = {
@@ -22,32 +23,33 @@ def input_data() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def test_train_val_percentage():
-    """Test to check if the train and val percentage is correctly applied."""
-    data = input_data()
-    data_container = DataContainer({"is_train": True})
-    data_container.flow = data
+@pytest.fixture
+def data(input_data: pd.DataFrame) -> DataContainer:
+    data = DataContainer({"is_train": True})
+    data.columns_to_ignore_for_training = []
+    data.flow = input_data
+    return data
 
+
+def test_train_val_percentage(data: DataContainer):
+    """Test to check if the train and val percentage is correctly applied."""
     split_step = TabularSplitStep(train_percentage=0.8)
-    result = split_step.execute(data_container)
+    result = split_step.execute(data)
 
     assert isinstance(result, DataContainer)
     assert result.train.shape == (6, 7)
     assert result.validation.shape == (2, 7)
 
 
-def test_train_val_test_percentage():
+def test_train_val_test_percentage(data: DataContainer):
     """Test to check if the train and val percentage is correctly applied."""
-    data = input_data()
-    data_container = DataContainer({"is_train": True})
-    data_container.flow = data
 
     split_step = TabularSplitStep(
         train_percentage=0.8,
         validation_percentage=0.1,
         test_percentage=0.1,
     )
-    result = split_step.execute(data_container)
+    result = split_step.execute(data)
 
     assert isinstance(result, DataContainer)
     assert result.train.shape == (6, 7)

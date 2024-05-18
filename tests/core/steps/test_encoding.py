@@ -7,6 +7,7 @@ from pipeline_lib.core import DataContainer
 from pipeline_lib.core.steps import EncodeStep
 
 
+@pytest.fixture
 def train_data() -> pd.DataFrame:
     # Data as a dictionary
     data = {
@@ -25,10 +26,10 @@ def train_data() -> pd.DataFrame:
 
 # Fixture to create a DataContainer for testing
 @pytest.fixture
-def train_data_container() -> DataContainer:
+def train_data_container(train_data: pd.DataFrame) -> DataContainer:
     data = DataContainer({"target": "target", "is_train": True})
     data.columns_to_ignore_for_training = []
-    data.train = train_data()
+    data.train = train_data
     return data
 
 
