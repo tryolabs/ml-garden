@@ -1,0 +1,4 @@
+date,category_low,category_high,numeric,target
+2024-03-01,A,X1,-19,0
+2024-03-02,B,X2,0,1
+2024-03-03,A,X3,11,0
