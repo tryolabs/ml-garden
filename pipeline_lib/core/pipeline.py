@@ -261,13 +261,10 @@ class Pipeline:
             for i, step in enumerate(config["pipeline"]["steps"]):
                 mlflow.log_param(f"pipeline.steps_{i}.step_type", step["step_type"])
                 for key, value in step.get("parameters", {}).items():
-                    if isinstance(value, dict):
-                        for key_mp, value_mp in value.items():
-                            mlflow.log_param(
-                                f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp
-                            )
-                    else:
-                        mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
+                    # Convert model_class to its string representation
+                    if key == "model_class":
+                        value = value.__name__
+                    mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
         def plot_feature_importance(df: pd.DataFrame) -> None:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -317,15 +314,16 @@ class Pipeline:
             if self.config:
                 self.logger.debug("Logging pipeline configuration to MLflow as a JSON file")
                 # convert model_class to string
+                config_copy = self.config.copy()
                 fit_step = next(
                     step
-                    for step in self.config["pipeline"]["steps"]
+                    for step in config_copy["pipeline"]["steps"]
                     if step["step_type"] == "ModelStep"
                 )
                 fit_step["parameters"]["model_class"] = fit_step["parameters"][
                     "model_class"
                 ].__name__
-                mlflow.log_dict(self.config, "config.json")
+                mlflow.log_dict(config_copy, "config.json")
 
             # save data container pickle as an artifact
             if self.save_data_path:
