@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -21,7 +21,7 @@ class CalculateFeaturesStep(PipelineStep):
 
     def __init__(
         self,
-        datetime_columns: Optional[List[str]] = None,
+        datetime_columns: Optional[Union[List[str], str]] = None,
         features: Optional[List[str]] = None,
     ) -> None:
         """Initialize CalculateFeaturesStep."""
