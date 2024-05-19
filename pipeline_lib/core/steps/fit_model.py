@@ -99,14 +99,12 @@ class ModelStep(PipelineStep):
         model_class: Type[Model],
         model_parameters: Optional[dict] = None,
         optuna_params: Optional[dict] = None,
-        save_path: Optional[str] = None,
     ) -> None:
         super().__init__()
         self.init_logger()
         self.model_class = model_class
         self.model_parameters = model_parameters or {}
         self.optuna_params = optuna_params
-        self.save_path = save_path
 
     def execute(self, data: DataContainer) -> DataContainer:
         if data.is_train:
@@ -146,10 +144,6 @@ class ModelStep(PipelineStep):
         )
 
         data.model = model
-
-        if self.save_path:
-            self.logger.info(f"Saving the model to {self.save_path}")
-            model.save(self.save_path)
 
         # save dataset predictions for metrics calculation
         self._save_datasets_predictions(data)
