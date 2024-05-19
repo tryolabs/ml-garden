@@ -3,7 +3,10 @@ import pandas as pd
 import pytest
 
 from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps import CalculateFeaturesStep
+from pipeline_lib.core.steps.calculate_features import (
+    CalculateFeaturesStep,
+    UnsupportedFeatureError,
+)
 
 
 @pytest.fixture
@@ -190,3 +193,39 @@ def test_error_in_incorrect_date_column(data: DataContainer):
 
     with pytest.raises(ValueError):
         calculate_features_step.execute(data)
+
+
+def test_init_with_string_datetime_columns():
+    calculate_features_step = CalculateFeaturesStep(
+        datetime_columns="creation_date", features=["year"]
+    )
+    assert calculate_features_step.datetime_columns == ["creation_date"]
+
+
+def test_init_with_datetime_columns_but_no_features():
+    with pytest.raises(ValueError):
+        CalculateFeaturesStep(datetime_columns=["creation_date"])
+
+
+def test_init_with_unsupported_features():
+    with pytest.raises(UnsupportedFeatureError):
+        CalculateFeaturesStep(datetime_columns=["creation_date"], features=["unsupported_feature"])
+
+
+def test_execute_with_prediction(data: DataContainer):
+    data.is_train = False
+    data.flow = data.train.copy()
+
+    datetime_columns = ["creation_date"]
+    features = ["year", "month", "day"]
+
+    calculate_features_step = CalculateFeaturesStep(
+        datetime_columns=datetime_columns,
+        features=features,
+    )
+    result = calculate_features_step.execute(data)
+
+    assert isinstance(result, DataContainer)
+    assert "creation_date_year" in result.flow.columns
+    assert "creation_date_month" in result.flow.columns
+    assert "creation_date_day" in result.flow.columns
