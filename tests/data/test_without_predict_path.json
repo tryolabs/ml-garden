@@ -1,0 +1,68 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "tests/data/test_2.pkl",
+            "target": "target"
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "tests/data/train.csv",
+                    "test_path": "tests/data/test.csv"
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.8
+                }
+            },
+            {
+                "step_type": "CleanStep"
+            },
+            {
+                "step_type": "CalculateFeaturesStep",
+                "parameters": {
+                    "datetime_columns": "date",
+                    "features": [
+                        "year",
+                        "month",
+                        "day"
+                    ]
+                }
+            },
+            {
+                "step_type": "EncodeStep",
+                "parameters": {
+                    "feature_encoders": {
+                        "category_high": {
+                            "encoder": "TargetEncoder"
+                        }
+                    }
+                }
+            },
+            {
+                "step_type": "ModelStep",
+                "parameters": {
+                    "model_class": "XGBoost",
+                    "model_parameters": {
+                        "n_estimators": 3,
+                        "max_depth": 3
+                    }
+                }
+            },
+            {
+                "step_type": "CalculateMetricsStep"
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
+            }
+        ]
+    }
+}
