@@ -3,12 +3,13 @@ import os
 import pytest
 
 from pipeline_lib import Pipeline
-from pipeline_lib.implementation.tabular.xgboost.model import XGBoost
+
+# from pipeline_lib.implementation.tabular.xgboost.model import XGBoost
 
 
-@pytest.fixture(autouse=True)
-def setup_function():
-    Pipeline.model_registry.register_model(XGBoost)
+# @pytest.fixture(autouse=True)
+# def setup_function():
+#     Pipeline.model_registry.register_model(XGBoost)
 
 
 def test_simple_train_pipeline():
