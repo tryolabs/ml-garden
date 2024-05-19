@@ -56,4 +56,4 @@ def decompress_zipfile(filename: str):
         The name of the .zip file to be decompressed, without the .zip extension
     """
     with zipfile.ZipFile(filename + ".zip", "r") as zip_file:
-        zip_file.extractall()
+        zip_file.extractall(path=os.path.dirname(filename))

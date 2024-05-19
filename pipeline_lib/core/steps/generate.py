@@ -127,10 +127,12 @@ class GenerateStep(PipelineStep):
                 )
             for key, value in data._generate_step_dtypes.items():
                 try:
-                    if key in df.columns:
+                    if key == data.target:
+                        # Skip the target column since it's not in the prediction dataframe
+                        continue
+                    elif key in df.columns:
                         df[key] = df[key].astype(value)
-                    elif key != data.target:
-                        # Target column may not be in the prediction dataframe
+                    else:
                         raise ValueError(
                             f"Column {key} from training schema not found in DataFrame"
                         )
