@@ -10,7 +10,6 @@ from typing import Any, Optional, Union
 
 import dill as pickle
 import pandas as pd
-import yaml
 from explainerdashboard.explainers import BaseExplainer
 from sklearn.compose import ColumnTransformer
 
