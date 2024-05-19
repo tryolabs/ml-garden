@@ -113,3 +113,16 @@ def test_log_experiment_predict_mode_raises_error():
 
     with pytest.raises(ValueError, match="only supported for training runs"):
         pipeline.log_experiment(data, experiment="test_experiment")
+
+
+def test_check_ames_housing_performance():
+    """Test that the testing mae is less than 16000 for Ames Housing problem."""
+    pipeline = Pipeline.from_json("tests/data/ames_housing.json")
+    data = pipeline.train()
+    metrics = data.metrics
+    test_mae = float(metrics["test"]["MAE"])
+
+    assert test_mae < 16000.0
+
+    zip_file = pipeline.save_data_path + ".zip"
+    os.remove(zip_file)
