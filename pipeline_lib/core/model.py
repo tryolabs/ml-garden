@@ -22,20 +22,3 @@ class Model(ABC):
     @abstractmethod
     def predict(self, X: pd.DataFrame) -> pd.Series:
         """Abstract method for making predictions."""
-
-    def save(self, path: str) -> None:
-        """Save the model."""
-        if not path.endswith(".joblib"):
-            raise ValueError(f"The model path must end with .joblib. Received: {path}")
-        joblib.dump(self, path)
-
-    @classmethod
-    def from_file(cls, path: str) -> "Model":
-        """Load the model from a .joblib file."""
-        if not Path(path).exists():
-            raise FileNotFoundError(f"File not found: {path}")
-
-        if not path.endswith(".joblib"):
-            raise ValueError(f"The model path must end with .joblib. Received: {path}")
-
-        return joblib.load(path)
