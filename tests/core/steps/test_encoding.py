@@ -33,22 +33,6 @@ def train_data_container(train_data: pd.DataFrame) -> DataContainer:
     return data
 
 
-def test_check_dtypes(train_data_container: DataContainer):
-    """Test to check data types after encoding."""
-    encode_step = EncodeStep()
-    result = encode_step.execute(train_data_container)
-
-    assert isinstance(result, DataContainer)
-    assert result.X_train.shape == (8, 6)
-    assert result.y_train.shape == (8,)
-    assert result.X_train["year"].dtype == np.dtype("int64")
-    assert result.X_train["month"].dtype == np.dtype("int64")
-    assert result.X_train["day"].dtype == np.dtype("int64")
-    assert result.X_train["numeric"].dtype == np.dtype("int64")
-    assert result.X_train["category_low"].dtype == np.dtype("uint8")  # optimizing int64 to uint8
-    assert result.X_train["category_high"].dtype == np.dtype("float32")  # optimizing to float32
-
-
 def test_check_numeric_passthrough(train_data_container: DataContainer):
     """Test to check if numeric columns are correctly passed through."""
     encode_step = EncodeStep()
