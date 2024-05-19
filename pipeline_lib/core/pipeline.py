@@ -39,14 +39,21 @@ class Pipeline:
         columns_to_ignore_for_training: Optional[list[str]] = None,
         tracking: Optional[dict] = None,
     ):
-        self.data = DataContainer()
         self.steps = []
         self.save_data_path = save_data_path
-        self.data.target = target
-        self.data.prediction_column = f"{target}_prediction"
-        self.data.columns_to_ignore_for_training = columns_to_ignore_for_training or []
+        self.target = target
+        self.prediction_column = f"{target}_prediction"
+        self.columns_to_ignore_for_training = columns_to_ignore_for_training or []
         self.tracking = tracking or {}
         self.config = {}
+
+    def _initialize_data(self) -> DataContainer:
+        """Initialize the data container."""
+        data = DataContainer()
+        data.target = self.target
+        data.prediction_column = self.prediction_column
+        data.columns_to_ignore_for_training = self.columns_to_ignore_for_training
+        return data
 
     def add_steps(self, steps: list[PipelineStep]):
         """Add steps to the pipeline."""
@@ -54,24 +61,31 @@ class Pipeline:
 
     def run(self, is_train: bool, df: Optional[pd.DataFrame] = None) -> DataContainer:
         """Run the pipeline on the given data."""
+        data = self._initialize_data()
 
         if is_train:
             steps_to_run = [step for step in self.steps if step.used_for_training]
             self.logger.info("Training the pipeline")
         else:
-            self.data.update(DataContainer.from_pickle(self.save_data_path))
+            loaded_data = DataContainer.from_pickle(self.save_data_path)
+            if loaded_data is None:
+                raise ValueError(
+                    f"Failed to load data from the pickle file ({self.save_data_path})."
+                )
+            data.update(loaded_data)
             if df is not None:
-                self.data.raw = df
+                data.raw = df
             steps_to_run = [step for step in self.steps if step.used_for_prediction]
             self.logger.info("Predicting with the pipeline")
 
-        self.data.is_train = is_train
+        data.is_train = is_train
+
         for i, step in enumerate(steps_to_run):
             start_time = time.time()
             log_str = f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
             Pipeline.logger.info(log_str)
 
-            data = step.execute(self.data)
+            data = step.execute(data)
 
             Pipeline.logger.info(f"{log_str} done. Took: {time.time() - start_time:.2f}s")
 
