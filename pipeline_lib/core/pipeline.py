@@ -261,6 +261,9 @@ class Pipeline:
                     # Convert model_class to its string representation
                     if key == "model_class":
                         value = value.__name__
+                    elif key == "model_parameters":
+                        for key_mp, value_mp in value.items():
+                            mlflow.log_param(key_mp, value_mp)
                     mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
         def plot_feature_importance(df: pd.DataFrame) -> None:
