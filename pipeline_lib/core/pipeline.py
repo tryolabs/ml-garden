@@ -244,6 +244,9 @@ class Pipeline:
             for i, step in enumerate(config["pipeline"]["steps"]):
                 mlflow.log_param(f"pipeline.steps_{i}.step_type", step["step_type"])
                 for key, value in step.get("parameters", {}).items():
+                    if key == "model_parameters":
+                        for key_mp, value_mp in value.items():
+                            mlflow.log_param(key_mp, value_mp)
                     mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
         def plot_feature_importance(df: pd.DataFrame) -> None:
