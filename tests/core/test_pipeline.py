@@ -90,7 +90,7 @@ def test_log_experiment_success(tmpdir):
         mlflow.start_run.assert_called_once()
         mlflow.log_param.assert_any_call("pipeline.name", "Test Pipeline")
         mlflow.log_param.assert_any_call("pipeline.description", "A test pipeline")
-        mlflow.log_param.assert_any_call("pipeline.parameters", {"key": "value"})
+        mlflow.log_param.assert_any_call("pipeline.parameters.key", "value")
         mlflow.log_param.assert_any_call("pipeline.steps_0.step_type", "TestStep")
         mlflow.log_param.assert_any_call("pipeline.steps_0.parameters.param", "value")
         mlflow.log_param.assert_any_call("pipeline.steps_1.step_type", "ModelStep")
