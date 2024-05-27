@@ -256,6 +256,8 @@ class Pipeline:
                     if isinstance(value, dict):
                         for key_mp, value_mp in value.items():
                             mlflow.log_param(f"pipeline.{key}.{key_mp}", value_mp)
+                    else:
+                        mlflow.log_param(f"pipeline.{key}", value)
 
             # Log step-level parameters
             for i, step in enumerate(config["pipeline"]["steps"]):
@@ -266,6 +268,8 @@ class Pipeline:
                             mlflow.log_param(
                                 f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp
                             )
+                    elif key == "model_class":
+                        mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value.__name__)
                     else:
                         mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
