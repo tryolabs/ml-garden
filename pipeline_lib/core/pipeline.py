@@ -249,7 +249,9 @@ class Pipeline:
                 for key, value in step.get("parameters", {}).items():
                     if isinstance(value, dict):
                         for key_mp, value_mp in value.items():
-                            mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp)
+                            mlflow.log_param(
+                                f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp
+                            )
                     else:
                         mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
