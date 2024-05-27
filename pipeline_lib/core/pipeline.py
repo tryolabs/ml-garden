@@ -261,10 +261,20 @@ class Pipeline:
             for i, step in enumerate(config["pipeline"]["steps"]):
                 mlflow.log_param(f"pipeline.steps_{i}.step_type", step["step_type"])
                 for key, value in step.get("parameters", {}).items():
+<<<<<<< HEAD
                     # Convert model_class to its string representation
                     if key == "model_class":
                         value = value.__name__
                     mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
+=======
+                    if isinstance(value, dict):
+                        for key_mp, value_mp in value.items():
+                            mlflow.log_param(
+                                f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp
+                            )
+                    else:
+                        mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
+>>>>>>> 4e29c42 (style checks)
 
         def plot_feature_importance(df: pd.DataFrame) -> None:
             fig, ax = plt.subplots(figsize=(10, 6))
