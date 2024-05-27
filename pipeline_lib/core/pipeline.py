@@ -238,16 +238,20 @@ class Pipeline:
             # Log top-level parameters
             for key in ["name", "description", "parameters"]:
                 if key in config["pipeline"]:
-                    mlflow.log_param(f"pipeline.{key}", config["pipeline"][key])
+                    value = config["pipeline"][key]
+                    if isinstance(value, dict):
+                        for key_mp, value_mp in value.items():
+                            mlflow.log_param(f"pipeline.{key}.{key_mp}", value_mp)
 
             # Log step-level parameters
             for i, step in enumerate(config["pipeline"]["steps"]):
                 mlflow.log_param(f"pipeline.steps_{i}.step_type", step["step_type"])
                 for key, value in step.get("parameters", {}).items():
-                    if key == "model_parameters":
+                    if isinstance(value, dict):
                         for key_mp, value_mp in value.items():
-                            mlflow.log_param(key_mp, value_mp)
-                    mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
+                            mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp)
+                    else:
+                        mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
         def plot_feature_importance(df: pd.DataFrame) -> None:
             fig, ax = plt.subplots(figsize=(10, 6))
