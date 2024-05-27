@@ -269,7 +269,6 @@ class Pipeline:
                     else:
                         mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
-
         def plot_feature_importance(df: pd.DataFrame) -> None:
             fig, ax = plt.subplots(figsize=(10, 6))
             ax.barh(df["feature"], df["importance"])
