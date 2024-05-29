@@ -4,7 +4,7 @@ ml-garden is a pipeline library that simplifies the creation and management of m
 The key components of the pipeline include Pipeline Steps, which are predefined steps connected to pass information through a data container; a Config File for setting pipeline steps and parameters; and a Data Container for storing and transferring essential data and results throughout the pipeline, facilitating effective data processing and analysis in machine learning projects.
 
 > [!WARNING]
-> This library is in the early stages of development and is not yet ready for production use. The API and functionality may change without notice. Use at your own risk.
+> Please be advised that this library is currently in the early stages of development and is not recommended for production use at this time. The API and functionality of the library may undergo changes without prior notice. Kindly use it at your own discretion and be aware of the associated risks.
 
 ## Features
 
