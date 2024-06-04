@@ -8,7 +8,7 @@ from pipeline_lib.core.steps.base import PipelineStep
 
 
 class ExplainerDashboardStep(PipelineStep):
-    """Scale the target using Quantile Transformer."""
+    """Create an explainer dashboard for the model."""
 
     used_for_prediction = False
     used_for_training = True
@@ -19,12 +19,32 @@ class ExplainerDashboardStep(PipelineStep):
         X_background_samples: int = 100,
         enable_step: bool = True,
     ) -> None:
+        """Initialize ExplainerDashboardStep.
+        Parameters
+        ----------
+        max_samples : int, optional
+            Maximum number of samples to use for the explainer dashboard, by default 1000
+        X_background_samples : int, optional
+            Number of samples to use for the background dataset, by default 100
+        enable_step : bool, optional
+            Enable or disable the step, by default True
+        """
         self.init_logger()
         self.max_samples = max_samples
         self.X_background_samples = X_background_samples
         self.enable_step = enable_step
 
     def execute(self, data: DataContainer) -> DataContainer:
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
         if not self.enable_step:
             self.logger.info("ExplainerDashboardStep disabled, skipping execution")
             return data

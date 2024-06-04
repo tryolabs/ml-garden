@@ -7,6 +7,8 @@ from pipeline_lib.core.steps.base import PipelineStep
 
 
 class CleanStep(PipelineStep):
+    """Clean tabular data."""
+
     used_for_prediction = True
     used_for_training = True
 
@@ -19,6 +21,22 @@ class CleanStep(PipelineStep):
         drop_ids: Optional[dict] = None,
         filter: Optional[dict] = None,
     ):
+        """Initialize CleanStep.
+        Parameters
+        ----------
+        fill_missing : Optional[dict], optional
+            Dictionary containing column names and fill values, by default None
+        remove_outliers : Optional[dict], optional
+            Dictionary containing column names and outlier removal methods, by default None
+        convert_dtypes : Optional[dict], optional
+            Dictionary containing column names and data types, by default None
+        drop_na_columns : Optional[list], optional
+            List of column names to drop rows with missing values, by default None
+        drop_ids : Optional[dict], optional
+            Dictionary containing column names and IDs to drop, by default None
+        filter : Optional[dict], optional
+            Dictionary containing column names and filter conditions, by default None
+        """
         self.init_logger()
         self.fill_missing = fill_missing
         self.remove_outliers = remove_outliers
@@ -28,6 +46,16 @@ class CleanStep(PipelineStep):
         self.filter = filter
 
     def execute(self, data: DataContainer) -> DataContainer:
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
         self.logger.info("Cleaning tabular data...")
 
         if not data.is_train:
@@ -46,8 +74,16 @@ class CleanStep(PipelineStep):
         return data
 
     def _clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Clean the DataFrame."""
-
+        """Clean the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to clean
+        Returns
+        -------
+        pd.DataFrame
+            The cleaned DataFrame
+        """
         df = self._filter(df)
 
         df = self._remove_outliers(df)
@@ -63,6 +99,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _filter(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Filter the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to filter
+        Returns
+        -------
+        pd.DataFrame
+            The filtered DataFrame
+        """
         if self.filter:
             original_rows = len(df)
             for key, value in self.filter.items():
@@ -83,6 +129,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _remove_outliers(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Remove outliers from the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to remove outliers from
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame without outliers
+        """
         if self.remove_outliers:
             for column, method in self.remove_outliers.items():
                 if column in df.columns:
@@ -110,6 +166,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _fill_missing(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Fill missing values in the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to fill missing values in
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with missing values filled
+        """
         if self.fill_missing:
             for column, fill_value in self.fill_missing.items():
                 if column in df.columns:
@@ -122,6 +188,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _convert_dtypes(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert column data types in the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to convert column data types in
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with converted column data types
+        """
         if self.convert_dtypes:
             for column, dtype in self.convert_dtypes.items():
                 if column in df.columns:
@@ -132,6 +208,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _drop_na_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop rows with missing values in the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to drop rows with missing values in
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame without rows with missing values
+        """
         if self.drop_na_columns:
             for column in self.drop_na_columns:
                 if column in df.columns:
@@ -146,6 +232,16 @@ class CleanStep(PipelineStep):
         return df
 
     def _drop_ids(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop rows with specific IDs in the DataFrame.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to drop rows with specific IDs in
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame without rows with specific IDs
+        """
         if self.drop_ids:
             for column, ids in self.drop_ids.items():
                 if column in df.columns:

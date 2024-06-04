@@ -20,6 +20,18 @@ class CalculateMetricsStep(PipelineStep):
         self.init_logger()
 
     def _calculate_metrics(self, true_values: pd.Series, predictions: pd.Series) -> dict:
+        """Calculate metrics.
+        Parameters
+        ----------
+        true_values : pd.Series
+            True values
+        predictions : pd.Series
+            Predictions
+        Returns
+        -------
+        dict
+            Metrics
+        """
         mae = mean_absolute_error(true_values, predictions)
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
         r2 = r2_score(true_values, predictions)
@@ -39,6 +51,16 @@ class CalculateMetricsStep(PipelineStep):
         }
 
     def execute(self, data: DataContainer) -> DataContainer:
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
         self.logger.debug("Starting metric calculation")
 
         metrics = {}

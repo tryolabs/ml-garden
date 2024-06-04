@@ -16,12 +16,26 @@ class CalculateReportsStep(PipelineStep):
     used_for_training = True
 
     def __init__(self, max_samples: int = 1000) -> None:
-        """Initialize CalculateReportsStep."""
+        """Initialize CalculateReportsStep.
+        Parameters
+        ----------
+        max_samples : int, optional
+            Maximum number of samples to use for calculating SHAP values, by default 1000
+        """
         self.init_logger()
         self.max_samples = max_samples
 
     def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the step."""
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The data updated data container
+        """
         self.logger.info("Calculating reports")
 
         model = data.model

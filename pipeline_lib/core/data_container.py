@@ -45,7 +45,7 @@ class DataContainer:
         Update the data in this container with another DataContainer's data.
 
         Parameters
-        =========
+        ----------
         other : DataContainer
             The DataContainer to copy data from.
         """
