@@ -16,6 +16,8 @@ class FileType(Enum):
 
 
 class GenerateStep(PipelineStep):
+    """Generate data from a file."""
+
     used_for_prediction = True
     used_for_training = True
 
@@ -39,7 +41,16 @@ class GenerateStep(PipelineStep):
         self.optimize_dtypes_skip_cols = optimize_dtypes_skip_cols or []
 
     def execute(self, data: DataContainer) -> DataContainer:
-        """Generate the data from the file."""
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
 
         # Skip GenerateStep if the data is already loaded
         if not data.is_train and data.raw is not None:
@@ -153,6 +164,16 @@ class GenerateStep(PipelineStep):
         return data
 
     def _infer_file_type(self, file_path: str) -> FileType:
+        """Infer the file type based on the file extension.
+        Parameters
+        ----------
+        file_path : str
+            The file path
+        Returns
+        -------
+        FileType
+            The file type
+        """
         _, file_extension = os.path.splitext(file_path)
         file_extension = file_extension.lower()
 
@@ -162,6 +183,18 @@ class GenerateStep(PipelineStep):
             raise ValueError(f"Unsupported file extension: {file_extension}")
 
     def _read_csv(self, file_path: str, **kwargs) -> pd.DataFrame:
+        """Read a CSV file.
+        Parameters
+        ----------
+        file_path : str
+            The file path
+        **kwargs
+            Additional keyword arguments to pass to pd.read_csv
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame
+        """
         index_col = kwargs.pop("index", None)
         self.logger.info(f"Reading CSV file with kwargs: {kwargs}")
         df = pd.read_csv(file_path, **kwargs)
@@ -170,6 +203,18 @@ class GenerateStep(PipelineStep):
         return df
 
     def _read_parquet(self, file_path: str, **kwargs) -> pd.DataFrame:
+        """Read a parquet file.
+        Parameters
+        ----------
+        file_path : str
+            The file path
+        **kwargs
+            Additional keyword arguments to pass to pd.read_parquet
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame
+        """
         index_col = kwargs.pop("index", None)
         self.logger.info(f"Reading parquet file with kwargs: {kwargs}")
         df = pd.read_parquet(file_path, **kwargs)
@@ -178,6 +223,16 @@ class GenerateStep(PipelineStep):
         return df
 
     def _load_data_from_file(self, file_path: str) -> pd.DataFrame:
+        """Load data from a file.
+        Parameters
+        ----------
+        file_path : str
+            The file path
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame
+        """
         file_type = self._infer_file_type(file_path)
 
         if file_type == FileType.CSV:

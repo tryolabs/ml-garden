@@ -35,13 +35,29 @@ class EncodeStep(PipelineStep):
         cardinality_threshold: int = 5,
         feature_encoders: Optional[dict] = None,
     ) -> None:
-        """Initialize EncodeStep."""
+        """Initialize EncodeStep.
+        Parameters
+        ----------
+        cardinality_threshold : int, optional
+            The threshold to determine low and high cardinality features, by default 5
+        feature_encoders : Optional[dict], optional
+            A dictionary mapping feature names to encoder configurations, by default None
+        """
         self.init_logger()
         self.cardinality_threshold = cardinality_threshold
         self.feature_encoders = feature_encoders or {}
 
     def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the encoding step."""
+        """Execute the encoding step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
         self.logger.info("Encoding data")
 
         target_column_name = data.target
@@ -108,7 +124,30 @@ class EncodeStep(PipelineStep):
         saved_encoder: Optional[ColumnTransformer] = None,
         log: Optional[bool] = False,
     ) -> Tuple[pd.DataFrame, Optional[pd.Series], Optional[ColumnTransformer]]:
-        """Apply the encoding to the data."""
+        """Apply the encoding to the data.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to encode
+        target_column_name : str
+            The target column name
+        columns_to_ignore_for_training : List[str]
+            Columns to ignore for training
+        categorical_features : List[str]
+            Categorical features
+        numeric_features : List[str]
+            Numeric features
+        fit_encoders : bool, optional
+            Whether to fit the encoders, by default False
+        saved_encoder : Optional[ColumnTransformer], optional
+            The saved encoder, by default None
+        log : Optional[bool], optional
+            Whether to log information about the features, by default False
+        Returns
+        -------
+        Tuple[pd.DataFrame, Optional[pd.Series], Optional[ColumnTransformer]]
+            The encoded data, the target column, and the encoder
+        """
         if not fit_encoders and not saved_encoder:
             raise ValueError("saved_encoder must be provided when fit_encoders is False.")
 
@@ -160,7 +199,18 @@ class EncodeStep(PipelineStep):
     def _get_feature_types(
         self, df: pd.DataFrame, target_column_name: str
     ) -> Tuple[List[str], List[str]]:
-        """Get categorical and numeric feature lists."""
+        """Get categorical and numeric feature lists.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame
+        target_column_name : str
+            The target column name
+        Returns
+        -------
+        Tuple[List[str], List[str]]
+            Categorical and numeric features
+        """
         categorical_features = [
             col
             for col in df.columns
@@ -177,7 +227,18 @@ class EncodeStep(PipelineStep):
     def _split_categorical_features(
         self, df: pd.DataFrame, categorical_features: List[str]
     ) -> Tuple[List[str], List[str]]:
-        """Split categorical features into low and high cardinality features."""
+        """Split categorical features into low and high cardinality features.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame
+        categorical_features : List[str]
+            Categorical features
+        Returns
+        -------
+        Tuple[List[str], List[str]]
+            Low and high cardinality features
+        """
         low_cardinality_features = [
             col for col in categorical_features if df[col].nunique() <= self.cardinality_threshold
         ]
@@ -189,7 +250,16 @@ class EncodeStep(PipelineStep):
     def _get_encoder_class_and_params(
         self, encoder_name: str
     ) -> Tuple[Union[Type[OrdinalEncoder], Type[TargetEncoder]], dict[str, Any]]:
-        """Map encoder name to the corresponding encoder class."""
+        """Map encoder name to the corresponding encoder class.
+        Parameters
+        ----------
+        encoder_name : str
+            The encoder name
+        Returns
+        -------
+        Tuple[Union[Type[OrdinalEncoder], Type[TargetEncoder]], dict[str, Any]]
+            The encoder class and the encoder parameters
+        """
 
         encoder = self.ENCODER_MAP.get(encoder_name)
         encoder_params = self.ENCODER_MAP_PARAMS.get(encoder_name)
@@ -219,6 +289,19 @@ class EncodeStep(PipelineStep):
         * For low cardinality features, use OrdinalEncoder.
         * For high cardinality features, use TargetEncoder.
         * For numeric features, pass them as is.
+
+        Parameters
+        ----------
+        high_cardinality_features : List[str]
+            High cardinality features
+        low_cardinality_features : List[str]
+            Low cardinality features
+        numeric_features : List[str]
+            Numeric features
+        Returns
+        -------
+        ColumnTransformer
+            The ColumnTransformer
         """
         transformers = []
 
@@ -270,7 +353,22 @@ class EncodeStep(PipelineStep):
         column_transformer: ColumnTransformer,
         is_train: bool = False,
     ) -> tuple[pd.DataFrame, Optional[pd.Series]]:
-        """Transform the data using the ColumnTransformer."""
+        """Transform the data using the ColumnTransformer.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame to transform
+        target_column_name : str
+            The target column name
+        column_transformer : ColumnTransformer
+            The ColumnTransformer
+        is_train : bool, optional
+            Whether the data is for training, by default False
+        Returns
+        -------
+        tuple[pd.DataFrame, Optional[pd.Series]]
+            The transformed data and the target column
+        """
         if target_column_name in df.columns:
             X = df.drop(columns=[target_column_name])  # Drop the target column
             y = df[target_column_name]  # Target column for training data
@@ -292,14 +390,36 @@ class EncodeStep(PipelineStep):
         )
 
     def _restore_column_order(self, df: pd.DataFrame, encoded_data: pd.DataFrame) -> pd.DataFrame:
-        """Restore the original column order."""
+        """Restore the original column order.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The original DataFrame
+        encoded_data : pd.DataFrame
+            The encoded DataFrame
+        Returns
+        -------
+        pd.DataFrame
+            The encoded DataFrame with the original column order
+        """
         new_column_order = [col for col in df.columns if col in encoded_data.columns]
         return encoded_data[new_column_order]
 
     def _convert_ordinal_encoded_columns_to_int(
         self, encoded_data: pd.DataFrame, encoded_feature_map: Dict[str, str]
     ) -> pd.DataFrame:
-        """Convert ordinal encoded columns to the smallest possible integer dtype."""
+        """Convert ordinal encoded columns to the smallest possible integer dtype.
+        Parameters
+        ----------
+        encoded_data : pd.DataFrame
+            The encoded DataFrame
+        encoded_feature_map : Dict[str, str]
+            The feature encoder map
+        Returns
+        -------
+        pd.DataFrame
+            The encoded DataFrame with ordinal encoded columns converted to int
+        """
         ordinal_encoded_features = [
             col for col, encoder in encoded_feature_map.items() if encoder == "OrdinalEncoder"
         ]
@@ -325,7 +445,18 @@ class EncodeStep(PipelineStep):
     def _restore_numeric_dtypes(
         self, encoded_data: pd.DataFrame, original_numeric_dtypes: dict
     ) -> pd.DataFrame:
-        """Restore original dtypes of numeric features."""
+        """Restore original dtypes of numeric features.
+        Parameters
+        ----------
+        encoded_data : pd.DataFrame
+            The encoded DataFrame
+        original_numeric_dtypes : dict
+            The original numeric dtypes
+        Returns
+        -------
+        pd.DataFrame
+            The encoded DataFrame with the original numeric dtypes
+        """
         for col, dtype in original_numeric_dtypes.items():
             if col in encoded_data.columns:
                 try:
@@ -337,7 +468,16 @@ class EncodeStep(PipelineStep):
         return encoded_data
 
     def _convert_float64_to_float32(self, encoded_data: pd.DataFrame) -> pd.DataFrame:
-        """Convert float64 columns to float32."""
+        """Convert float64 columns to float32.
+        Parameters
+        ----------
+        encoded_data : pd.DataFrame
+            The encoded DataFrame
+        Returns
+        -------
+        pd.DataFrame
+            The encoded DataFrame with float64 columns converted to float32
+        """
         float64_columns = encoded_data.select_dtypes(include=["float64"]).columns
         for col in float64_columns:
             encoded_data[col] = encoded_data[col].astype(np.float32)
@@ -346,6 +486,14 @@ class EncodeStep(PipelineStep):
     def _create_feature_encoder_map(self, column_transformer: ColumnTransformer) -> Dict[str, str]:
         """
         Create a dictionary to store the encoder used for each feature.
+        Parameters
+        ----------
+        column_transformer : ColumnTransformer
+            The ColumnTransformer
+        Returns
+        -------
+        Dict[str, str]
+            The feature encoder map
         """
         feature_encoder_map = {}
         transformed_features = column_transformer.get_feature_names_out()
@@ -370,7 +518,20 @@ class EncodeStep(PipelineStep):
         high_cardinality_features: List[str],
         feature_encoder_map: Dict[str, str],
     ) -> None:
-        """Log information about the features."""
+        """Log information about the features.
+        Parameters
+        ----------
+        categorical_features : List[str]
+            Categorical features
+        numeric_features : List[str]
+            Numeric features
+        low_cardinality_features : List[str]
+            Low cardinality features
+        high_cardinality_features : List[str]
+            High cardinality features
+        feature_encoder_map : Dict[str, str]
+            The feature encoder map
+        """
         self.logger.info(
             f"Categorical features: ({len(categorical_features)}) - {categorical_features}"
         )

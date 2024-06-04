@@ -14,7 +14,7 @@ class UnsupportedFeatureError(Exception):
 
 
 class CalculateFeaturesStep(PipelineStep):
-    """Calculate features."""
+    """Calculate datetime-related features from specified columns."""
 
     used_for_prediction = True
     used_for_training = True
@@ -24,7 +24,14 @@ class CalculateFeaturesStep(PipelineStep):
         datetime_columns: Optional[Union[List[str], str]] = None,
         features: Optional[List[str]] = None,
     ) -> None:
-        """Initialize CalculateFeaturesStep."""
+        """Initialize CalculateFeaturesStep.
+
+        Parameters
+        ----------
+        datetime_columns : Union[List[str], str], optional
+            The name of the column or columns containing datetime values, by default None
+        features : Optional[List[str]], optional
+        """
         super().__init__()
         self.init_logger()
         self.datetime_columns = datetime_columns
@@ -59,7 +66,18 @@ class CalculateFeaturesStep(PipelineStep):
             )
 
     def _convert_column_to_datetime(self, df: pd.DataFrame, column: str) -> pd.DataFrame:
-        """Convert a column to datetime."""
+        """Convert a column to datetime.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing the column to convert
+        column : str
+            The name of the column to convert
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the column converted to datetime
+        """
         # Check if the column is already a datetime type
         if not is_datetime64_any_dtype(df[column]):
             try:
@@ -78,7 +96,15 @@ class CalculateFeaturesStep(PipelineStep):
         return df
 
     def _extract_feature(self, df: pd.DataFrame, column: str, feature: str) -> None:
-        """Extract a single feature from a datetime column."""
+        """Extract a single feature from a datetime column.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing the datetime column
+        column : str
+            The name of the datetime column
+        feature : str
+        """
         extractor = self.feature_extractors[feature]
         feature_column = f"{column}_{feature}"
 
@@ -97,7 +123,16 @@ class CalculateFeaturesStep(PipelineStep):
             raise ValueError(error_message)
 
     def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the step."""
+        """Execute the step.
+        Parameters
+        ----------
+        data : DataContainer
+            The data container
+        Returns
+        -------
+        DataContainer
+            The updated data container
+        """
         self.logger.info("Calculating features")
 
         if not data.is_train:
@@ -121,7 +156,18 @@ class CalculateFeaturesStep(PipelineStep):
     def _create_datetime_features(
         self, df: pd.DataFrame, log: Optional[bool] = False
     ) -> pd.DataFrame:
-        """Create datetime features."""
+        """Create datetime features.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame containing the datetime columns
+        log : Optional[bool], optional
+            Whether to log warnings and errors, by default False
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the datetime features added
+        """
         created_features = []
 
         if self.datetime_columns:
