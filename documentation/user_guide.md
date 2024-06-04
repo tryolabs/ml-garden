@@ -64,18 +64,17 @@ Here you can see an example of a `config.json` file to run an XGBoost pipeline (
 	"name": "MyTrainingPipeline",
 	"description": "My amazing project",
 	"parameters": {
-			"save_data_path": "pipeline.pkl",
+            "save_data_path": "pipeline.pkl",
             "target": "target_column"
 		}
 	},
 	"steps":[
 	{
-		"step_type": "GenerateStep",
-		"parameters": {
-			"train_path": "path/to/train/data.csv",
-            "test_path": "path/to/test/data.csv",
-            "predict_path": "path/to/predict/data.csv",
-            "drop_columns": [
+        "step_type": "GenerateStep",
+            "parameters": {
+                "train_path": "path/to/train/data.csv",
+                "test_path": "path/to/test/data.csv","predict_path": "path/to/predict/data.csv",
+                "drop_columns": [
 	            "column_to_drop"
                     ]
                 }
@@ -169,21 +168,21 @@ The configuration file defines the steps that should be executed by the pipeline
 ```json
 {
 "pipeline": {
-	"name": "MyTrainingPipeline",
-	"description": "My amazing project",
-	"parameters": {
-			"save_data_path": "pipeline.pkl",
+    "name": "MyTrainingPipeline",
+    "description": "My amazing project",
+        "parameters": {
+            "save_data_path": "pipeline.pkl",
             "target": "target_column"
 		}
 	},
 	"steps":[
 	{
-		"step_type": "GenerateStep",
-		"parameters": {
-			"train_path": "path/to/train/data.csv",
-            "test_path": "path/to/test/data.csv",
-            "predict_path": "path/to/predict/data.csv",
-            "drop_columns": [
+            "step_type": "GenerateStep",
+            "parameters": {
+                "train_path": "path/to/train/data.csv",
+                "test_path": "path/to/test/data.csv",
+                "predict_path": "path/to/predict/data.csv",
+                "drop_columns": [
 	            "column_to_drop"
                     ]
                 }
@@ -314,7 +313,7 @@ This will allow you to see the dashboard on `http://localhost:8080/`. For more d
 
 ## **Explainer Dashboard**
 
-The pipeline integrates the [explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/) library, which allows to visualize and explain the results. It includes visualization of feature imprtances and different tools of explainable AI, like SHAP values, permutation importances, interaction effects, partial dependence plots, and more. The explainer is stored in the pipeline, if this step is enabled. The pipeline is saved in a compressed format, it can be decompressed and the dashboard can be accessed as shown in the following code block.
+The pipeline integrates the [explainerdashboard](https://explainerdashboard.readthedocs.io/en/latest/) library, which allows to visualize and explain the results. It includes visualization of feature importances and different tools of explainable AI, like SHAP values, permutation importances, interaction effects, partial dependence plots, and more. The explainer is stored in the pipeline, if this step is enabled. The pipeline is saved in a compressed format, it can be decompressed and the dashboard can be accessed as shown in the following code block.
 
 ```python
 import pickle
@@ -337,9 +336,10 @@ The explainerdashboard can be disabled using `enable: false` in the configuratio
 
 ```python
 {
-		"step_type": "ExplainerDashboardStep",
-    "parameters": {
-       "enable_step": false,
+    "step_type":
+    "ExplainerDashboardStep",
+            "parameters": {
+                 "enable_step": false,
     }
 }
 ```
@@ -390,36 +390,12 @@ class CustomStep(PipelineStep):
     def __init__(self)
 	    # set the parameters needed
 
-	  def execute(self, data: DataContainer) -> DataContainer:
+    def execute(self, data: DataContainer) -> DataContainer:
 		  # perform calculations for this step
 
-		  return data
+    return data
 ```
 
 New models can be added to the `pipeline_lib/implementation/tabular` folder. Currently, the pipeline supports tabular data for regression problems. However, if you want to perform a different task, more sophisticated changes will be necessary.
 
 If you think your work would be valuable for other projects, please consider contributing it to the library.
-
-## Outline
-
-- [ ] Introduction
-  - [ ] Overview of the Pipeline Library
-  - [ ] Purpose and core functionality of the library
-  - [ ] Key components
-- [ ] Getting Started
-  - [ ] Installation instructions
-  - [ ] Generating a configuration file for the pipeline
-  - [ ] Example of a basic pipeline configuration
-- [ ] Steps
-  - [ ] Overview of predefined steps available in the core folder
-- [ ] Configuration File
-  - [ ] Structure and format of the configuration file
-  - [ ] Defining desired steps and parameters in the configuration file
-- [ ] Generating and Executing Pipelines
-  - [ ] Process of generating a pipeline from the configuration file
-  - [ ] Executing the pipeline with the specified steps and parameters
-  - [ ] Results visualization
-  - [ ] Datacontainer description
-- [ ] Customizing the library for your project
-  - [ ] Customizing or adding new steps to the core folder
-  - [ ] Adding support for new models
