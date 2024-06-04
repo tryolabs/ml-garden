@@ -56,7 +56,7 @@ poetry install --extras "all_models"
 
 ## Quick start
 
-Here you can see an example of a `config.json` file to run an XGBoost pipeline (for more detailed explanation please refer to [Generating and Executing Pipelines](#pipelines):
+Here you can see an example of a `config.json` file to run an XGBoost pipeline (for more detailed explanation please refer to [Generating and Executing Pipelines](#generating-and-executing-pipelines)):
 
 ```json
 {
@@ -257,7 +257,7 @@ The configuration file defines the steps that should be executed by the pipeline
 
 More examples of configuration files, including hyperparameter tuning, can be found in the [examples](https://github.com/tryolabs/pipeline-lib/tree/main/examples/ames_housing/configs) folder.
 
-## Generating and Executing Pipelines{#pipelines}
+## Generating and Executing Pipelines
 
 From this configuration file, we can directly start a pipeline that executes the defined steps with the desired parameters.
 
