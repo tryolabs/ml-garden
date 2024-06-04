@@ -86,6 +86,7 @@ Here you can see an example of a `config.json` file to run an XGBoost pipeline (
 			"train_percentage": 0.7,
 			"validation_percentage":0.2,
 			"test_percentage":0.1
+            }
 		},
 		{
 		"step_type": "CleanStep",
@@ -110,8 +111,8 @@ Here you can see an example of a `config.json` file to run an XGBoost pipeline (
          "enable_step": true
          }
      }
-	}
-	]
+  }
+]
 }
 ```
 
@@ -192,6 +193,7 @@ The configuration file defines the steps that should be executed by the pipeline
 		"step_type": "TabularStep",
 		"parameters":{
 			"train_percentage": 0.8
+            }
 		},
 		{
 		"step_type": "CleanStep",
@@ -250,8 +252,8 @@ The configuration file defines the steps that should be executed by the pipeline
      "step_type": "ExplainerDashboardStep",
          "parameters": {}
      }
-	}
-	]
+    }
+    ]
 }
 ```
 
@@ -350,21 +352,20 @@ Experiment tracking is performed using [mlflow](https://mlflow.org/). The experi
 
 ```json
 {
-"pipeline": {
-        "name": "MyTrainingPipeline",
-        "description": "My amazing project",
-        "parameters": {
-            "save_data_path": "pipeline.pkl",
-            "target": "target_column",
-            "tracking": {
-                "experiment": "experiment_name",
-                "run": "run_name"
-            }
-        },
- "steps": [
- ...
-		]
- }
+  "pipeline": {
+    "name": "MyTrainingPipeline",
+    "description": "My amazing project",
+    "parameters": {
+      "save_data_path": "pipeline.pkl",
+      "target": "target_column",
+      "tracking": {
+        "experiment": "experiment_name",
+        "run": "run_name"
+      }
+    }
+  },
+  "steps": []
+}
 ```
 
 The results can then seen in the browser using the command.
