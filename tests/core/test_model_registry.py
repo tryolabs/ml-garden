@@ -48,8 +48,8 @@ def test_get_all_model_classes():
     assert AnotherDummyModel in all_models.values()
 
 
-@patch("pipeline_lib.core.model_registry.pkgutil.walk_packages")
-@patch("pipeline_lib.core.model_registry.importlib.import_module")
+@patch("ml_garden.core.model_registry.pkgutil.walk_packages")
+@patch("ml_garden.core.model_registry.importlib.import_module")
 def test_auto_register_models_from_package(mock_import_module, mock_walk_packages):
     mock_package = MagicMock()
     mock_package.__name__ = "package"
@@ -79,7 +79,7 @@ def test_auto_register_models_from_package(mock_import_module, mock_walk_package
     assert AnotherDummyModel in registry.get_all_model_classes().values()
 
 
-@patch("pipeline_lib.core.model_registry.importlib.import_module")
+@patch("ml_garden.core.model_registry.importlib.import_module")
 def test_auto_register_models_import_error(mock_import_module):
     mock_import_module.side_effect = ImportError
 
