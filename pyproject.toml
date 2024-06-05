@@ -8,12 +8,12 @@ profile = "black"
 skip = [".venv"]
 
 [tool.poetry]
-name = "pipeline-lib"
+name = "ml-garden"
 version = "0.1.0"
 description = "A library for designing and re-using ML pipelines"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{ include = "pipeline_lib" }]
+packages = [{ include = "ml_garden" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
