@@ -118,7 +118,7 @@ Here's an example of how to use the library to run an XGBoost pipeline:
 ```python
 import logging
 
-from ml-garden import Pipeline
+from ml_garden import Pipeline
 
 logging.basicConfig(level=logging.INFO)
 
