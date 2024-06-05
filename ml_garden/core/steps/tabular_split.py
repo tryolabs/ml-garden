@@ -4,10 +4,10 @@ from typing import Optional
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.random_state_generator import get_random_state
-from pipeline_lib.core.steps.base import PipelineStep
-from pipeline_lib.utils.string_utils import concatenate_columns
+from ml_garden.core import DataContainer
+from ml_garden.core.random_state_generator import get_random_state
+from ml_garden.core.steps.base import PipelineStep
+from ml_garden.utils.string_utils import concatenate_columns
 
 
 class TabularSplitStep(PipelineStep):

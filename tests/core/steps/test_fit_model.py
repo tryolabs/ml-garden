@@ -3,9 +3,9 @@ import unittest.mock as mock
 import pandas as pd
 import pytest
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.model import Model
-from pipeline_lib.core.steps.fit_model import ModelStep, OptunaOptimizer
+from ml_garden.core import DataContainer
+from ml_garden.core.model import Model
+from ml_garden.core.steps.fit_model import ModelStep, OptunaOptimizer
 
 
 @pytest.fixture

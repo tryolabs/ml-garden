@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 
-from pipeline_lib.core.model import Model
+from ml_garden.core.model import Model
 
 
 class ModelClassNotFoundError(Exception):

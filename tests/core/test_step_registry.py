@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline_lib.core.step_registry import StepClassNotFoundError, StepRegistry
-from pipeline_lib.core.steps.base import PipelineStep
+from ml_garden.core.step_registry import StepClassNotFoundError, StepRegistry
+from ml_garden.core.steps.base import PipelineStep
 
 
 class DummyStep(PipelineStep):

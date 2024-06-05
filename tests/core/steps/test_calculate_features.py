@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps.calculate_features import (
+from ml_garden.core import DataContainer
+from ml_garden.core.steps.calculate_features import (
     CalculateFeaturesStep,
     UnsupportedFeatureError,
 )

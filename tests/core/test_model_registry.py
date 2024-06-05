@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pipeline_lib.core.model import Model
-from pipeline_lib.core.model_registry import ModelClassNotFoundError, ModelRegistry
+from ml_garden.core.model import Model
+from ml_garden.core.model_registry import ModelClassNotFoundError, ModelRegistry
 
 
 class DummyModel(Model):
