@@ -60,59 +60,57 @@ Here you can see an example of a `config.json` file to run an XGBoost pipeline (
 
 ```json
 {
-"pipeline": {
-	"name": "MyTrainingPipeline",
-	"description": "My amazing project",
-	"parameters": {
-            "save_data_path": "pipeline.pkl",
-            "target": "target_column"
-		}
-	},
-	"steps":[
-	{
-        "step_type": "GenerateStep",
-            "parameters": {
-                "train_path": "path/to/train/data.csv",
-                "test_path": "path/to/test/data.csv","predict_path": "path/to/predict/data.csv",
-                "drop_columns": [
-	            "column_to_drop"
-                    ]
-                }
-
-		},
-		{
-		"step_type": "TabularStep",
-		"parameters":{
-			"train_percentage": 0.7,
-			"validation_percentage":0.2,
-			"test_percentage":0.1
-            }
-		},
-		{
-		"step_type": "CleanStep",
-			}
-		},
+  "pipeline": {
+    "name": "MyTrainingPipeline",
+    "description": "My amazing project",
+    "parameters": {
+      "save_data_path": "pipeline.pkl",
+      "target": "target_column"
+    }
+  },
+  "steps": [
     {
-    "step_type": "EncodeStep",
-    "parameters": {}
-     },
-     {
-     "step_type": "ModelStep",
-        "parameters": {
-           "model_class": "XGBoostModel",
-       }
-     },
-     {
-     "step_type": "CalculateMetricsStep",
-     },
-     {
-     "step_type": "ExplainerDashboardStep",
-         "parameters": {
-         "enable_step": true
-         }
-     }
-  }
-]
+      "step_type": "GenerateStep",
+      "parameters": {
+        "train_path": "path/to/train/data.csv",
+        "test_path": "path/to/test/data.csv",
+        "predict_path": "path/to/predict/data.csv",
+        "drop_columns": ["column_to_drop"]
+      }
+    },
+    {
+      "step_type": "TabularStep",
+      "parameters": {
+        "train_percentage": 0.7,
+        "validation_percentage": 0.2,
+        "test_percentage": 0.1
+      }
+    },
+    {
+      "step_type": "CleanStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "EncodeStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "ModelStep",
+      "parameters": {
+        "model_class": "XGBoostModel"
+      }
+    },
+    {
+      "step_type": "CalculateMetricsStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "ExplainerDashboardStep",
+      "parameters": {
+        "enable_step": true
+      }
+    }
+  ]
 }
 ```
 
@@ -168,9 +166,9 @@ The configuration file defines the steps that should be executed by the pipeline
 
 ```json
 {
-"pipeline": {
-    "name": "MyTrainingPipeline",
-    "description": "My amazing project",
+    "pipeline": {
+        "name": "MyTrainingPipeline",
+        "description": "My amazing project",
         "parameters": {
             "save_data_path": "pipeline.pkl",
             "target": "target_column"
@@ -178,24 +176,23 @@ The configuration file defines the steps that should be executed by the pipeline
 	},
 	"steps":[
 	{
-            "step_type": "GenerateStep",
-            "parameters": {
-                "train_path": "path/to/train/data.csv",
-                "test_path": "path/to/test/data.csv",
-                "predict_path": "path/to/predict/data.csv",
-                "drop_columns": [
+        "step_type": "GenerateStep",
+        "parameters": {
+            "train_path": "path/to/train/data.csv",
+            "test_path": "path/to/test/data.csv",
+            "predict_path": "path/to/predict/data.csv",
+            "drop_columns": [
 	            "column_to_drop"
-                    ]
-                }
-
-		},
-		{
+                ]
+            }
+	},
+	{
 		"step_type": "TabularStep",
 		"parameters":{
 			"train_percentage": 0.8
             }
-		},
-		{
+	},
+	{
 		"step_type": "CleanStep",
 		"parameters":{
 			"filter": "column_name > 1000"
@@ -206,24 +203,25 @@ The configuration file defines the steps that should be executed by the pipeline
 			"drop_ids": {
 				"id": [1, 100, 505]
 			}
-		},
-		{
-    "step_type": "CalculateFeaturesStep",
-    "parameters": {
-       "datetime_columns": ["date"],
-       "features": [
-          "month",
-          "day",
-          "hour"
-          ]
-      }
+        }
+	},
+	{
+        "step_type": "CalculateFeaturesStep",
+        "parameters": {
+            "datetime_columns": ["date"],
+            "features": [
+                "month",
+                "day",
+                "hour"
+            ]
+        }
     },
     {
-    "step_type": "EncodeStep",
-    "parameters": {}
-     },
-     {
-     "step_type": "ModelStep",
+        "step_type": "EncodeStep",
+        "parameters": {}
+    },
+    {
+        "step_type": "ModelStep",
         "parameters": {
            "model_class": "XGBoostModel",
            "model_parameters": {
@@ -239,19 +237,18 @@ The configuration file defines the steps that should be executed by the pipeline
              "early_stopping_rounds": 20,
          }
        }
-     },
-     {
-     "step_type": "PredictStep",
+    },
+    {
+        "step_type": "PredictStep",
         "parameters": {}
-     },
-     {
-     "step_type": "CalculateMetricsStep",
+    },
+    {
+        "step_type": "CalculateMetricsStep",
          "parameters": {}
-     },
-     {
-     "step_type": "ExplainerDashboardStep",
+    },
+    {
+        "step_type": "ExplainerDashboardStep",
          "parameters": {}
-     }
     }
     ]
 }
