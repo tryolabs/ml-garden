@@ -119,7 +119,7 @@ You can run the pipeline in train mode using the following code
 ```python
 import logging
 
-from ml-garden import Pipeline
+from ml_garden import Pipeline
 
 logging.basicConfig(level=logging.INFO)
 
@@ -254,7 +254,7 @@ From this configuration file, we can directly start a pipeline that executes the
 ```python
 import logging
 
-from ml-garden import Pipeline
+from ml_garden import Pipeline
 
 logging.basicConfig([level=logging.INFO](http://level=logging.info/))
 
@@ -366,7 +366,7 @@ For more details, please refer to the [mlflow documentation](https://mlflow.org/
 
 # Customizing the Library for Your Project
 
-The pipeline can be customized to a specific project not only by selecting the steps to be performed. If you need to perform steps that are not available, you can add them to the folder `ml-garden/core/steps/custom_step.py` and then include them into your `config.json`. There you have to provide a “step_type”, which is simply the name of the class you define and the “parameters” of this class. The defined class needs to have an `execute` method, which executes the calculations to be done in the step. The custom step needs to inherit from the `PipelineStep`. It receives an object from the `DataContatiner` and returns it. The code snippet below shows the structure of a step.
+The pipeline can be customized to a specific project not only by selecting the steps to be performed. If you need to perform steps that are not available, you can add them to the folder `ml_garden/core/steps/custom_step.py` and then include them into your `config.json`. There you have to provide a “step_type”, which is simply the name of the class you define and the “parameters” of this class. The defined class needs to have an `execute` method, which executes the calculations to be done in the step. The custom step needs to inherit from the `PipelineStep`. It receives an object from the `DataContatiner` and returns it. The code snippet below shows the structure of a step.
 
 ```python
 from ml_garden.core import DataContainer
