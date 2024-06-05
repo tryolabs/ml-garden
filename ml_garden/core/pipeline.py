@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 import mlflow
 import pandas as pd
 
-from pipeline_lib.core.data_container import DataContainer
-from pipeline_lib.core.model_registry import ModelRegistry
-from pipeline_lib.core.random_state_generator import initialize_random_state
-from pipeline_lib.core.step_registry import StepRegistry
-from pipeline_lib.core.steps import PipelineStep
+from ml_garden.core.data_container import DataContainer
+from ml_garden.core.model_registry import ModelRegistry
+from ml_garden.core.random_state_generator import initialize_random_state
+from ml_garden.core.step_registry import StepRegistry
+from ml_garden.core.steps import PipelineStep
 
 
 class Pipeline:

@@ -2,8 +2,8 @@ from typing import Optional
 
 import pandas as pd
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps.base import PipelineStep
+from ml_garden.core import DataContainer
+from ml_garden.core.steps.base import PipelineStep
 
 
 class CleanStep(PipelineStep):

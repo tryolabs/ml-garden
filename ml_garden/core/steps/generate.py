@@ -5,9 +5,9 @@ from typing import Optional
 
 import pandas as pd
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps.base import PipelineStep
-from pipeline_lib.utils.df_type_conversions import apply_all_dtype_conversions
+from ml_garden.core import DataContainer
+from ml_garden.core.steps.base import PipelineStep
+from ml_garden.utils.df_type_conversions import apply_all_dtype_conversions
 
 
 class FileType(Enum):

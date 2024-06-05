@@ -7,8 +7,8 @@ from os import unlink
 import pandas as pd
 import xgboost as xgb
 
-from pipeline_lib.core.model import Model
-from pipeline_lib.utils import compression_utils
+from ml_garden.core.model import Model
+from ml_garden.utils import compression_utils
 
 logger = logging.getLogger(__file__)
 

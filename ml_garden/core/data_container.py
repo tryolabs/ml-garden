@@ -13,8 +13,8 @@ import pandas as pd
 from explainerdashboard.explainers import BaseExplainer
 from sklearn.compose import ColumnTransformer
 
-from pipeline_lib.core.model import Model
-from pipeline_lib.utils.compression_utils import compress_zipfile, decompress_zipfile
+from ml_garden.core.model import Model
+from ml_garden.utils.compression_utils import compress_zipfile, decompress_zipfile
 
 
 class DataContainer:

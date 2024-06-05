@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps import GenerateStep
+from ml_garden.core import DataContainer
+from ml_garden.core.steps import GenerateStep
 
 
 # Fixture to create a sample CSV file for testing

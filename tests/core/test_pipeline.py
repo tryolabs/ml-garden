@@ -5,7 +5,7 @@ import mlflow
 import pandas as pd
 import pytest
 
-from pipeline_lib import Pipeline
+from ml_garden import Pipeline
 
 
 def test_simple_train_pipeline():

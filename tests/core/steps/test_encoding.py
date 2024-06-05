@@ -3,8 +3,8 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps import EncodeStep
+from ml_garden.core import DataContainer
+from ml_garden.core.steps import EncodeStep
 
 
 @pytest.fixture

@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-from pipeline_lib.core import DataContainer
-from pipeline_lib.core.steps.base import PipelineStep
+from ml_garden.core import DataContainer
+from ml_garden.core.steps.base import PipelineStep
 
 
 class CalculateMetricsStep(PipelineStep):
