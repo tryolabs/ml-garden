@@ -3,7 +3,7 @@ import logging
 
 from explainerdashboard import ExplainerDashboard
 
-from pipeline_lib import Pipeline
+from ml_garden import Pipeline
 
 # Constants
 DEFAULT_LOG_LEVEL = "INFO"
