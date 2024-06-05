@@ -166,91 +166,82 @@ The configuration file defines the steps that should be executed by the pipeline
 
 ```json
 {
-    "pipeline": {
-        "name": "MyTrainingPipeline",
-        "description": "My amazing project",
-        "parameters": {
-            "save_data_path": "pipeline.pkl",
-            "target": "target_column"
-		}
-	},
-	"steps":[
-	{
-        "step_type": "GenerateStep",
-        "parameters": {
-            "train_path": "path/to/train/data.csv",
-            "test_path": "path/to/test/data.csv",
-            "predict_path": "path/to/predict/data.csv",
-            "drop_columns": [
-	            "column_to_drop"
-                ]
-            }
-	},
-	{
-		"step_type": "TabularStep",
-		"parameters":{
-			"train_percentage": 0.8
-            }
-	},
-	{
-		"step_type": "CleanStep",
-		"parameters":{
-			"filter": "column_name > 1000"
-			"drop_na_columns": [
-				"column_name1",
-				"column_name2"
-				]
-			"drop_ids": {
-				"id": [1, 100, 505]
-			}
-        }
-	},
-	{
-        "step_type": "CalculateFeaturesStep",
-        "parameters": {
-            "datetime_columns": ["date"],
-            "features": [
-                "month",
-                "day",
-                "hour"
-            ]
-        }
-    },
-    {
-        "step_type": "EncodeStep",
-        "parameters": {}
-    },
-    {
-        "step_type": "ModelStep",
-        "parameters": {
-           "model_class": "XGBoostModel",
-           "model_parameters": {
-             "max_depth": 5,
-             "eta": 0.1,
-             "objective": "reg:squarederror",
-             "eval_metric": "made",
-             "n_jobs": -1,
-             "n_estimators": 50,
-             "min_child_weight": 1,
-             "subsample": 1,
-             "colsample_bytree": 1,
-             "early_stopping_rounds": 20,
-         }
-       }
-    },
-    {
-        "step_type": "PredictStep",
-        "parameters": {}
-    },
-    {
-        "step_type": "CalculateMetricsStep",
-         "parameters": {}
-    },
-    {
-        "step_type": "ExplainerDashboardStep",
-         "parameters": {}
+  "pipeline": {
+    "name": "MyTrainingPipeline",
+    "description": "My amazing project",
+    "parameters": {
+      "save_data_path": "pipeline.pkl",
+      "target": "target_column"
     }
-    ]
+  },
+  "steps": [
+    {
+      "step_type": "GenerateStep",
+      "parameters": {
+        "train_path": "path/to/train/data.csv",
+        "test_path": "path/to/test/data.csv",
+        "predict_path": "path/to/predict/data.csv",
+        "drop_columns": ["column_to_drop"]
+      }
+    },
+    {
+      "step_type": "TabularStep",
+      "parameters": {
+        "train_percentage": 0.8
+      }
+    },
+    {
+      "step_type": "CleanStep",
+      "parameters": {
+        "filter": "column_name > 1000",
+        "drop_na_columns": ["column_name1", "column_name2"],
+        "drop_ids": {
+          "id": [1, 100, 505]
+        }
+      }
+    },
+    {
+      "step_type": "CalculateFeaturesStep",
+      "parameters": {
+        "datetime_columns": ["date"],
+        "features": ["month", "day", "hour"]
+      }
+    },
+    {
+      "step_type": "EncodeStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "ModelStep",
+      "parameters": {
+        "model_class": "XGBoostModel",
+        "model_parameters": {
+          "max_depth": 5,
+          "eta": 0.1,
+          "objective": "reg:squarederror",
+          "eval_metric": "made",
+          "n_jobs": -1,
+          "n_estimators": 50,
+          "min_child_weight": 1,
+          "subsample": 1,
+          "colsample_bytree": 1,
+          "early_stopping_rounds": 20
+        }
+      }
+    },
+    {
+      "step_type": "PredictStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "CalculateMetricsStep",
+      "parameters": {}
+    },
+    {
+      "step_type": "ExplainerDashboardStep",
+      "parameters": {}
+    }
+  ]
 }
 ```
 
