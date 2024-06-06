@@ -19,12 +19,12 @@ jobs:
           virtualenvs-in-project: true
 
       # Allow loading a cached venv created in a previous run if the lock file is identical
-      #- name: Load cached venv if it exists
-      #  id: venv-cache
-      #  uses: actions/cache@v3
-      #  with:
-      #    path: .venv
-      #    key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+      - name: Load cached venv if it exists
+        id: venv-cache
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
 
       - name: Install dependencies
         run: poetry install --no-interaction --extras all_models
