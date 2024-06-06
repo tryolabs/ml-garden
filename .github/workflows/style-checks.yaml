@@ -27,6 +27,7 @@ jobs:
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
 
       - name: Install dependencies
+        if: steps.venv-cache.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
 
       - name: Check format with black
