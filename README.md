@@ -4,8 +4,6 @@ ml-garden is a pipeline library that simplifies the creation and management of m
 The key components of the pipeline include Pipeline Steps, which are predefined steps connected to pass information through a data container; a Config File for setting pipeline steps and parameters; and a Data Container for storing and transferring essential data and results throughout the pipeline, facilitating effective data processing and analysis in machine learning projects.
 
 > [!WARNING]
-> Please be advised that this library is currently in the early stages of development and is not recommended for production use at this time. The API and functionality of the library may undergo changes without prior notice. Kindly use it at your own discretion and be aware of the associated risks.
-> [!WARNING]
 > Please be advised that this library is currently in the early stages of development and is not recommended for production use at this time. The API and functionality of the library may undergo changes without prior notice. This library was developed as part of a pro bono collaboration project with the [Open Collaboration Foundation (OCF)](https://github.com/openclimatefix/Open-Source-Quartz-Solar-Forecast/tree/main). As such, the development of the library is a work in progress, and both its implementation and API are subject to change. Kindly use the library at your own discretion and be aware of the associated risks.
 
 ## Features
