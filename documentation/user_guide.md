@@ -97,7 +97,7 @@ Here you can see an example of a `config.json` file to run an XGBoost pipeline (
     {
       "step_type": "ModelStep",
       "parameters": {
-        "model_class": "XGBoostModel"
+        "model_class": "XGBoost"
       }
     },
     {
