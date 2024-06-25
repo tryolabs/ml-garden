@@ -17,32 +17,32 @@ packages = [{ include = "ml_garden" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pandas = "^2.2.1"
-pyarrow = "^15.0.0"
+pandas = "^2.2.2"
+pyarrow = "^15.0.2"
 PyYAML = "^6.0.1"
-scikit-learn = ">=1.4.0"
-optuna = "^3.5.0"
-optuna-dashboard = "^0.15.0"
-explainerdashboard = "^0.4.5"
-xgboost = { version = "^2.0.3", optional = true }
+scikit-learn = ">=1.5.0"
+optuna = "^3.6.1"
+optuna-dashboard = "^0.15.1"
+explainerdashboard = "^0.4.7"
+xgboost = { version = "^2.1.0", optional = true }
 category-encoders = "^2.6.3"
-tqdm = "^4.66.2"
+tqdm = "^4.66.4"
 dill = "^0.3.8"
-mlflow = "^2.11.3"
-matplotlib = "^3.8.4"
+mlflow = "^2.14.1"
+matplotlib = "^3.9.0"
 
 [tool.poetry.extras]
 xgboost = ["xgboost"]
 all_models = ["xgboost"]
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^7.0.0"
-black = "^23.12.1"
+flake8 = "^7.1.0"
+black = "^24.4.2"
 isort = "^5.13.2"
-ipykernel = "^6.29.3"
-memray = "^1.12.0"
+ipykernel = "^6.29.4"
+memray = "^1.13.1"
 pyinstrument = "^4.6.2"
-pytest = "^8.2.0"
+pytest = "^8.2.2"
 
 
 [build-system]
