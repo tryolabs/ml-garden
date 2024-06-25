@@ -8,18 +8,24 @@ from ml_garden.core.steps import CalculateMetricsStep
 @pytest.fixture
 def data() -> DataContainer:
     data = DataContainer({"is_train": True})
-    data.train = pd.DataFrame({
-        "target": [1, 2, 3, 4, 5],
-        "prediction": [1.1, 1.9, 3.2, 3.8, 5.1],
-    })
-    data.validation = pd.DataFrame({
-        "target": [2, 4, 6, 8, 10],
-        "prediction": [2.2, 3.8, 6.1, 7.9, 9.8],
-    })
-    data.test = pd.DataFrame({
-        "target": [3, 6, 9, 12, 15],
-        "prediction": [3.3, 5.7, 9.2, 11.8, 14.9],
-    })
+    data.train = pd.DataFrame(
+        {
+            "target": [1, 2, 3, 4, 5],
+            "prediction": [1.1, 1.9, 3.2, 3.8, 5.1],
+        }
+    )
+    data.validation = pd.DataFrame(
+        {
+            "target": [2, 4, 6, 8, 10],
+            "prediction": [2.2, 3.8, 6.1, 7.9, 9.8],
+        }
+    )
+    data.test = pd.DataFrame(
+        {
+            "target": [3, 6, 9, 12, 15],
+            "prediction": [3.3, 5.7, 9.2, 11.8, 14.9],
+        }
+    )
     data.target = "target"
     data.prediction_column = "prediction"
     return data
