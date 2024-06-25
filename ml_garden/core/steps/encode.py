@@ -314,18 +314,22 @@ class EncodeStep(PipelineStep):
             )
 
             if high_cardinality_features:
-                transformers.append((
-                    "high_cardinality_encoder",
-                    high_cardinality_encoder_class(**high_cardinality_encoder_params),
-                    high_cardinality_features,
-                ))
+                transformers.append(
+                    (
+                        "high_cardinality_encoder",
+                        high_cardinality_encoder_class(**high_cardinality_encoder_params),
+                        high_cardinality_features,
+                    )
+                )
 
             if low_cardinality_features:
-                transformers.append((
-                    "low_cardinality_encoder",
-                    low_cardinality_encoder_class(**low_cardinality_encoder_params),
-                    low_cardinality_features,
-                ))
+                transformers.append(
+                    (
+                        "low_cardinality_encoder",
+                        low_cardinality_encoder_class(**low_cardinality_encoder_params),
+                        low_cardinality_features,
+                    )
+                )
         else:
             for feature in self.feature_encoders:
                 encoder_config = self.feature_encoders[feature]
