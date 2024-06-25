@@ -172,3 +172,4 @@ cython_debug/
 #.idea/
 
 **/.DS_Store
+*.pkl.zip
