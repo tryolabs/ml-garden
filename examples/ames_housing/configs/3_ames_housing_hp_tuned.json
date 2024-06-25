@@ -40,17 +40,16 @@
                 "parameters": {
                     "model_class": "XGBoost",
                     "model_parameters": {
-                        "max_depth": 13,
-                        "eta": 0.03239049988148554,
                         "objective": "reg:squarederror",
                         "eval_metric": "rmse",
-                        "n_jobs": -1,
-                        "n_estimators": 2230,
-                        "min_child_weight": 5,
-                        "subsample": 0.8178467889715423,
-                        "colsample_bytree": 0.6268890901817588,
+                        "tree_method": "hist",
                         "early_stopping_rounds": 20,
-                        "tree_method": "hist"
+                        "max_depth": 15,
+                        "eta": 0.08311222976823307,
+                        "n_estimators": 374,
+                        "min_child_weight": 6,
+                        "subsample": 0.5272883435658126,
+                        "colsample_bytree": 0.946222179438676
                     }
                 }
             },
