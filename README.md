@@ -141,6 +141,24 @@ This will use the DataFrame provided in code, not needing the `predict_path` fil
 
 The library allows users to define custom steps for data generation, cleaning, and preprocessing, which can be seamlessly integrated into the pipeline.
 
+## Optuna dashboard
+For hyperparameter tuning runs, you can run the Optuna Dashboard to check the status of hyperparameter tuning runs with this command:
+```bash
+optuna-dashboard sqlite:///db.sqlite3
+```
+
+## MLFlow Experiment Tracking
+You can locally host an MLFlow server to track your experiments by running
+```bash
+mlflow server --host 0.0.0.0 --port 5000
+```
+
+If you're within Tryolabs' VPN you can also use the MLFlow server hosted within our servers:
+```bash
+mlflow server --host 192.168.10.241 --port 49420
+```
+
+
 ## Performance and Memory Profiling
 
 We've added pyinsytrument and memray as development dependencies for optimizing performance and memory usage of the library.
