@@ -13,18 +13,17 @@ logger = logging.getLogger()
 # json_path = "examples/ames_housing/configs/1_ames_housing_baseline.json"
 # json_path = "examples/ames_housing/configs/2_ames_housing_hp_tuning.json"
 json_path = "examples/ames_housing/configs/3_ames_housing_hp_tuned.json"
-is_train = True
 
 
 # %%
 # Load and run the pipeline using the provided JSON file path
 pipeline = Pipeline.from_json(json_path)
-data = pipeline.run(is_train=is_train)
+data = pipeline.train()
 
 # %%
 # Load and run the pipeline using the provided JSON file path
 pipeline = Pipeline.from_json(json_path)
-data = pipeline.run(is_train=False)
+data = pipeline.predict()
 
 # %%
 data.predictions
