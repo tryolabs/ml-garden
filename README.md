@@ -155,7 +155,7 @@ mlflow server --host 0.0.0.0 --port 5000
 
 If you're within Tryolabs' VPN you can also use the MLFlow server hosted within our servers:
 ```bash
-mlflow server --host 192.168.10.241 --port 49420
+http://192.168.10.241:49420
 ```
 
 
