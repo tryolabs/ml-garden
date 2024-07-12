@@ -4,7 +4,8 @@
         "description": "Training pipeline for XGBoost models.",
         "parameters": {
             "save_data_path": "tests/data/test_2.pkl",
-            "target": "target"
+            "target": "target",
+            "task": "regression"
         },
         "steps": [
             {
@@ -47,7 +48,7 @@
             {
                 "step_type": "ModelStep",
                 "parameters": {
-                    "model_class": "XGBoost",
+                    "model_class": "XGBoostRegressor",
                     "model_parameters": {
                         "n_estimators": 3,
                         "max_depth": 3

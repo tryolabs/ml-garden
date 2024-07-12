@@ -5,6 +5,7 @@
         "parameters": {
             "save_data_path": "ames_housing.pkl",
             "target": "SalePrice",
+            "task": "regression",
             "tracking": {
                 "experiment": "ames_housing",
                 "run": "baseline"
@@ -38,7 +39,7 @@
             {
                 "step_type": "ModelStep",
                 "parameters": {
-                    "model_class": "XGBoost"
+                    "model_class": "XGBoostRegressor"
                 }
             },
             {

@@ -64,7 +64,7 @@ def test_log_experiment_success(tmpdir):
     class TestModel:
         pass
 
-    pipeline = Pipeline(save_data_path=str(tmpdir), target="target")
+    pipeline = Pipeline(save_data_path=str(tmpdir), target="target", task="regression")
     pipeline.config = {
         "pipeline": {
             "name": "Test Pipeline",
@@ -109,7 +109,7 @@ def test_log_experiment_predict_mode_raises_error():
     data = MagicMock()
     data.is_train = False
 
-    pipeline = Pipeline(save_data_path="", target="target")
+    pipeline = Pipeline(save_data_path="", target="target", task="regression")
 
     with pytest.raises(ValueError, match="only supported for training runs"):
         pipeline.log_experiment(data, experiment="test_experiment")

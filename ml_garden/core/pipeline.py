@@ -32,10 +32,13 @@ class Pipeline:
         "explainer",
     ]
 
+    SUPPORTED_TASKS = {"classification", "regression"}
+
     def __init__(
         self,
         save_data_path: str,
         target: str,
+        task: str,
         columns_to_ignore_for_training: Optional[list[str]] = None,
         tracking: Optional[dict] = None,
     ):
@@ -47,12 +50,18 @@ class Pipeline:
         self.tracking = tracking or {}
         self.config = {}
 
+        if task not in self.SUPPORTED_TASKS:
+            raise ValueError(f"task should be one of the supported tasks: {self.SUPPORTED_TASKS}")
+
+        self.task = task
+
     def _initialize_data(self) -> DataContainer:
         """Initialize the data container."""
         data = DataContainer()
         data.target = self.target
         data.prediction_column = self.prediction_column
         data.columns_to_ignore_for_training = self.columns_to_ignore_for_training
+        data.task = self.task
         return data
 
     def add_steps(self, steps: list[PipelineStep]):
@@ -160,6 +169,7 @@ class Pipeline:
                 "columns_to_ignore_for_training", []
             ),
             tracking=config["pipeline"]["parameters"].get("tracking"),
+            task=config["pipeline"]["parameters"]["task"],
         )
         pipeline.config = config
 
@@ -184,6 +194,12 @@ class Pipeline:
                 model_class_name = parameters.pop("model_class")
                 model_class = cls.model_registry.get_model_class(model_class_name)
                 parameters["model_class"] = model_class
+
+                if model_class.TASK != pipeline.task:
+                    raise ValueError(
+                        f"The model class '{model_class_name}' is intended for '{model_class.TASK}'"
+                        f" tasks, but the pipeline task is '{pipeline.task}'."
+                    )
 
             step_class = cls.step_registry.get_step_class(step_type)
             step = step_class(**parameters)

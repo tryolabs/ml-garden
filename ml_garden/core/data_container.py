@@ -891,6 +891,37 @@ class DataContainer:
         """
         self["feature_importance"] = value
 
+    @property
+    def task(self) -> str:
+        """
+        Get the task from the DataContainer.
+
+        Returns
+        -------
+        str
+            The task, either "regression" or "classification".
+        """
+        return self["task"]
+
+    @task.setter
+    def task(self, value: str) -> None:
+        """
+        Set the task in the DataContainer.
+
+        Parameters
+        ----------
+        value : str
+            The task to set. Must be one of "regression" or "classification".
+
+        Raises
+        ------
+        ValueError
+            If the value is not "regression" or "classification".
+        """
+        if value not in {"regression", "classification"}:
+            raise ValueError('Task must be "regression" or "classification"')
+        self["task"] = value
+
     def __eq__(self, other) -> bool:
         """
         Compare this DataContainer with another for equality.
