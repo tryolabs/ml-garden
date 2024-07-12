@@ -29,6 +29,7 @@ def data_container():
         "validation": pd.DataFrame({"feature1": [7, 8], "feature2": [9, 10], "target": [0, 1]}),
         "test": pd.DataFrame({"feature1": [11, 12], "feature2": [13, 14], "target": [1, 0]}),
         "prediction_column": "predicted",
+        "task": "regression",
     }
     return DataContainer(data)
 
@@ -129,6 +130,7 @@ def test_optuna_optimizer(mock_model_class, data_container):
             data_container.y_validation,
             mock_model_class,
             initial_model_parameters,
+            data_container.task,
         )
 
     # Assert the model is instantiated with optimized parameters

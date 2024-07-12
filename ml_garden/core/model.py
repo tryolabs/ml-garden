@@ -7,6 +7,8 @@ import pandas as pd
 class Model(ABC):
     """Base class for models."""
 
+    TASK = ""
+
     @abstractmethod
     def fit(
         self,

@@ -1,1 +1,1 @@
-from .model import XGBoost  # noqa: F401
+from .model import XGBoostClassifier, XGBoostRegressor  # noqa: F401

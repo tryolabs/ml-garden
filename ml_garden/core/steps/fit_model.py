@@ -2,10 +2,14 @@ import json
 import logging
 from typing import Optional, Type
 
+import numpy as np
 import optuna
 from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
     mean_absolute_error,
     mean_squared_error,
+    roc_auc_score,
     root_mean_squared_error,
 )
 
@@ -37,6 +41,7 @@ class OptunaOptimizer:
         y_validation,
         model_class: Type[Model],
         model_parameters: dict,
+        task: str,
     ) -> dict:
         """Optimize the model hyperparameters using Optuna.
         Parameters
@@ -53,6 +58,8 @@ class OptunaOptimizer:
             The model class to optimize
         model_parameters : dict
             The model parameters to optimize
+        task : str
+            The type of task: "regression" or "classification"
         Returns
         -------
         dict
@@ -70,7 +77,7 @@ class OptunaOptimizer:
             preds = model.predict(X_validation)
 
             objective_metric = self.optuna_params.get("objective_metric", "mean_absolute_error")
-            error = self._calculate_error(y_validation, preds, objective_metric)
+            error = self._calculate_error(y_validation, preds, objective_metric, task)
             return error
 
         study = self._create_study()
@@ -124,7 +131,7 @@ class OptunaOptimizer:
         return study
 
     @staticmethod
-    def _calculate_error(y_true, y_pred, metric):
+    def _calculate_error(y_true: np.ndarray, y_pred: np.ndarray, metric: str, task: str) -> float:
         """Calculate the error between the true and predicted values.
         Parameters
         ----------
@@ -134,16 +141,30 @@ class OptunaOptimizer:
             The predicted target values
         metric : str
             The error metric to calculate
+        task : str
+            The type of task: "regression" or "classification"
         Returns
         -------
         float
             The error value
         """
-        metrics = {
+        regression_metrics = {
             "mae": mean_absolute_error,
             "mse": mean_squared_error,
             "rmse": root_mean_squared_error,
         }
+        classification_metrics = {
+            "accuracy": accuracy_score,
+            "f1": f1_score,
+            "auc": roc_auc_score,
+        }
+
+        if task == "regression":
+            metrics = regression_metrics
+        elif task == "classification":
+            metrics = classification_metrics
+        else:
+            raise ValueError(f"Unsupported task: {task}")
 
         if metric not in metrics:
             raise ValueError(f"Unsupported objective metric: {metric}")
@@ -223,6 +244,7 @@ class ModelStep(PipelineStep):
                 data.y_validation,
                 self.model_class,
                 model_parameters,
+                data.task,
             )
             model_parameters.update(optuna_model_params)
             self.logger.info(f"Optimized model parameters: \n{json.dumps(model_parameters)}")
