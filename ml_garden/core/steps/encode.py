@@ -277,70 +277,76 @@ class EncodeStep(PipelineStep):
 
         return encoder, encoder_params
 
+    def _log_encoder_override(
+        self, feature, encoder_class, high_cardinality_features, low_cardinality_features
+    ):
+        if feature in high_cardinality_features:
+            self.logger.info(
+                f"Feature '{feature}' encoder overridden from"
+                f" {self.HIGH_CARDINALITY_ENCODER} to {encoder_class.__name__}"
+            )
+        elif feature in low_cardinality_features:
+            self.logger.info(
+                f"Feature '{feature}' encoder overridden from {self.LOW_CARDINALITY_ENCODER} to"
+                f" {encoder_class.__name__}"
+            )
+        else:
+            self.logger.info(
+                f"Feature '{feature}' explicitly encoded with {encoder_class.__name__}"
+            )
+
     def _create_column_transformer(
         self,
         high_cardinality_features: List[str],
         low_cardinality_features: List[str],
         numeric_features: List[str],
     ) -> ColumnTransformer:
-        """Create a ColumnTransformer for encoding.
-
-        If `feature_encoders` is not provided, use the default encoders based on cardinality.
-        * For low cardinality features, use OrdinalEncoder.
-        * For high cardinality features, use TargetEncoder.
-        * For numeric features, pass them as is.
-
-        Parameters
-        ----------
-        high_cardinality_features : List[str]
-            High cardinality features
-        low_cardinality_features : List[str]
-            Low cardinality features
-        numeric_features : List[str]
-            Numeric features
-        Returns
-        -------
-        ColumnTransformer
-            The ColumnTransformer
-        """
         transformers = []
+        encoded_features = set()
 
-        if not self.feature_encoders:
-            high_cardinality_encoder_class, high_cardinality_encoder_params = (
-                self._get_encoder_class_and_params(self.HIGH_CARDINALITY_ENCODER)
+        # Handle shared encoder for Origin and Destination
+        if "shared_origin_destination" in self.feature_encoders:
+            shared_config = self.feature_encoders["shared_origin_destination"]
+            shared_features = shared_config["features"]
+            encoder_class, encoder_params = self._get_encoder_class_and_params(
+                shared_config["encoder"]
             )
-            low_cardinality_encoder_class, low_cardinality_encoder_params = (
-                self._get_encoder_class_and_params(self.LOW_CARDINALITY_ENCODER)
-            )
+            encoder_params.update(shared_config.get("params", {}))
+            shared_encoder = encoder_class(**encoder_params)
 
-            if high_cardinality_features:
-                transformers.append(
-                    (
-                        "high_cardinality_encoder",
-                        high_cardinality_encoder_class(**high_cardinality_encoder_params),
-                        high_cardinality_features,
-                    )
+            transformers.append(("shared_origin_destination", shared_encoder, shared_features))
+            encoded_features.update(shared_features)
+
+            for feature in shared_features:
+                self._log_encoder_override(
+                    feature, encoder_class, high_cardinality_features, low_cardinality_features
                 )
 
-            if low_cardinality_features:
-                transformers.append(
-                    (
-                        "low_cardinality_encoder",
-                        low_cardinality_encoder_class(**low_cardinality_encoder_params),
-                        low_cardinality_features,
-                    )
-                )
-        else:
-            for feature in self.feature_encoders:
+        # Handle other categorical features
+        remaining_categorical = (
+            set(high_cardinality_features + low_cardinality_features) - encoded_features
+        )
+        for feature in remaining_categorical:
+            if feature in self.feature_encoders:
                 encoder_config = self.feature_encoders[feature]
                 encoder_class, encoder_params = self._get_encoder_class_and_params(
                     encoder_config["encoder"]
                 )
                 encoder_params.update(encoder_config.get("params", {}))
-                encoder = encoder_class(**encoder_params)
-                transformers.append((f"{feature}_encoder", encoder, [feature]))
+            elif feature in high_cardinality_features:
+                encoder_class, encoder_params = self._get_encoder_class_and_params(
+                    self.HIGH_CARDINALITY_ENCODER
+                )
+            else:
+                encoder_class, encoder_params = self._get_encoder_class_and_params(
+                    self.LOW_CARDINALITY_ENCODER
+                )
 
-        # Pass numeric features as is
+            encoder = encoder_class(**encoder_params)
+            transformers.append((f"{feature}_encoder", encoder, [feature]))
+            encoded_features.add(feature)
+
+        # Handle numeric features
         if numeric_features:
             transformers.append(("numeric", "passthrough", numeric_features))
 
