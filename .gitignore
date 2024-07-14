@@ -11,6 +11,8 @@ __pycache__/
 *.json
 *.pkl
 
+# Autogluon
+AutogluonModels/
 
 # ignore mlflow folder
 mlruns/
