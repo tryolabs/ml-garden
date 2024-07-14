@@ -29,7 +29,8 @@ def train_data() -> pd.DataFrame:
 def train_data_container(train_data: pd.DataFrame) -> DataContainer:
     data = DataContainer({"target": "target", "is_train": True})
     data.columns_to_ignore_for_training = []
-    data.train = train_data
+    data.X_train = train_data.drop(columns=["target"])
+    data.y_train = train_data["target"]
     return data
 
 
@@ -45,10 +46,10 @@ def test_check_numeric_passthrough(train_data_container: DataContainer):
         assert column in result.X_train.columns
 
         # Check that the dtype of the numeric column remains the same
-        assert result.X_train[column].dtype == train_data_container.train[column].dtype
+        assert result.X_train[column].dtype == train_data_container.X_train[column].dtype
 
         # Check that the values of the numeric column remain unchanged
-        pdt.assert_series_equal(result.X_train[column], train_data_container.train[column])
+        pdt.assert_series_equal(result.X_train[column], train_data_container.X_train[column])
 
 
 def test_check_ordinal_encoding(train_data_container: DataContainer):
@@ -64,7 +65,7 @@ def test_check_ordinal_encoding(train_data_container: DataContainer):
 
     # Check that the number of unique encoded values matches the number of unique categories
     assert len(result.X_train["category_low"].unique()) == len(
-        train_data_container.train["category_low"].unique()
+        train_data_container.X_train["category_low"].unique()
     )
 
 
