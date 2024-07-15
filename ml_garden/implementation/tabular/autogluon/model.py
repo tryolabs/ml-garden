@@ -3,13 +3,14 @@ import logging
 import pandas as pd
 from autogluon.tabular import TabularPredictor
 
+from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 
 logger = logging.getLogger(__file__)
 
 
 class AutoGluon(Model):
-    TASKS = ["regression", "classification"]
+    TASKS = [Task.REGRESSION, Task.CLASSIFICATION]
 
     def __init__(self, **params):
         self.params = params

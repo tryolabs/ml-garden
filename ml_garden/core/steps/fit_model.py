@@ -298,6 +298,7 @@ class ModelStep(PipelineStep):
             The updated data container
         """
         self.logger.info(f"Predicting with {self.model_class.__name__} model")
+        data.X_prediction = data.flow.drop(columns=data.columns_to_ignore_for_training)
         data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
         data.predictions = data.flow[data.prediction_column]
         return data
