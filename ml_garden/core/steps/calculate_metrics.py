@@ -15,6 +15,7 @@ from sklearn.metrics import (
 )
 
 from ml_garden.core import DataContainer
+from ml_garden.core.constants import Task
 from ml_garden.core.steps.base import PipelineStep
 
 
@@ -110,6 +111,43 @@ class CalculateMetricsStep(PipelineStep):
             "Confusion Matrix": str(cm.tolist()),
         }
 
+    def _calculate_metrics(
+        self, true_values: pd.Series, predictions: pd.Series, task: Task
+    ) -> dict:
+        """
+        Calculate metrics based on the task type.
+
+        Parameters
+        ----------
+        true_values : pd.Series
+            The true values of the target variable.
+        predictions : pd.Series
+            The predicted values of the model.
+        task : Task
+            The type of task, either Task.CLASSIFICATION or Task.REGRESSION.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the calculated metrics.
+
+        Raises
+        ------
+        ValueError
+            If the task type is not recognized.
+        """
+        metric_calculators = {
+            Task.CLASSIFICATION: self._calculate_classification_metrics,
+            Task.REGRESSION: self._calculate_regression_metrics,
+        }
+
+        try:
+            calculate_metrics = metric_calculators[task]
+        except KeyError:
+            raise ValueError(f"Unsupported task type: {task}")
+
+        return calculate_metrics(true_values=true_values, predictions=predictions)
+
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
         Parameters
@@ -125,13 +163,6 @@ class CalculateMetricsStep(PipelineStep):
 
         metrics = {}
 
-        if data.task == "classification":
-            calculate_metrics = self._calculate_classification_metrics
-        elif data.task == "regression":
-            calculate_metrics = self._calculate_regression_metrics
-        else:
-            raise ValueError(f"Unsupported task type: {data.task}")
-
         if data.is_train:
             # Metrics are only calculated during training
             for dataset_name in ["train", "validation", "test"]:
@@ -143,9 +174,10 @@ class CalculateMetricsStep(PipelineStep):
                     )
                     continue
 
-                metrics[dataset_name] = calculate_metrics(
+                metrics[dataset_name] = self._calculate_metrics(
                     true_values=dataset[data.target],
                     predictions=dataset[data.prediction_column],
+                    task=data.task,
                 )
 
             # pretty print metrics

@@ -13,6 +13,7 @@ import pandas as pd
 from explainerdashboard.explainers import BaseExplainer
 from sklearn.compose import ColumnTransformer
 
+from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 from ml_garden.utils.compression_utils import compress_zipfile, decompress_zipfile
 
@@ -892,25 +893,25 @@ class DataContainer:
         self["feature_importance"] = value
 
     @property
-    def task(self) -> str:
+    def task(self) -> Task:
         """
         Get the task from the DataContainer.
 
         Returns
         -------
-        str
+        Task
             The task, either "regression" or "classification".
         """
         return self["task"]
 
     @task.setter
-    def task(self, value: str) -> None:
+    def task(self, value: Task) -> None:
         """
         Set the task in the DataContainer.
 
         Parameters
         ----------
-        value : str
+        value : Task
             The task to set. Must be one of "regression" or "classification".
 
         Raises
@@ -918,8 +919,9 @@ class DataContainer:
         ValueError
             If the value is not "regression" or "classification".
         """
-        if value not in {"regression", "classification"}:
-            raise ValueError('Task must be "regression" or "classification"')
+        if not isinstance(value, Task):
+            raise ValueError(f"task must be an instance of Task enum, got {type(task)}")
+
         self["task"] = value
 
     def __eq__(self, other) -> bool:

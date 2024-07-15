@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 
 from ml_garden.core import DataContainer
+from ml_garden.core.constants import Task
 from ml_garden.core.steps import CalculateMetricsStep
 
 
@@ -22,7 +23,7 @@ def data() -> DataContainer:
     })
     data.target = "target"
     data.prediction_column = "prediction"
-    data.task = "regression"
+    data.task = Task.REGRESSION
     return data
 
 
