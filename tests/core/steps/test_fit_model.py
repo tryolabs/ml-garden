@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from ml_garden.core import DataContainer
+from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 from ml_garden.core.steps.fit_model import ModelStep, OptunaOptimizer
 
@@ -29,7 +30,7 @@ def data_container():
         "validation": pd.DataFrame({"feature1": [7, 8], "feature2": [9, 10], "target": [0, 1]}),
         "test": pd.DataFrame({"feature1": [11, 12], "feature2": [13, 14], "target": [1, 0]}),
         "prediction_column": "predicted",
-        "task": "regression",
+        "task": Task.REGRESSION,
     }
     return DataContainer(data)
 
