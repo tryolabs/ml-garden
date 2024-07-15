@@ -16,9 +16,6 @@ class AutoGluon(Model):
         self.model: TabularPredictor = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series, eval_set=None, verbose=True) -> None:
-
-        # Autogluon SHOULD ignore encoders and previous steps
-
         train_data = X.copy()
         train_data["label"] = y
         if eval_set is not None and len(eval_set) > 0:
