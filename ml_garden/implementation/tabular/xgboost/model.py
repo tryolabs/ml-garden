@@ -3,13 +3,14 @@ import logging
 import pandas as pd
 import xgboost as xgb
 
+from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 
 logger = logging.getLogger(__file__)
 
 
 class XGBoostRegressor(Model):
-    TASK = "regression"
+    TASKS = [Task.REGRESSION]
 
     def __init__(self, **params):
         self.model = xgb.XGBRegressor(**params)
@@ -22,7 +23,7 @@ class XGBoostRegressor(Model):
 
 
 class XGBoostClassifier(Model):
-    TASK = "classification"
+    TASKS = [Task.CLASSIFICATION]
 
     def __init__(self, **params):
         self.model = xgb.XGBClassifier(**params)

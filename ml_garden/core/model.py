@@ -3,11 +3,13 @@ from typing import List, Optional, Tuple
 
 import pandas as pd
 
+from ml_garden.core.constants import Task
+
 
 class Model(ABC):
     """Base class for models."""
 
-    TASK = ""
+    TASKS: List[Task] = []
 
     @abstractmethod
     def fit(

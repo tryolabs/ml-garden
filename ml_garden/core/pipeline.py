@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import mlflow
 import pandas as pd
 
+from ml_garden.core.constants import Task
 from ml_garden.core.data_container import DataContainer
 from ml_garden.core.model_registry import ModelRegistry
 from ml_garden.core.random_state_generator import initialize_random_state
@@ -32,16 +33,17 @@ class Pipeline:
         "explainer",
     ]
 
-    SUPPORTED_TASKS = {"classification", "regression"}
-
     def __init__(
         self,
         save_data_path: str,
         target: str,
-        task: str,
+        task: Task,
         columns_to_ignore_for_training: Optional[list[str]] = None,
         tracking: Optional[dict] = None,
     ):
+        if not isinstance(task, Task):
+            raise ValueError(f"task must be an instance of Task enum, got {type(task)}")
+
         self.steps = []
         self.save_data_path = save_data_path
         self.target = target
@@ -49,10 +51,6 @@ class Pipeline:
         self.columns_to_ignore_for_training = columns_to_ignore_for_training or []
         self.tracking = tracking or {}
         self.config = {}
-
-        if task not in self.SUPPORTED_TASKS:
-            raise ValueError(f"task should be one of the supported tasks: {self.SUPPORTED_TASKS}")
-
         self.task = task
 
     def _initialize_data(self) -> DataContainer:
@@ -147,6 +145,14 @@ class Pipeline:
             )
 
     @classmethod
+    def _validate_task(cls, task: str) -> Task:
+        try:
+            return Task(task.lower())
+        except ValueError:
+            supported_tasks = ", ".join(t.value for t in Task)
+            raise ValueError(f"Invalid task: {task}. Supported tasks are: {supported_tasks}")
+
+    @classmethod
     def from_json(cls, path: str) -> Pipeline:
         """Load a pipeline from a JSON file."""
         # check file is a json file
@@ -162,6 +168,8 @@ class Pipeline:
         if custom_steps_path:
             cls.step_registry.load_and_register_custom_steps(custom_steps_path)
 
+        task = Pipeline._validate_task(config["pipeline"]["parameters"]["task"])
+
         pipeline = Pipeline(
             save_data_path=config["pipeline"]["parameters"]["save_data_path"],
             target=config["pipeline"]["parameters"]["target"],
@@ -169,7 +177,7 @@ class Pipeline:
                 "columns_to_ignore_for_training", []
             ),
             tracking=config["pipeline"]["parameters"].get("tracking"),
-            task=config["pipeline"]["parameters"]["task"],
+            task=task,
         )
         pipeline.config = config
 
@@ -195,7 +203,7 @@ class Pipeline:
                 model_class = cls.model_registry.get_model_class(model_class_name)
                 parameters["model_class"] = model_class
 
-                if model_class.TASK != pipeline.task:
+                if pipeline.task not in model_class.TASKS:
                     raise ValueError(
                         f"The model class '{model_class_name}' is intended for '{model_class.TASK}'"
                         f" tasks, but the pipeline task is '{pipeline.task}'."
