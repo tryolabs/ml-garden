@@ -14,6 +14,7 @@ from sklearn.metrics import (
 )
 
 from ml_garden.core import DataContainer
+from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 from ml_garden.core.steps.base import PipelineStep
 
@@ -41,7 +42,7 @@ class OptunaOptimizer:
         y_validation,
         model_class: Type[Model],
         model_parameters: dict,
-        task: str,
+        task: Task,
     ) -> dict:
         """Optimize the model hyperparameters using Optuna.
         Parameters
@@ -58,7 +59,7 @@ class OptunaOptimizer:
             The model class to optimize
         model_parameters : dict
             The model parameters to optimize
-        task : str
+        task : Task
             The type of task: "regression" or "classification"
         Returns
         -------
@@ -76,7 +77,7 @@ class OptunaOptimizer:
             model.fit(X_train, y_train, eval_set=[(X_validation, y_validation)], verbose=False)
             preds = model.predict(X_validation)
 
-            objective_metric = self.optuna_params.get("objective_metric", "mean_absolute_error")
+            objective_metric = self.optuna_params["objective_metric"]
             error = self._calculate_error(y_validation, preds, objective_metric, task)
             return error
 
@@ -131,8 +132,9 @@ class OptunaOptimizer:
         return study
 
     @staticmethod
-    def _calculate_error(y_true: np.ndarray, y_pred: np.ndarray, metric: str, task: str) -> float:
+    def _calculate_error(y_true: np.ndarray, y_pred: np.ndarray, metric: str, task: Task) -> float:
         """Calculate the error between the true and predicted values.
+
         Parameters
         ----------
         y_true : np.ndarray
@@ -141,7 +143,7 @@ class OptunaOptimizer:
             The predicted target values
         metric : str
             The error metric to calculate
-        task : str
+        task : Task
             The type of task: "regression" or "classification"
         Returns
         -------
@@ -159,9 +161,9 @@ class OptunaOptimizer:
             "auc": roc_auc_score,
         }
 
-        if task == "regression":
+        if task == Task.REGRESSION:
             metrics = regression_metrics
-        elif task == "classification":
+        elif task == Task.CLASSIFICATION:
             metrics = classification_metrics
         else:
             raise ValueError(f"Unsupported task: {task}")
