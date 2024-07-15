@@ -920,7 +920,7 @@ class DataContainer:
             If the value is not "regression" or "classification".
         """
         if not isinstance(value, Task):
-            raise ValueError(f"task must be an instance of Task enum, got {type(task)}")
+            raise ValueError(f"task must be an instance of Task enum, got {type(value)}")
 
         self["task"] = value
 
