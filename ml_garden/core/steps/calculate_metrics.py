@@ -21,26 +21,26 @@ from ml_garden.core.steps.base import PipelineStep
 
 
 class RegressionMetrics(TypedDict):
-    MAE: str
-    RMSE: str
-    R_2: str
-    Mean_Error: str
-    Max_Error: str
-    Median_Absolute_Error: str
+    MAE: float
+    RMSE: float
+    R_2: float
+    Mean_Error: float
+    Max_Error: float
+    Median_Absolute_Error: float
 
 
 class ClassMetrics(TypedDict):
-    Precision: str
-    Recall: str
-    F1_Score: str
-    Support: str
+    Precision: float
+    Recall: float
+    F1_Score: float
+    Support: int
 
 
 class ClassificationOverallMetrics(TypedDict):
-    Accuracy: str
-    Weighted_Precision: str
-    Weighted_Recall: str
-    Weighted_F1_Score: str
+    Accuracy: float
+    Weighted_Precision: float
+    Weighted_Recall: float
+    Weighted_F1_Score: float
 
 
 class ClassificationMetrics(TypedDict):
@@ -56,7 +56,7 @@ class DatasetMetrics(TypedDict):
 
 
 class CalculateMetricsStep(PipelineStep):
-    """Calculate metrics."""
+    """Calculate metrics for regression and classification tasks."""
 
     used_for_prediction = False
     used_for_training = True
@@ -69,7 +69,21 @@ class CalculateMetricsStep(PipelineStep):
     def _calculate_regression_metrics(
         self, true_values: pd.Series, predictions: pd.Series
     ) -> RegressionMetrics:
-        """Calculate regression metrics."""
+        """
+        Calculate regression metrics.
+
+        Parameters
+        ----------
+        true_values : pd.Series
+            The true values of the target variable.
+        predictions : pd.Series
+            The predicted values of the target variable.
+
+        Returns
+        -------
+        RegressionMetrics
+            A dictionary containing various regression metrics.
+        """
         mae = mean_absolute_error(true_values, predictions)
         rmse = np.sqrt(mean_squared_error(true_values, predictions))
         r2 = r2_score(true_values, predictions)
@@ -78,18 +92,32 @@ class CalculateMetricsStep(PipelineStep):
         median_absolute_error = np.median(np.abs(true_values - predictions))
 
         return RegressionMetrics(
-            MAE=str(mae),
-            RMSE=str(rmse),
-            R_2=str(r2),
-            Mean_Error=str(me),
-            Max_Error=str(max_error),
-            Median_Absolute_Error=str(median_absolute_error),
+            MAE=mae,
+            RMSE=rmse,
+            R_2=r2,
+            Mean_Error=me,
+            Max_Error=max_error,
+            Median_Absolute_Error=median_absolute_error,
         )
 
     def _calculate_classification_metrics(
         self, true_values: pd.Series, predictions: pd.Series
     ) -> ClassificationMetrics:
-        """Calculate classification metrics."""
+        """
+        Calculate classification metrics.
+
+        Parameters
+        ----------
+        true_values : pd.Series
+            The true values of the target variable.
+        predictions : pd.Series
+            The predicted values of the target variable.
+
+        Returns
+        -------
+        ClassificationMetrics
+            A dictionary containing various classification metrics.
+        """
         accuracy = accuracy_score(true_values, predictions)
         precision, recall, f1, support = precision_recall_fscore_support(true_values, predictions)
         weighted_precision = precision_score(true_values, predictions, average="weighted")
@@ -98,19 +126,19 @@ class CalculateMetricsStep(PipelineStep):
         cm = confusion_matrix(true_values, predictions)
 
         overall = ClassificationOverallMetrics(
-            Accuracy=str(accuracy),
-            Weighted_Precision=str(weighted_precision),
-            Weighted_Recall=str(weighted_recall),
-            Weighted_F1_Score=str(weighted_f1),
+            Accuracy=accuracy,
+            Weighted_Precision=weighted_precision,
+            Weighted_Recall=weighted_recall,
+            Weighted_F1_Score=weighted_f1,
         )
 
         per_class = {}
         for i, class_label in enumerate(np.unique(true_values)):
             per_class[f"Class_{class_label}"] = ClassMetrics(
-                Precision=str(precision[i]),
-                Recall=str(recall[i]),
-                F1_Score=str(f1[i]),
-                Support=str(support[i]),
+                Precision=precision[i],
+                Recall=recall[i],
+                F1_Score=f1[i],
+                Support=int(support[i]),
             )
 
         return ClassificationMetrics(
@@ -122,7 +150,28 @@ class CalculateMetricsStep(PipelineStep):
     def _calculate_metrics(
         self, true_values: pd.Series, predictions: pd.Series, task: Task
     ) -> Union[RegressionMetrics, ClassificationMetrics]:
-        """Calculate metrics based on the task type."""
+        """
+        Calculate metrics based on the task type.
+
+        Parameters
+        ----------
+        true_values : pd.Series
+            The true values of the target variable.
+        predictions : pd.Series
+            The predicted values of the target variable.
+        task : Task
+            The type of machine learning task (classification or regression).
+
+        Returns
+        -------
+        Union[RegressionMetrics, ClassificationMetrics]
+            A dictionary containing the calculated metrics.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported task type is provided.
+        """
         metric_calculators = {
             Task.CLASSIFICATION: self._calculate_classification_metrics,
             Task.REGRESSION: self._calculate_regression_metrics,
@@ -136,7 +185,19 @@ class CalculateMetricsStep(PipelineStep):
         return calculate_metrics(true_values=true_values, predictions=predictions)
 
     def execute(self, data: DataContainer) -> DataContainer:
-        """Execute the step."""
+        """
+        Execute the metric calculation step.
+
+        Parameters
+        ----------
+        data : DataContainer
+            The data container object containing the datasets and metadata.
+
+        Returns
+        -------
+        DataContainer
+            The updated data container with calculated metrics.
+        """
         self.logger.debug("Starting metric calculation")
 
         metrics: DatasetMetrics = {}
