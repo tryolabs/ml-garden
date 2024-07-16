@@ -52,11 +52,9 @@ class EncodeStep(PipelineStep):
         self.logger.info("Encoding data")
 
         if not data.is_train:
-            categorical_features, numeric_features = self._get_feature_types(
-                data.flow.drop(columns=data.columns_to_ignore_for_training)
-            )
+            categorical_features, numeric_features = self._get_feature_types(data.X_prediction)
             data.X_prediction, _, _ = self._apply_encoding(
-                X=data.flow,
+                X=data.X_prediction,
                 y=None,
                 categorical_features=categorical_features,
                 numeric_features=numeric_features,
@@ -66,8 +64,6 @@ class EncodeStep(PipelineStep):
             return data
 
         categorical_features, numeric_features = self._get_feature_types(data.X_train)
-        self.logger.info(f"New categorical features: {categorical_features}")
-        self.logger.info(f"New numeric features: {numeric_features}")
 
         data.X_train, data.y_train, data._encoder = self._apply_encoding(
             X=data.X_train,

@@ -13,7 +13,7 @@ from ml_garden.utils.string_utils import concatenate_columns
 class TabularSplitStep(PipelineStep):
     """Split the data."""
 
-    used_for_prediction = False
+    used_for_prediction = True
     used_for_training = True
 
     def __init__(
@@ -129,6 +129,13 @@ class TabularSplitStep(PipelineStep):
 
         Where df is the DataFrame used as input to the SplitStep
         """
+        if not data.is_train:
+            data.X_prediction = data.flow
+            if data.columns_to_ignore_for_training:
+                data.X_prediction = data.X_prediction.drop(
+                    columns=data.columns_to_ignore_for_training
+                )
+            return data
 
         self.logger.info("Splitting tabular data...")
         df = data.flow

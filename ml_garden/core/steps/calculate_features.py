@@ -65,7 +65,7 @@ class CalculateFeaturesStep(PipelineStep):
                 f" features: {list(self.feature_extractors.keys())}"
             )
 
-    def _convert_column_to_datetime(self, df: pd.DataFrame, column: str) -> pd.DataFrame:
+    def _convert_column_to_datetime(self, df: pd.DataFrame, column: str, log: bool) -> pd.DataFrame:
         """Convert a column to datetime.
         Parameters
         ----------
@@ -73,6 +73,8 @@ class CalculateFeaturesStep(PipelineStep):
             The DataFrame containing the column to convert
         column : str
             The name of the column to convert
+        log: bool
+            If True, logs information.
         Returns
         -------
         pd.DataFrame
@@ -85,14 +87,15 @@ class CalculateFeaturesStep(PipelineStep):
                     df[column],
                     errors="raise",
                 )
-                self.logger.info(f"Column '{column}' automatically converted to datetime.")
+                if log:
+                    self.logger.info(f"Column '{column}' automatically converted to datetime.")
             except ValueError as e:
                 self.logger.error(f"Error converting column '{column}' to datetime: {e}")
             except Exception as e:
                 self.logger.error(f"Unexpected error converting column '{column}' to datetime: {e}")
         else:
-            self.logger.debug(f"Column '{column}' is already a datetime type.")
-
+            if log:
+                self.logger.debug(f"Column '{column}' is already a datetime type.")
         return df
 
     def _extract_feature(self, df: pd.DataFrame, column: str, feature: str) -> None:
@@ -122,6 +125,14 @@ class CalculateFeaturesStep(PipelineStep):
             )
             raise ValueError(error_message)
 
+    def _drop_datetime_columns(self, df: pd.DataFrame, log: bool) -> pd.DataFrame:
+        """Drop the datetime columns from the `df`."""
+        if self.datetime_columns:
+            if log:
+                self.logger.info(f"Dropping original datetime columns: {self.datetime_columns}")
+            return df.drop(columns=self.datetime_columns)
+        return df
+
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
         Parameters
@@ -135,21 +146,18 @@ class CalculateFeaturesStep(PipelineStep):
         """
         self.logger.info("Calculating features")
 
-        if not data.is_train:
-            data.flow = self._create_datetime_features(data.flow, log=True)
+        datasets = [
+            ("X_prediction", data.X_prediction, True),
+            ("X_train", data.X_train, True),
+            ("X_validation", data.X_validation, False),
+            ("X_test", data.X_test, False),
+        ]
 
-        if data.train is not None:
-            data.train = self._create_datetime_features(data.train, log=True)
-
-        if data.validation is not None:
-            data.validation = self._create_datetime_features(data.validation)
-
-        if data.test is not None:
-            data.test = self._create_datetime_features(data.test)
-
-        ## add datetime columns to ignore columns for training
-        if self.datetime_columns:
-            data.columns_to_ignore_for_training.extend(self.datetime_columns)
+        for attr_name, dataset, should_log in datasets:
+            if dataset is not None:
+                dataset = self._create_datetime_features(dataset, log=should_log)
+                dataset = self._drop_datetime_columns(dataset, log=should_log)
+                setattr(data, attr_name, dataset)
 
         return data
 
@@ -173,7 +181,7 @@ class CalculateFeaturesStep(PipelineStep):
         if self.datetime_columns:
             for column in self.datetime_columns:
                 if column in df.columns:
-                    df = self._convert_column_to_datetime(df, column)
+                    df = self._convert_column_to_datetime(df, column, log)
 
                     if self.features:
                         for feature in self.features:
@@ -190,5 +198,8 @@ class CalculateFeaturesStep(PipelineStep):
         else:
             if log:
                 self.logger.warning("No datetime columns specified. Skipping feature extraction.")
+
+        if log:
+            self.logger.info(f"Created new features: {self.features}")
 
         return df
