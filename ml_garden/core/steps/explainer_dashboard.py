@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
-from explainerdashboard import RegressionExplainer
+from explainerdashboard import ClassifierExplainer, RegressionExplainer
 
 from ml_garden.core import DataContainer
+from ml_garden.core.constants import Task
 from ml_garden.core.random_state_generator import get_random_state
 from ml_garden.core.steps.base import PipelineStep
 
@@ -63,23 +64,21 @@ class ExplainerDashboardStep(PipelineStep):
             # Explainer dashboard is calculated only during training
             # We use all the available data for this purpose, optionally a sample if the data is too
             # large
-            X = data.X_train
-            y = data.y_train
-            if data.validation is not None:
-                X = pd.concat([X, data.X_validation])
-                y = pd.concat([y, data.y_validation])
-            if data.test is not None:
+            X = data.X_validation
+            y = data.y_validation
+
+            if data.X_test is not None:
                 X = pd.concat([X, data.X_test])
                 y = pd.concat([y, data.y_test])
 
             # Some Shap explainers require a "background dataset" with the original distribution
             # of the data.
             if self.X_background_samples > 0 and len(X) > self.X_background_samples:
-                X_backround = X.sample(
+                X_background = X.sample(
                     n=self.max_samples, random_state=get_random_state(), replace=False
                 )
             else:
-                X_backround = X
+                X_background = X
 
             if self.max_samples > 0 and len(X) > self.max_samples:
                 # Randomly sample a subset of data points if the dataset is larger than max_samples
@@ -97,12 +96,22 @@ class ExplainerDashboardStep(PipelineStep):
             # To avoid this potential long wait to a crash we add this assertion here
             assert len(X) == len(y), "Mismatch in number of samples and labels"
 
-            explainer = RegressionExplainer(
+            # Choose the appropriate explainer based on the task
+            explainer_class = {
+                Task.REGRESSION: RegressionExplainer,
+                Task.CLASSIFICATION: ClassifierExplainer,
+            }.get(data.task)
+
+            if explainer_class is None:
+                raise ValueError(f"Unsupported task type: {data.task}")
+
+            explainer = explainer_class(
                 model,
-                X_background=X_backround,
+                X_background=X_background,
                 X=X,
                 y=y,
             )
+
             explainer.calculate_properties()
             data.explainer = explainer
 
