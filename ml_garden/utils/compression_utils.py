@@ -1,5 +1,12 @@
+import logging
 import os
+import time
 import zipfile
+from os import unlink
+
+import xgboost as xgb
+
+logger = logging.getLogger(__file__)
 
 
 def compress_zipfile(
@@ -57,3 +64,62 @@ def decompress_zipfile(filename: str):
     """
     with zipfile.ZipFile(filename + ".zip", "r") as zip_file:
         zip_file.extractall(path=os.path.dirname(filename))
+
+
+# Function to save and compress an XGBoost model
+def save_and_compress_xgb_booster(
+    model: xgb.Booster, filename: str, compression=zipfile.ZIP_BZIP2, compresslevel: int = 9
+) -> None:
+    """
+    Saves an XGBoost model into a compressed file using BZ2 compression.
+
+    Parameters
+    ----------
+    model : xgb.Booster
+        The XGBoost model to save.
+    filename : str
+        The name of the file where to store the model. File extension should be .ubj or .json.
+        Use ".ubj" extension for Binary JSON format (more efficient, non-human-readable) or ".json"
+        extension for JSON format.
+    compresslevel : int, optional
+        Compression level (1-9) to use, higher is more compression. , by default 9
+    """
+
+    # Save model directly to a UBJSON file
+    start_time = time.time()
+    model.save_model(filename)
+    logger.debug(f"Model saved in {time.time() - start_time:.2f} seconds.")
+
+    start_time = time.time()
+    compress_zipfile(
+        filename,
+        compression=compression,
+        compresslevel=compresslevel,
+        delete_uncompressed=True,
+    )
+    logger.debug(f"Model bzip2 compressed in {time.time() - start_time:.2f} seconds.")
+
+
+def load_compressed_xgb_booster(filename: str) -> xgb.Booster:
+    """
+    Loads an XGBoost model from a BZ2 compressed UBJSON file.
+
+    Parameters
+    ----------
+
+    filename : str
+        The name of the file where the model is stored. File extension should be .ubj or .json,
+        the .bz2 extension will be appended automatically
+
+    Returns
+    -------
+    xgb.Booster
+        The loaded XGBoost model.
+    """
+    decompress_zipfile(filename)
+
+    # Load the model from the temporary UBJSON file
+    model = xgb.Booster()
+    model.load_model(filename)
+    unlink(filename)  # Delete the temporary UBJSON file
+    return model
