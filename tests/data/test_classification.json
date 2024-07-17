@@ -1,0 +1,75 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "delay.pkl",
+            "target": "Delay",
+            "task": "classification",
+            "columns_to_ignore_for_training": [
+                "FlightID"
+            ]
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "tests/data/train_delay_classification.csv",
+                    "predict_path": "tests/data/test_delay_classification.csv"
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.6,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.2
+                }
+            },
+            {
+                "step_type": "CleanStep"
+            },
+            {
+                "step_type": "CalculateFeaturesStep",
+                "parameters": {
+                    "datetime_columns": [
+                        "ScheduledDeparture",
+                        "ScheduledArrival"
+                    ],
+                    "features": [
+                        "minute",
+                        "hour",
+                        "weekday",
+                        "month"
+                    ]
+                }
+            },
+            {
+                "step_type": "EncodeStep",
+                "parameters": {
+                    "feature_encoders": {
+                        "shared_origin_destination": {
+                            "features": [
+                                "Origin",
+                                "Destination"
+                            ],
+                            "encoder": "OrdinalEncoder"
+                        }
+                    }
+                }
+            },
+            {
+                "step_type": "ModelStep",
+                "parameters": {
+                    "model_class": "XGBoostClassifier"
+                }
+            },
+            {
+                "step_type": "CalculateMetricsStep"
+            },
+            {
+                "step_type": "ExplainerDashboardStep"
+            }
+        ]
+    }
+}
