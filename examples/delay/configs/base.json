@@ -47,11 +47,10 @@
                 "step_type": "EncodeStep",
                 "parameters": {
                     "feature_encoders": {
-                        "shared_origin_destination": {
-                            "features": [
-                                "Origin",
-                                "Destination"
-                            ],
+                        "Origin": {
+                            "encoder": "OrdinalEncoder"
+                        },
+                        "Destination": {
                             "encoder": "OrdinalEncoder"
                         }
                     }
@@ -67,7 +66,10 @@
                 "step_type": "CalculateMetricsStep"
             },
             {
-                "step_type": "ExplainerDashboardStep"
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
             }
         ]
     }

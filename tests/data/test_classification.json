@@ -48,11 +48,10 @@
                 "step_type": "EncodeStep",
                 "parameters": {
                     "feature_encoders": {
-                        "shared_origin_destination": {
-                            "features": [
-                                "Origin",
-                                "Destination"
-                            ],
+                        "Origin": {
+                            "encoder": "OrdinalEncoder"
+                        },
+                        "Destination": {
                             "encoder": "OrdinalEncoder"
                         }
                     }
