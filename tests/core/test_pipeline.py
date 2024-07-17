@@ -18,9 +18,28 @@ def test_simple_train_pipeline():
     os.remove(zip_file)
 
 
+def test_simple_train_pipeline_classification():
+    """Test that the pipeline can be trained with classification."""
+    pipeline = Pipeline.from_json("tests/data/test_classification.json")
+    pipeline.train()
+
+    zip_file = pipeline.save_data_path + ".zip"
+    os.remove(zip_file)
+
+
 def test_simple_predict_pipeline():
     """Test that the pipeline can be trained and predicted."""
     pipeline = Pipeline.from_json("tests/data/test.json")
+    pipeline.train()
+    pipeline.predict()
+
+    zip_file = pipeline.save_data_path + ".zip"
+    os.remove(zip_file)
+
+
+def test_simple_predict_classification_pipeline():
+    """Test that the pipeline can be trained and predicted."""
+    pipeline = Pipeline.from_json("tests/data/test_classification.json")
     pipeline.train()
     pipeline.predict()
 
