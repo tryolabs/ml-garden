@@ -4,6 +4,7 @@ from typing import Optional, Type
 
 import numpy as np
 import optuna
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -300,4 +301,14 @@ class ModelStep(PipelineStep):
         self.logger.info(f"Predicting with {self.model_class.__name__} model")
         data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
         data.predictions = data.flow[data.prediction_column]
+
+        # If the task is classification, also get the prediction probabilities
+        if data.task == Task.CLASSIFICATION:
+            proba_df = data.model.predict_proba(data.X_prediction)
+            proba_df.columns = [f"proba_{col}" for col in proba_df.columns]
+
+            # Concatenate the probabilities DataFrame with the existing DataFrame
+            data.flow = pd.concat([data.flow, proba_df], axis=1)
+            data.predict_proba = proba_df
+
         return data

@@ -24,3 +24,19 @@ class Model(ABC):
     @abstractmethod
     def predict(self, X: pd.DataFrame) -> pd.Series:
         """Abstract method for making predictions."""
+
+    def predict_proba(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Predict class probabilities with the trained model.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Features to make probability predictions on.
+
+        Returns
+        -------
+        pd.DataFrame
+            Predicted class probabilities for the input features.
+        """
+        pass

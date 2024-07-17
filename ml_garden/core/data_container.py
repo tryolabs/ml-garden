@@ -676,6 +676,31 @@ class DataContainer:
         self["predictions"] = value
 
     @property
+    def predict_proba(self) -> pd.DataFrame:
+        """
+        Get the prediction probabilities from the DataContainer.
+
+        Returns
+        -------
+        pd.DataFrame
+            The prediction probabilities stored in the DataContainer.
+        """
+        return self["predict_proba"]
+
+    @predict_proba.setter
+    def predict_proba(self, value: pd.DataFrame):
+        """
+        Set the prediction probabilities in the DataContainer.
+
+        Parameters
+        ----------
+        value : pd.DataFrame
+            The prediction probabilities to be stored in the DataContainer.
+            Should be a DataFrame with a column for each class.
+        """
+        self["predict_proba"] = value
+
+    @property
     def explainer(self) -> BaseExplainer:
         """
         Get the explainer from the DataContainer.

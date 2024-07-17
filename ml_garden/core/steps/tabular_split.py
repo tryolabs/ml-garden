@@ -1,5 +1,5 @@
 from math import isclose
-from typing import Optional
+from typing import Optional, Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -13,7 +13,7 @@ from ml_garden.utils.string_utils import concatenate_columns
 class TabularSplitStep(PipelineStep):
     """Split the data."""
 
-    used_for_prediction = False
+    used_for_prediction = True
     used_for_training = True
 
     def __init__(
@@ -81,6 +81,39 @@ class TabularSplitStep(PipelineStep):
                     "validation_percentage must be provided when test_percentage is specified."
                 )
 
+    def _set_X_y(self, data: DataContainer) -> None:
+        """
+        Set X and y for train, validation, and test sets.
+
+        This method sets X_train, y_train, X_validation, y_validation, X_test, and y_test
+        in the DataContainer object.
+
+        Parameters
+        ----------
+        data : DataContainer
+            The DataContainer object containing the split data.
+
+        Returns
+        -------
+        None
+        """
+
+        def split_X_y(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+            df = df.drop(columns=data.columns_to_ignore_for_training)
+            if data.target is None:
+                return df, None
+            return df.drop(columns=[data.target]), df[data.target]
+
+        data.X_train, data.y_train = split_X_y(data.train)
+        data.X_validation, data.y_validation = split_X_y(data.validation)
+
+        if data.test is not None:
+            data.X_test, data.y_test = split_X_y(data.test)
+        else:
+            data.X_test, data.y_test = None, None
+
+        self.logger.debug("X and y sets have been created for train, validation, and test data.")
+
     def execute(self, data: DataContainer) -> DataContainer:
         """
         Execute the random train-validation-test split.
@@ -96,6 +129,13 @@ class TabularSplitStep(PipelineStep):
 
         Where df is the DataFrame used as input to the SplitStep
         """
+        if not data.is_train:
+            data.X_prediction = data.flow
+            if data.columns_to_ignore_for_training:
+                data.X_prediction = data.X_prediction.drop(
+                    columns=data.columns_to_ignore_for_training
+                )
+            return data
 
         self.logger.info("Splitting tabular data...")
         df = data.flow
@@ -239,5 +279,8 @@ class TabularSplitStep(PipelineStep):
             self.logger.info(
                 f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
             )
+
+        # Set X and y for train, validation and test datasets
+        self._set_X_y(data)
 
         return data

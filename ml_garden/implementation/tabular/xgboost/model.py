@@ -75,4 +75,5 @@ class XGBoostClassifier(Model):
         pd.DataFrame
             Predicted class probabilities for the input features.
         """
-        return self.model.predict_proba(X)
+        proba = self.model.predict_proba(X)
+        return pd.DataFrame(proba, columns=self.model.classes_)

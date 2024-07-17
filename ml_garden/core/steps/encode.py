@@ -51,54 +51,44 @@ class EncodeStep(PipelineStep):
         """Execute the encoding step."""
         self.logger.info("Encoding data")
 
-        target_column_name = data.target
-
         if not data.is_train:
-            categorical_features, numeric_features = self._get_feature_types(
-                data.flow.drop(columns=data.columns_to_ignore_for_training), data.target
-            )
+            categorical_features, numeric_features = self._get_feature_types(data.X_prediction)
             data.X_prediction, _, _ = self._apply_encoding(
-                data.flow,
-                target_column_name,
-                data.columns_to_ignore_for_training,
-                categorical_features,
-                numeric_features,
+                X=data.X_prediction,
+                y=None,
+                categorical_features=categorical_features,
+                numeric_features=numeric_features,
                 saved_encoder=data._encoder,
                 log=True,
             )
             return data
 
-        categorical_features, numeric_features = self._get_feature_types(
-            data.train.drop(columns=data.columns_to_ignore_for_training), target_column_name
-        )
+        categorical_features, numeric_features = self._get_feature_types(data.X_train)
 
         data.X_train, data.y_train, data._encoder = self._apply_encoding(
-            data.train,
-            target_column_name,
-            data.columns_to_ignore_for_training,
-            categorical_features,
-            numeric_features,
+            X=data.X_train,
+            y=data.y_train,
+            categorical_features=categorical_features,
+            numeric_features=numeric_features,
             fit_encoders=True,
             log=True,
         )
 
         if data.validation is not None:
             data.X_validation, data.y_validation, _ = self._apply_encoding(
-                data.validation,
-                target_column_name,
-                data.columns_to_ignore_for_training,
-                categorical_features,
-                numeric_features,
+                X=data.X_validation,
+                y=data.y_validation,
+                categorical_features=categorical_features,
+                numeric_features=numeric_features,
                 saved_encoder=data._encoder,
             )
 
         if data.test is not None:
             data.X_test, data.y_test, _ = self._apply_encoding(
-                data.test,
-                target_column_name,
-                data.columns_to_ignore_for_training,
-                categorical_features,
-                numeric_features,
+                X=data.X_test,
+                y=data.y_test,
+                categorical_features=categorical_features,
+                numeric_features=numeric_features,
                 saved_encoder=data._encoder,
             )
 
@@ -106,9 +96,8 @@ class EncodeStep(PipelineStep):
 
     def _apply_encoding(
         self,
-        df: pd.DataFrame,
-        target_column_name: str,
-        columns_to_ignore_for_training: List[str],
+        X: pd.DataFrame,
+        y: pd.Series,
         categorical_features: List[str],
         numeric_features: List[str],
         fit_encoders: bool = False,
@@ -119,12 +108,10 @@ class EncodeStep(PipelineStep):
 
         Parameters
         ----------
-        df : pd.DataFrame
-            The DataFrame to encode
-        target_column_name : str
-            The target column name
-        columns_to_ignore_for_training : List[str]
-            Columns to ignore for training
+        X : pd.DataFrame
+            The DataFrame with features to encode
+        y : pd.Series
+            The target series
         categorical_features : List[str]
             Categorical features
         numeric_features : List[str]
@@ -144,12 +131,10 @@ class EncodeStep(PipelineStep):
         if not fit_encoders and not saved_encoder:
             raise ValueError("saved_encoder must be provided when fit_encoders is False.")
 
-        df = df.drop(columns=columns_to_ignore_for_training)
-
         low_cardinality_features, high_cardinality_features = self._split_categorical_features(
-            df, categorical_features
+            X, categorical_features
         )
-        original_numeric_dtypes = {col: df[col].dtype for col in numeric_features}
+        original_numeric_dtypes = {col: X[col].dtype for col in numeric_features}
 
         if fit_encoders:
             # Save the encoder for prediction
@@ -163,13 +148,13 @@ class EncodeStep(PipelineStep):
             assert encoder is not None
 
         encoded_data, targets = self._transform_data(
-            df,
-            target_column_name,
+            X,
+            y,
             encoder,
             fit_encoders,
         )
 
-        encoded_data = self._restore_column_order(df, encoded_data)
+        encoded_data = self._restore_column_order(X, encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
         encoded_data = self._convert_float64_to_float32(encoded_data)
 
@@ -189,20 +174,20 @@ class EncodeStep(PipelineStep):
 
         return encoded_data, targets, encoder
 
-    def _get_feature_types(
-        self, df: pd.DataFrame, target_column_name: str
-    ) -> Tuple[List[str], List[str]]:
-        """Get categorical and numeric feature lists."""
-        categorical_features = [
-            col
-            for col in df.columns
-            if df[col].dtype in ["object", "category"] and col != target_column_name
-        ]
-        numeric_features = [
-            col
-            for col in df.columns
-            if col not in categorical_features and col != target_column_name
-        ]
+    def _get_feature_types(self, X: pd.DataFrame) -> Tuple[List[str], List[str]]:
+        """Get categorical and numeric feature lists.
+        Parameters
+        ----------
+        X : pd.DataFrame
+            The features DataFrame
+
+        Returns
+        -------
+        Tuple[List[str], List[str]]
+            Categorical and numeric features
+        """
+        categorical_features = [col for col in X.columns if X[col].dtype in ["object", "category"]]
+        numeric_features = [col for col in X.columns if col not in categorical_features]
 
         return categorical_features, numeric_features
 
@@ -297,19 +282,27 @@ class EncodeStep(PipelineStep):
 
     def _transform_data(
         self,
-        df: pd.DataFrame,
-        target_column_name: str,
+        X: pd.DataFrame,
+        y: pd.Series,
         column_transformer: ColumnTransformer,
         is_train: bool = False,
     ) -> tuple[pd.DataFrame, Optional[pd.Series]]:
-        """Transform the data using the ColumnTransformer."""
-        if target_column_name in df.columns:
-            X = df.drop(columns=[target_column_name])  # Drop the target column
-            y = df[target_column_name]  # Target column for training data
-        else:
-            X = df  # All columns for prediction data
-            y = None  # No target in the prediction data
-
+        """Transform the data using the ColumnTransformer.
+        Parameters
+        ----------
+        X : pd.DataFrame
+            The DataFrame with features to transform
+        y : pd.Series
+            The target series
+        column_transformer : ColumnTransformer
+            The ColumnTransformer
+        is_train : bool, optional
+            Whether the data is for training, by default False
+        Returns
+        -------
+        tuple[pd.DataFrame, Optional[pd.Series]]
+            The transformed data and the target column
+        """
         if is_train:
             self.logger.info("Fitting encoders")
             column_transformer.fit(X, y)
@@ -318,7 +311,7 @@ class EncodeStep(PipelineStep):
         self.logger.debug(f"Transformed data shape: {transformed_data.shape}")
         return (
             pd.DataFrame(
-                transformed_data, columns=column_transformer.get_feature_names_out(), index=df.index
+                transformed_data, columns=column_transformer.get_feature_names_out(), index=X.index
             ),
             y,
         )

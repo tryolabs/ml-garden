@@ -7,14 +7,16 @@
             "target": "Delay",
             "task": "classification",
             "columns_to_ignore_for_training": [
-                "FlightID"
+                "FlightID",
+                "FlightNumber"
             ]
         },
         "steps": [
             {
                 "step_type": "GenerateStep",
                 "parameters": {
-                    "train_path": "examples/delay/data/train.csv"
+                    "train_path": "examples/delay/data/train.csv",
+                    "predict_path": "examples/delay/data/test.csv"
                 }
             },
             {
