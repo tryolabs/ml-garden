@@ -33,4 +33,10 @@ class AutoGluon(Model):
 
     def predict(self, X: pd.DataFrame) -> pd.Series:
         predictions = self.model.predict(X)
-        return predictions
+        return pd.Series(predictions, index=X.index)
+
+    def predict_proba(self, X: pd.DataFrame) -> pd.DataFrame:
+        if self.model.problem_type == "regression":
+            raise ValueError("predict_proba is not available for regression tasks.")
+        probabilities = self.model.predict_proba(X)
+        return pd.DataFrame(probabilities, index=X.index)
