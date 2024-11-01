@@ -37,4 +37,4 @@ jobs:
         run: poetry run ruff format --check
 
       - name: Check docstring coverage
-        run: poetry run docstr-coverage ./**/*.py --fail-under 20  --verbose=2
+        run: poetry run docstr-coverage $(find . -name "*.py") --fail-under 20 --verbose=2
