@@ -6,26 +6,26 @@ from ml_garden.core.steps import GenerateStep
 
 
 # Fixture to create a sample CSV file for testing
-@pytest.fixture
+@pytest.fixture()
 def train_csv_file() -> str:
     return "tests/data/train.csv"
 
 
-@pytest.fixture
+@pytest.fixture()
 def predict_csv_file() -> str:
     return "tests/data/predict.csv"
 
 
 # Fixture to create a DataContainer for testing
-@pytest.fixture
+@pytest.fixture()
 def train_data_container() -> DataContainer:
     data = DataContainer({"target": "target", "is_train": True})
     return data
 
 
-@pytest.fixture
+@pytest.fixture()
 def predict_data_container() -> DataContainer:
-    data = DataContainer({"target": "target", "is_train": False})
+    data_container = DataContainer({"target": "target", "is_train": False})
 
     generate_step_dtypes = {
         "date": np.dtype("O"),
@@ -34,12 +34,12 @@ def predict_data_container() -> DataContainer:
         "numeric": np.dtype("int64"),
         "target": np.dtype("int64"),
     }
-    data._generate_step_dtypes = generate_step_dtypes
+    data_container._generate_step_dtypes = generate_step_dtypes  # noqa: SLF001
 
-    return data
+    return data_container
 
 
-def test_simple_train_csv_execute(train_csv_file: str, train_data_container: DataContainer):
+def test_simple_train_csv_execute(train_csv_file: str, train_data_container: DataContainer) -> None:
     generate_step = GenerateStep(train_path=train_csv_file)
     result = generate_step.execute(train_data_container)
 
@@ -55,7 +55,9 @@ def test_simple_train_csv_execute(train_csv_file: str, train_data_container: Dat
     ]
 
 
-def test_simple_predict_csv_execute(predict_csv_file: str, predict_data_container: DataContainer):
+def test_simple_predict_csv_execute(
+    predict_csv_file: str, predict_data_container: DataContainer
+) -> None:
     generate_step = GenerateStep(predict_path=predict_csv_file)
     result = generate_step.execute(predict_data_container)
 
@@ -70,7 +72,7 @@ def test_simple_predict_csv_execute(predict_csv_file: str, predict_data_containe
     ]
 
 
-def test_mandatory_generate_step_dtypes_in_prediction(predict_csv_file: str):
+def test_mandatory_generate_step_dtypes_in_prediction(predict_csv_file: str) -> None:
     generate_step = GenerateStep(predict_path=predict_csv_file)
     data_container = DataContainer({"target": "target", "is_train": False})
     # missing generate_step_dtypes in data_container

@@ -1,4 +1,5 @@
 # %%
+# ruff: noqa: ERA001 B018
 import logging
 
 from explainerdashboard import ExplainerDashboard

@@ -19,9 +19,10 @@ class CleanStep(PipelineStep):
         convert_dtypes: Optional[dict] = None,
         drop_na_columns: Optional[list] = None,
         drop_ids: Optional[dict] = None,
-        filter: Optional[dict] = None,
-    ):
+        filter_conditions: Optional[dict] = None,
+    ) -> None:
         """Initialize CleanStep.
+
         Parameters
         ----------
         fill_missing : Optional[dict], optional
@@ -34,7 +35,7 @@ class CleanStep(PipelineStep):
             List of column names to drop rows with missing values, by default None
         drop_ids : Optional[dict], optional
             Dictionary containing column names and IDs to drop, by default None
-        filter : Optional[dict], optional
+        filter_conditions : Optional[dict], optional
             Dictionary containing column names and filter conditions, by default None
         """
         self.init_logger()
@@ -43,14 +44,16 @@ class CleanStep(PipelineStep):
         self.convert_dtypes = convert_dtypes
         self.drop_na_columns = drop_na_columns
         self.drop_ids = drop_ids
-        self.filter = filter
+        self.filter = filter_conditions
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -75,10 +78,12 @@ class CleanStep(PipelineStep):
 
     def _clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """Clean the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to clean
+
         Returns
         -------
         pd.DataFrame
@@ -100,10 +105,12 @@ class CleanStep(PipelineStep):
 
     def _filter(self, df: pd.DataFrame) -> pd.DataFrame:
         """Filter the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to filter
+
         Returns
         -------
         pd.DataFrame
@@ -117,23 +124,30 @@ class CleanStep(PipelineStep):
                 dropped_rows = before_filter_rows - len(df)
                 dropped_percentage = (dropped_rows / before_filter_rows) * 100
                 self.logger.info(
-                    f"Filter '{key}': {value} | Dropped rows:"
-                    f" {dropped_rows} ({dropped_percentage:.2f}%)"
+                    "Filter '%s': %s | Dropped rows: %d (%.2f%%)",
+                    key,
+                    value,
+                    dropped_rows,
+                    dropped_percentage,
                 )
             total_dropped_rows = original_rows - len(df)
             total_dropped_percentage = (total_dropped_rows / original_rows) * 100
             self.logger.info(
-                f"Total rows dropped: {total_dropped_rows} ({total_dropped_percentage:.2f}%) |"
-                f"Final number of rows: {len(df)}"
+                "Total rows dropped: %d (%.2f%%) | Final number of rows: %d",
+                total_dropped_rows,
+                total_dropped_percentage,
+                len(df),
             )
         return df
 
     def _remove_outliers(self, df: pd.DataFrame) -> pd.DataFrame:
         """Remove outliers from the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to remove outliers from
+
         Returns
         -------
         pd.DataFrame
@@ -149,7 +163,7 @@ class CleanStep(PipelineStep):
                         lower_bound = q1 - (1.5 * iqr)
                         upper_bound = q3 + (1.5 * iqr)
                         df[column] = df[column].clip(lower=lower_bound, upper=upper_bound)
-                        self.logger.info(f"Clipped outliers in column '{column}'")
+                        self.logger.info("Clipped outliers in column '%s'", column)
                     elif method == "drop":
                         q1 = df[column].quantile(0.25)
                         q3 = df[column].quantile(0.75)
@@ -158,19 +172,21 @@ class CleanStep(PipelineStep):
                         upper_bound = q3 + (1.5 * iqr)
                         outliers = (df[column] < lower_bound) | (df[column] > upper_bound)
                         df = df[~outliers]
-                        self.logger.info(f"Dropped outliers in column '{column}'")
+                        self.logger.info("Dropped outliers in column '%s'", column)
                     else:
-                        self.logger.warning(f"Unsupported outlier removal method '{method}'")
+                        self.logger.warning("Unsupported outlier removal method '%s'", method)
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning("Column '%s' not found in the DataFrame", column)
         return df
 
     def _fill_missing(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fill missing values in the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to fill missing values in
+
         Returns
         -------
         pd.DataFrame
@@ -179,20 +195,24 @@ class CleanStep(PipelineStep):
         if self.fill_missing:
             for column, fill_value in self.fill_missing.items():
                 if column in df.columns:
-                    df[column].fillna(fill_value, inplace=True)
+                    df[column] = df[column].fillna(fill_value)
                     self.logger.info(
-                        f"Filled missing values in column '{column}' with {fill_value}"
+                        "Filled missing values in column '%s' with %s",
+                        column,
+                        fill_value,
                     )
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning("Column '%s' not found in the DataFrame", column)
         return df
 
     def _convert_dtypes(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert column data types in the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to convert column data types in
+
         Returns
         -------
         pd.DataFrame
@@ -202,17 +222,19 @@ class CleanStep(PipelineStep):
             for column, dtype in self.convert_dtypes.items():
                 if column in df.columns:
                     df[column] = df[column].astype(dtype)
-                    self.logger.info(f"Converted column '{column}' to {dtype}")
+                    self.logger.info("Converted column '%s' to %s", column, dtype)
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning("Column '%s' not found in the DataFrame", column)
         return df
 
     def _drop_na_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Drop rows with missing values in the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to drop rows with missing values in
+
         Returns
         -------
         pd.DataFrame
@@ -222,21 +244,25 @@ class CleanStep(PipelineStep):
             for column in self.drop_na_columns:
                 if column in df.columns:
                     initial_rows = len(df)
-                    df.dropna(subset=[column], inplace=True)
+                    df = df.dropna(subset=[column])
                     dropped_rows = initial_rows - len(df)
                     self.logger.info(
-                        f"Dropped {dropped_rows} rows with None values in column '{column}'"
+                        "Dropped %d rows with None values in column '%s'",
+                        dropped_rows,
+                        column,
                     )
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning("Column '%s' not found in the DataFrame", column)
         return df
 
     def _drop_ids(self, df: pd.DataFrame) -> pd.DataFrame:
         """Drop rows with specific IDs in the DataFrame.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame to drop rows with specific IDs in
+
         Returns
         -------
         pd.DataFrame
@@ -258,18 +284,25 @@ class CleanStep(PipelineStep):
                             dropped_rows / initial_rows
                         ) * 100  # Calculate the percentage of rows dropped
                         self.logger.info(
-                            f"Dropped {dropped_rows} rows ({percentage_dropped:.2f}%) with IDs"
-                            f" {list(dropped_ids)} in column '{column}'"
+                            "Dropped %d rows (%.2f%%) with IDs %s in column '%s'",
+                            dropped_rows,
+                            percentage_dropped,
+                            list(dropped_ids),
+                            column,
                         )
                     else:
                         self.logger.info(
-                            f"No rows dropped for IDs {list(ids)} in column '{column}'"
+                            "No rows dropped for IDs %s in column '%s'",
+                            list(ids),
+                            column,
                         )
 
                     if not_found_ids:
                         self.logger.warning(
-                            f"IDs {list(not_found_ids)} not found in column '{column}'"
+                            "IDs %s not found in column '%s'",
+                            list(not_found_ids),
+                            column,
                         )
                 else:
-                    self.logger.warning(f"Column '{column}' not found in the DataFrame")
+                    self.logger.warning("Column '%s' not found in the DataFrame", column)
         return df

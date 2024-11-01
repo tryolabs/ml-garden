@@ -4,17 +4,21 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
-from typing import Any, Optional, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import dill as pickle
-import pandas as pd
-from explainerdashboard.explainers import BaseExplainer
-from sklearn.compose import ColumnTransformer
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from explainerdashboard.explainers import BaseExplainer
+    from sklearn.compose import ColumnTransformer
+
+    from ml_garden.core.model import Model
+
 
 from ml_garden.core.constants import Task
-from ml_garden.core.model import Model
 from ml_garden.utils.compression_utils import compress_zipfile, decompress_zipfile
 
 
@@ -28,7 +32,7 @@ class DataContainer:
         A dictionary to store data items.
     """
 
-    def __init__(self, initial_data: Optional[dict] = None):
+    def __init__(self, initial_data: dict | None = None) -> None:
         """
         Initialize the DataContainer with an empty dictionary or provided data.
 
@@ -39,7 +43,7 @@ class DataContainer:
         """
         self.data = initial_data if initial_data is not None else {}
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.debug(f"{self.__class__.__name__} initialized")
+        self.logger.debug("%s initialized", self.__class__.__name__)
 
     def update(self, other: DataContainer) -> None:
         """
@@ -52,7 +56,7 @@ class DataContainer:
         """
         self.data.update(other.data)
 
-    def add(self, key: str, value):
+    def add(self, key: str, value: Any) -> None:
         """
         Add a new item to the container.
 
@@ -60,7 +64,7 @@ class DataContainer:
         ----------
         key : str
             The key under which the value is stored.
-        value
+        value : Any
             The data to be stored.
 
         Returns
@@ -68,9 +72,9 @@ class DataContainer:
         None
         """
         self.data[key] = value
-        self.logger.debug(f"Data added under key: {key}")
+        self.logger.debug("Data added under key: %s", key)
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: Any = None) -> Any:
         """
         Retrieve an item from the container by its key.
 
@@ -78,7 +82,7 @@ class DataContainer:
         ----------
         key : str
             The key of the item to retrieve.
-        default
+        default: Any
             The default value to return if the key is not found. Defaults to None.
 
         Returns
@@ -87,7 +91,7 @@ class DataContainer:
         """
         return self.data.get(key, default)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         """
         Retrieve an item using bracket notation.
 
@@ -102,7 +106,7 @@ class DataContainer:
         """
         return self.get(key)
 
-    def __setitem__(self, key: str, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         """
         Add or update an item using bracket notation.
 
@@ -110,7 +114,7 @@ class DataContainer:
         ----------
         key : str
             The key under which the value is stored.
-        value
+        value : Any
             The data to be stored.
 
         Returns
@@ -163,7 +167,7 @@ class DataContainer:
         """
         return list(self.data.keys())
 
-    def save(self, file_path: str, keys: Optional[Union[str, list[str]]] = None):
+    def save(self, file_path: str, keys: str | list[str] | None = None) -> None:
         """
         Serialize the container data using pickle and save it to a file.
 
@@ -171,7 +175,7 @@ class DataContainer:
         ----------
         file_path : str
             The path of the file where the serialized data should be saved.
-        keys : Optional[Union[str, List[str]]], optional
+        keys : Optional[str | list[str]], optional
             The keys of the data to be saved. If None, all data is saved.
 
         Returns
@@ -185,24 +189,28 @@ class DataContainer:
 
         serialized_data = pickle.dumps(data_to_save)
 
-        with open(file_path, "wb") as file:
-            file.write(serialized_data)
+        with Path(file_path).open("wb") as f:
+            f.write(serialized_data)
 
         compress_zipfile(filename=file_path, delete_uncompressed=True)
 
         data_size_bytes = sys.getsizeof(serialized_data)
         data_size_mb = data_size_bytes / 1048576  # Convert bytes to megabytes
-        disk_size_mb = os.path.getsize(file_path + ".zip") / 1048576  # Convert bytes to megabytes
+        disk_size_mb = (
+            Path(file_path + ".zip").stat().st_size / 1048576
+        )  # Convert bytes to megabytes
 
         self.logger.info(
-            f"{self.__class__.__name__} serialized and saved to {file_path}.zip. Serialized Data"
-            f" size: {data_size_mb:.2f} MB. Size on Disk: {disk_size_mb:.2f} MB."
+            "%s serialized and saved to %s.zip. Serialized Data size: %.2f MB. Size on Disk:"
+            " %.2f MB.",
+            self.__class__.__name__,
+            file_path,
+            data_size_mb,
+            disk_size_mb,
         )
 
     @classmethod
-    def from_pickle(
-        cls, file_path: str, keys: Optional[Union[str, list[str]]] = None
-    ) -> DataContainer:
+    def from_pickle(cls, file_path: str, keys: str | list[str] | None = None) -> DataContainer:
         """
         Load data from a  pickle file and return a new instance of DataContainer.
 
@@ -220,14 +228,15 @@ class DataContainer:
         """
         # Check file is a pickle file
         if not file_path.endswith(".pkl"):
-            raise ValueError(f"File {file_path} is not a pickle file")
+            error_message = f"File {file_path} is not a pickle file"
+            raise ValueError(error_message)
 
         decompress_zipfile(filename=file_path)
 
-        with open(file_path, "rb") as file:
-            data = pickle.loads(file.read())
+        with Path(file_path).open("rb") as file:
+            data = pickle.loads(file.read())  # noqa: S301
 
-        os.unlink(file_path)  # Delete the unzipped file after reading
+        Path(file_path).unlink()  # Delete the unzipped file after reading
 
         if isinstance(keys, str):
             keys = [keys]
@@ -241,9 +250,9 @@ class DataContainer:
             loaded_keys = set(new_container.keys)
             not_loaded_keys = set(keys) - loaded_keys if keys else set()
             if not_loaded_keys:
-                new_container.logger.warning(f"Keys without values: {not_loaded_keys}")
+                new_container.logger.warning("Keys without values: %s", not_loaded_keys)
 
-        new_container.logger.info(f"{cls.__name__} loaded from {file_path}")
+        new_container.logger.info("%s loaded from %s", cls.__name__, file_path)
         return new_container
 
     @property
@@ -259,7 +268,7 @@ class DataContainer:
         return self["clean"]
 
     @clean.setter
-    def clean(self, value: pd.DataFrame):
+    def clean(self, value: pd.DataFrame) -> None:
         """
         Set the clean data in the DataContainer.
 
@@ -284,7 +293,7 @@ class DataContainer:
         return self["raw"]
 
     @raw.setter
-    def raw(self, value: pd.DataFrame):
+    def raw(self, value: pd.DataFrame) -> None:
         """
         Set the raw data in the DataContainer.
 
@@ -295,12 +304,14 @@ class DataContainer:
         """
         self["raw"] = value
 
-    # FIXME: make type hints more specific than Any, however I don't know the return type of the
-    # values in dtypes.
+    # TODO(@palf): make type hints more specific than Any, however I don't know the return type of
+    # the values in dtypes.
+    # https://github.com/palfrey/ml-garden/issues/10
     @property
     def _generate_step_dtypes(self) -> dict[str, Any]:
         """
         Get the schema of the raw data produced by the GenerateStep during training.
+
         This schema is a dictionary mapping dataframe columns (after drops) to their observed types
         during training
 
@@ -312,16 +323,17 @@ class DataContainer:
         return self["_generate_step_dtypes"]
 
     @_generate_step_dtypes.setter
-    def _generate_step_dtypes(self, value: dict[str, Any]):
+    def _generate_step_dtypes(self, value: dict[str, Any]) -> None:
         """
         Set the schema of the raw data produced by the GenerateStep during training.
-        This schema is a dictionary mapping dataframe columns (after drops) to their observed types
-        during training
 
-        Returns
-        -------
-        dict[str, Any]
-            A dictionary with columns in keys and their training types in values
+        This schema is a dictionary mapping dataframe columns (after drops) to their observed types
+        during training.
+
+        Parameters
+        ----------
+        value : dict[str, Any]
+            A dictionary with columns in keys and their training types in values.
         """
         self["_generate_step_dtypes"] = value
 
@@ -329,6 +341,7 @@ class DataContainer:
     def split_indices(self) -> dict[str, pd.Index]:
         """
         Get the indices for each split.
+
         Indices refer to the dataframe used as input for the SplitStep. Users of the library must
         make sure that the indices are valid.
 
@@ -342,9 +355,10 @@ class DataContainer:
         return self["split_indices"]
 
     @split_indices.setter
-    def split_indices(self, value: dict[str, pd.Index]):
+    def split_indices(self, value: dict[str, pd.Index]) -> None:
         """
         Set the indices for each split.
+
         Indices refer to the dataframe used as input for the SplitStep Users of the library must
         make sure that the indices are valid.
 
@@ -370,7 +384,7 @@ class DataContainer:
         return self["train"]
 
     @train.setter
-    def train(self, value: pd.DataFrame):
+    def train(self, value: pd.DataFrame) -> None:
         """
         Set the train data in the DataContainer.
 
@@ -394,7 +408,7 @@ class DataContainer:
         return self["validation"]
 
     @validation.setter
-    def validation(self, value: pd.DataFrame):
+    def validation(self, value: pd.DataFrame) -> None:
         """
         Set the validation data in the DataContainer.
 
@@ -406,7 +420,7 @@ class DataContainer:
         self["validation"] = value
 
     @property
-    def test(self) -> Optional[pd.DataFrame]:
+    def test(self) -> pd.DataFrame | None:
         """
         Get the test data from the DataContainer.
 
@@ -418,7 +432,7 @@ class DataContainer:
         return self["test"]
 
     @test.setter
-    def test(self, value: Optional[pd.DataFrame]):
+    def test(self, value: pd.DataFrame | None) -> None:
         """
         Set the test data in the DataContainer.
 
@@ -430,10 +444,13 @@ class DataContainer:
         self["test"] = value
 
     @property
-    def X_train(self) -> pd.DataFrame:
+    def X_train(self) -> pd.DataFrame:  # noqa: N802
         """
-        Get the encoded training data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Get the encoded training data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as
+        input for the model.
+
 
         Returns
         -------
@@ -443,10 +460,12 @@ class DataContainer:
         return self["X_train"]
 
     @X_train.setter
-    def X_train(self, value: pd.DataFrame):
+    def X_train(self, value: pd.DataFrame) -> None:  # noqa: N802
         """
-        Set the encoded training data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Set the encoded training data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Parameters
         ----------
@@ -468,7 +487,7 @@ class DataContainer:
         return self["y_train"]
 
     @y_train.setter
-    def y_train(self, value: pd.Series):
+    def y_train(self, value: pd.Series) -> None:
         """
         Set the encoded training labels to the DataContainer.
 
@@ -480,10 +499,12 @@ class DataContainer:
         self["y_train"] = value
 
     @property
-    def X_validation(self) -> pd.DataFrame:
+    def X_validation(self) -> pd.DataFrame:  # noqa: N802
         """
-        Get the encoded validation data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Get the encoded validation data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Returns
         -------
@@ -493,10 +514,13 @@ class DataContainer:
         return self["X_validation"]
 
     @X_validation.setter
-    def X_validation(self, value: pd.DataFrame):
+    def X_validation(self, value: pd.DataFrame) -> None:  # noqa: N802
         """
-        Set the encoded validation data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Set the encoded validation data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
+
         Parameters
         ----------
         value
@@ -517,9 +541,10 @@ class DataContainer:
         return self["y_validation"]
 
     @y_validation.setter
-    def y_validation(self, value: pd.Series):
+    def y_validation(self, value: pd.Series) -> None:
         """
         Set the encoded validation labels to the DataContainer.
+
         Parameters
         ----------
         value
@@ -528,10 +553,12 @@ class DataContainer:
         self["y_validation"] = value
 
     @property
-    def X_test(self) -> pd.DataFrame:
+    def X_test(self) -> pd.DataFrame:  # noqa: N802
         """
-        Get the encoded test data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Get the encoded test data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Returns
         -------
@@ -541,10 +568,12 @@ class DataContainer:
         return self["X_test"]
 
     @X_test.setter
-    def X_test(self, value: pd.DataFrame):
+    def X_test(self, value: pd.DataFrame) -> None:  # noqa: N802
         """
-        Set the encoded test data to the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Set the encoded test data to the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Parameters
         ----------
@@ -566,22 +595,24 @@ class DataContainer:
         return self["y_test"]
 
     @y_test.setter
-    def y_test(self, value: pd.Series):
+    def y_test(self, value: pd.Series) -> None:
         """
         Set the encoded test labels to the DataContainer.
 
         Parameters
-        -------
+        ----------
         value
            The encoded test labels stored in the DataContainer.
         """
         self["y_test"] = value
 
     @property
-    def X_prediction(self) -> pd.DataFrame:
+    def X_prediction(self) -> pd.DataFrame:  # noqa: N802
         """
-        Get the encoded prediction data from the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Get the encoded prediction data from the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Returns
         -------
@@ -591,13 +622,15 @@ class DataContainer:
         return self["X_prediction"]
 
     @X_prediction.setter
-    def X_prediction(self, value: pd.DataFrame):
+    def X_prediction(self, value: pd.DataFrame) -> None:  # noqa: N802
         """
-        Set the encoded prediction data to the DataContainer. This is data after passing through
-        the encoder step, ready to be used as input for the model.
+        Set the encoded prediction data to the DataContainer.
+
+        This is data after passing through the encoder step, ready to be used as input for the
+        model.
 
         Parameters
-        -------
+        ----------
         value
            The encoded prediction data stored in the DataContainer.
         """
@@ -616,7 +649,7 @@ class DataContainer:
         return self["model"]
 
     @model.setter
-    def model(self, value: Model):
+    def model(self, value: Model) -> None:
         """
         Set the model in the DataContainer.
 
@@ -640,7 +673,7 @@ class DataContainer:
         return self["metrics"]
 
     @metrics.setter
-    def metrics(self, value: dict):
+    def metrics(self, value: dict) -> None:
         """
         Set the metrics in the DataContainer.
 
@@ -664,7 +697,7 @@ class DataContainer:
         return self["predictions"]
 
     @predictions.setter
-    def predictions(self, value: pd.Series):
+    def predictions(self, value: pd.Series) -> None:
         """
         Set the predictions in the DataContainer.
 
@@ -686,14 +719,15 @@ class DataContainer:
             The explainer stored in the DataContainer.
         """
         if not self.is_train:
-            raise ValueError(
+            error_message = (
                 "Explainer is only available for training. Pipeline was executed on prediction"
                 " mode."
             )
+            raise ValueError(error_message)
         return self["explainer"]
 
     @explainer.setter
-    def explainer(self, value: BaseExplainer):
+    def explainer(self, value: BaseExplainer) -> None:
         """
         Set the explainer in the DataContainer.
 
@@ -717,7 +751,7 @@ class DataContainer:
         return self["tuning_params"]
 
     @tuning_params.setter
-    def tuning_params(self, value: dict):
+    def tuning_params(self, value: dict) -> None:
         """
         Set the tuning parameters in the DataContainer.
 
@@ -741,7 +775,7 @@ class DataContainer:
         return self["target"]
 
     @target.setter
-    def target(self, value: str):
+    def target(self, value: str) -> None:
         """
         Set the target in the DataContainer.
 
@@ -754,22 +788,19 @@ class DataContainer:
 
     @property
     def prediction_column(self) -> str:
-        """
-        Get the prediction column name from the DataContainer.
-        """
+        """Get the prediction column name from the DataContainer."""
         return self["prediction_column"]
 
     @prediction_column.setter
-    def prediction_column(self, value: str):
-        """
-        Set the prediction column name in the DataContainer.
-        """
+    def prediction_column(self, value: str) -> None:
+        """Set the prediction column name in the DataContainer."""
         self["prediction_column"] = value
 
     @property
     def columns_to_ignore_for_training(self) -> list[str]:
         """
         Get the columns to ignore for training from the DataContainer.
+
         This is useful for specifying id columns, which we don't want to include in the model
         training to avoid overfitting, but we want to keep them in the pipeline for metric/reporting
         calculation.
@@ -782,9 +813,10 @@ class DataContainer:
         return self["columns_to_ignore_for_training"]
 
     @columns_to_ignore_for_training.setter
-    def columns_to_ignore_for_training(self, value: list[str]):
+    def columns_to_ignore_for_training(self, value: list[str]) -> None:
         """
         Set the columns to ignore for training from the DataContainer.
+
         This is useful for specifying id columns, which we don't want to include in the model
         training to avoid overfitting, but we want to keep them in the pipeline for metric/reporting
         calculation.
@@ -809,7 +841,7 @@ class DataContainer:
         return self["flow"]
 
     @flow.setter
-    def flow(self, value: pd.DataFrame):
+    def flow(self, value: pd.DataFrame) -> None:
         """
         Set the flow in the DataContainer.
 
@@ -833,7 +865,7 @@ class DataContainer:
         return self["is_train"]
 
     @is_train.setter
-    def is_train(self, value: bool):
+    def is_train(self, value: bool) -> None:
         """
         Set the is_train flag in the DataContainer.
 
@@ -857,7 +889,7 @@ class DataContainer:
         return self["encoder"]
 
     @_encoder.setter
-    def _encoder(self, value: ColumnTransformer):
+    def _encoder(self, value: ColumnTransformer) -> None:
         """
         Set the encoder in the DataContainer.
 
@@ -881,7 +913,7 @@ class DataContainer:
         return self["feature_importance"]
 
     @feature_importance.setter
-    def feature_importance(self, value: pd.DataFrame):
+    def feature_importance(self, value: pd.DataFrame) -> None:
         """
         Set the feature_importance in the DataContainer.
 
@@ -916,15 +948,16 @@ class DataContainer:
 
         Raises
         ------
-        ValueError
+        TypeError
             If the value is not "regression" or "classification".
         """
         if not isinstance(value, Task):
-            raise ValueError(f"task must be an instance of Task enum, got {type(value)}")
+            error_message = f"task must be an instance of Task enum, got {type(value)}"
+            raise TypeError(error_message)
 
         self["task"] = value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Compare this DataContainer with another for equality.
 
@@ -942,7 +975,7 @@ class DataContainer:
             return self.data == other.data
         return False
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         """
         Compare this DataContainer with another for inequality.
 
@@ -958,7 +991,7 @@ class DataContainer:
         """
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Generate a user-friendly JSON string representation of the DataContainer.
 
@@ -970,7 +1003,7 @@ class DataContainer:
         data_summary = {key: type(value).__name__ for key, value in self.data.items()}
         return json.dumps(data_summary, indent=4)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Generate an official string representation of the DataContainer.
 
