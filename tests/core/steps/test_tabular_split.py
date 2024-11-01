@@ -3,9 +3,16 @@ import pandas as pd
 import pytest
 
 from ml_garden.core import DataContainer
+from ml_garden.core.random_state_generator import RandomStateManager
 from ml_garden.core.steps import TabularSplitStep
 
 # ruff: noqa: ERA001
+
+
+@pytest.fixture(autouse=True)
+def _setup_random_state() -> None:
+    """Initialize random state before each test."""
+    RandomStateManager.initialize(seed=42)
 
 
 @pytest.fixture()

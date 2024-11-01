@@ -22,7 +22,7 @@ def test_register_step() -> None:
 
 def test_register_non_step_class() -> None:
     registry = StepRegistry()
-    with pytest.raises(ValueError, match="must be a subclass of PipelineStep"):
+    with pytest.raises(TypeError, match="must be a subclass of PipelineStep"):
         registry.register_step(int)
 
 
@@ -87,12 +87,11 @@ def test_auto_register_steps_from_package(
 
 @patch("ml_garden.core.step_registry.importlib.import_module")
 def test_auto_register_steps_import_error(mock_import_module: MagicMock) -> None:
-    mock_import_module.side_effect = ImportError
+    mock_import_module.side_effect = ImportError("Package not found")
 
     registry = StepRegistry()
-    registry.auto_register_steps_from_package("invalid_package")
-
-    assert len(registry.get_all_step_classes()) == 0
+    with pytest.raises(ImportError, match="Failed to import package: invalid_package"):
+        registry.auto_register_steps_from_package("invalid_package")
 
 
 @patch("ml_garden.core.step_registry.os.listdir")
@@ -139,6 +138,7 @@ def test_load_and_register_custom_steps_exception(
     mock_spec.loader.exec_module.side_effect = Exception("Test Exception")
 
     registry = StepRegistry()
-    registry.load_and_register_custom_steps("custom_steps_path")
-
-    assert len(registry.get_all_step_classes()) == 0
+    with pytest.raises(
+        ImportError, match="Failed to load module: custom_step. Error: Test Exception"
+    ):
+        registry.load_and_register_custom_steps("custom_steps_path")
