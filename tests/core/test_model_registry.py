@@ -22,7 +22,7 @@ def test_register_model() -> None:
 
 def test_register_non_model_class() -> None:
     registry = ModelRegistry()
-    with pytest.raises(ValueError, match="<class 'int'> must be a subclass of Model"):
+    with pytest.raises(TypeError, match="<class 'int'> must be a subclass of Model"):
         registry.register_model(int)
 
 
@@ -90,6 +90,5 @@ def test_auto_register_models_import_error(mock_import_module: MagicMock) -> Non
     mock_import_module.side_effect = ImportError
 
     registry = ModelRegistry()
-    registry.auto_register_models_from_package("invalid_package")
-
-    assert len(registry.get_all_model_classes()) == 0
+    with pytest.raises(ImportError):
+        registry.auto_register_models_from_package("invalid_package")

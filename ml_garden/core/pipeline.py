@@ -339,7 +339,7 @@ class Pipeline:
             mode_name = "train" if data.is_train else "predict"
             run = (
                 f"{self.__class__.__name__}_{mode_name}_"
-                f"{datetime.now(datetime.UTC).strftime('%Y%m%d_%H%M%S')}"
+                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}"  # noqa: DTZ005
             )
             self.logger.info("Run name not provided. Using default run name: %s", run)
 
