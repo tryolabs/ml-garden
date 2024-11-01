@@ -1,6 +1,6 @@
 {
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "off",
     "files.watcherExclude": {
         "**/.venv/**": true,
         "**/__pycache__/**": true
@@ -39,5 +39,7 @@
     "ruff.organizeImports": true,
     "ruff.fixAll": true,
     "ruff.importStrategy": "fromEnvironment",
-    "ruff.lint.run": "onSave"
+    "ruff.lint.run": "onSave",
+    "python.linting.enabled": false,
+    "python.linting.pylintEnabled": false
 }

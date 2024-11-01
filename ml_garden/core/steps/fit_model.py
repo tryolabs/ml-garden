@@ -4,6 +4,7 @@ from typing import Optional, Type
 
 import numpy as np
 import optuna
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -18,12 +19,15 @@ from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 from ml_garden.core.steps.base import PipelineStep
 
+# ruff: noqa: N803 N806
+
 
 class OptunaOptimizer:
     """Optuna optimizer for hyperparameter tuning."""
 
     def __init__(self, optuna_params: dict, logger: logging.Logger) -> None:
         """Initialize OptunaOptimizer.
+
         Parameters
         ----------
         optuna_params : dict
@@ -36,15 +40,16 @@ class OptunaOptimizer:
 
     def optimize(
         self,
-        X_train,
-        y_train,
-        X_validation,
-        y_validation,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        X_validation: pd.DataFrame,
+        y_validation: pd.Series,
         model_class: Type[Model],
         model_parameters: dict,
         task: Task,
     ) -> dict:
         """Optimize the model hyperparameters using Optuna.
+
         Parameters
         ----------
         X_train : pd.DataFrame
@@ -61,13 +66,14 @@ class OptunaOptimizer:
             The model parameters to optimize
         task : Task
             The type of task: "regression" or "classification"
+
         Returns
         -------
         dict
             The best hyperparameters found by Optuna
         """
 
-        def objective(trial):
+        def objective(trial: optuna.Trial) -> float:
             # Create a copy of model_parameters, then update with the optuna hyperparameters
             param = {}
             param.update(model_parameters)
@@ -87,12 +93,14 @@ class OptunaOptimizer:
         best_params = study.best_params
         return best_params
 
-    def _create_trial_params(self, trial) -> dict:
+    def _create_trial_params(self, trial: optuna.Trial) -> dict:
         """Create a dictionary of hyperparameters for a single Optuna trial.
+
         Parameters
         ----------
         trial : optuna.Trial
             The Optuna trial object
+
         Returns
         -------
         dict
@@ -110,6 +118,7 @@ class OptunaOptimizer:
 
     def _create_study(self) -> optuna.Study:
         """Create an Optuna study.
+
         Returns
         -------
         optuna.Study
@@ -120,7 +129,7 @@ class OptunaOptimizer:
         load_if_exists = self.optuna_params.get("load_if_exists", False)
 
         self.logger.info(
-            f"Creating Optuna study with parameters: \n {json.dumps(self.optuna_params, indent=4)}"
+            "Creating Optuna study with parameters: \n %s", json.dumps(self.optuna_params, indent=4)
         )
 
         study = optuna.create_study(
@@ -145,6 +154,7 @@ class OptunaOptimizer:
             The error metric to calculate
         task : Task
             The type of task: "regression" or "classification"
+
         Returns
         -------
         float
@@ -166,10 +176,12 @@ class OptunaOptimizer:
         elif task == Task.CLASSIFICATION:
             metrics = classification_metrics
         else:
-            raise ValueError(f"Unsupported task: {task}")
+            error_message = f"Unsupported task: {task}"
+            raise ValueError(error_message)
 
         if metric not in metrics:
-            raise ValueError(f"Unsupported objective metric: {metric}")
+            error_message = f"Unsupported objective metric: {metric}"
+            raise ValueError(error_message)
 
         return metrics[metric](y_true, y_pred)
 
@@ -187,6 +199,7 @@ class ModelStep(PipelineStep):
         optuna_params: Optional[dict] = None,
     ) -> None:
         """Initialize ModelStep.
+
         Parameters
         ----------
         model_class : Type[Model]
@@ -204,10 +217,12 @@ class ModelStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -220,23 +235,32 @@ class ModelStep(PipelineStep):
 
     def train(self, data: DataContainer) -> DataContainer:
         """Train the model.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
             The updated data container
         """
-        self.logger.info(f"Fitting the {self.model_class.__name__} model")
+        self.logger.info("Fitting the %s model", self.model_class.__name__)
         model_parameters = self.model_parameters
 
-        assert data.X_train is not None and data.y_train is not None, (
-            "Encoded train data not found in the DataContainer, make sure the EncodeStep was"
-            " executed before FitModelStep"
-        )
-
+        if data.X_train is None:
+            error_message = (
+                "Encoded train data not found in the DataContainer, make sure the EncodeStep was"
+                " executed before FitModelStep"
+            )
+            raise ValueError(error_message)
+        if data.y_train is None:
+            error_message = (
+                "Encoded target data not found in the DataContainer, make sure the EncodeStep was"
+                " executed before FitModelStep"
+            )
+            raise ValueError(error_message)
         if self.optuna_params:
             optimizer = OptunaOptimizer(self.optuna_params, self.logger)
             optuna_model_params = optimizer.optimize(
@@ -249,7 +273,9 @@ class ModelStep(PipelineStep):
                 data.task,
             )
             model_parameters.update(optuna_model_params)
-            self.logger.info(f"Optimized model parameters: \n{json.dumps(model_parameters)}")
+            self.logger.info(
+                "Optimized model parameters: \n%s", json.dumps(model_parameters, indent=4)
+            )
             self.logger.info("Re-fitting the model with optimized parameters")
 
         model = self.model_class(**model_parameters)
@@ -269,6 +295,7 @@ class ModelStep(PipelineStep):
 
     def _save_datasets_predictions(self, data: DataContainer) -> None:
         """Save the predictions for each dataset (train, val, test) in the DataContainer.
+
         Parameters
         ----------
         data : DataContainer
@@ -280,7 +307,7 @@ class ModelStep(PipelineStep):
 
             if dataset is None or encoded_dataset is None:
                 self.logger.warning(
-                    f"Dataset '{dataset_name}' not found. Skipping metric calculation."
+                    "Dataset '%s' not found. Skipping metric calculation.", dataset_name
                 )
                 continue
 
@@ -288,16 +315,18 @@ class ModelStep(PipelineStep):
 
     def predict(self, data: DataContainer) -> DataContainer:
         """Predict with the model.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
             The updated data container
         """
-        self.logger.info(f"Predicting with {self.model_class.__name__} model")
+        self.logger.info("Predicting with %s model", self.model_class.__name__)
         data.flow[data.prediction_column] = data.model.predict(data.X_prediction)
         data.predictions = data.flow[data.prediction_column]
         return data

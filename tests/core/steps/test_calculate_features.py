@@ -1,3 +1,5 @@
+"""Tests for the CalculateFeaturesStep."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,10 +11,10 @@ from ml_garden.core.steps.calculate_features import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def input_data() -> pd.DataFrame:
-    # Data as a dictionary
-    data = {
+    """Return test data as a dictionary."""
+    data_dict = {
         "creation_date": np.array(
             [
                 "2023-01-01",
@@ -55,18 +57,18 @@ def input_data() -> pd.DataFrame:
     }
 
     # Create the DataFrame
-    return pd.DataFrame(data)
+    return pd.DataFrame(data_dict)
 
 
-@pytest.fixture
-def data(input_data: pd.DataFrame) -> DataContainer:
-    data = DataContainer({"is_train": True})
-    data.columns_to_ignore_for_training = []
-    data.train = input_data
-    return data
+@pytest.fixture()
+def data(input_data: pd.DataFrame) -> DataContainer:  # noqa: C901
+    data_container = DataContainer({"is_train": True})
+    data_container.columns_to_ignore_for_training = []
+    data_container.train = input_data
+    return data_container
 
 
-def test_skipping_with_no_parameters(data: DataContainer):
+def test_skipping_with_no_parameters(data: DataContainer) -> None:
     """Test to check if the step is skipped when no parameters are provided."""
     calculate_features_step = CalculateFeaturesStep()
     result = calculate_features_step.execute(data)
@@ -75,8 +77,8 @@ def test_skipping_with_no_parameters(data: DataContainer):
     assert result.train.equals(data.train)
 
 
-def test_feature_names(data: DataContainer):
-    """Test to check correct naming of feature columns"""
+def test_feature_names(data: DataContainer) -> None:
+    """Test to check correct naming of feature columns."""
     datetime_columns = ["creation_date", "deletion_date"]
     features = ["year", "month", "day", "hour", "minute", "second", "weekday", "dayofyear"]
 
@@ -105,7 +107,7 @@ def test_feature_names(data: DataContainer):
     assert "deletion_date_dayofyear" in result.train.columns
 
 
-def test_date_columns_are_ignored_for_training(data: DataContainer):
+def test_date_columns_are_ignored_for_training(data: DataContainer) -> None:
     """Test to check if the date columns are ignored for training."""
     datetime_columns = ["creation_date", "deletion_date"]
     features = ["year", "month", "day"]
@@ -121,7 +123,7 @@ def test_date_columns_are_ignored_for_training(data: DataContainer):
     assert "deletion_date" in result.columns_to_ignore_for_training
 
 
-def test_output_dtypes(data: DataContainer):
+def test_output_dtypes(data: DataContainer) -> None:
     """Test to check the output data types."""
     datetime_columns = ["creation_date"]
     features = ["year", "month", "day", "hour", "minute", "second", "weekday", "dayofyear"]
@@ -143,7 +145,7 @@ def test_output_dtypes(data: DataContainer):
     assert result.train["creation_date_dayofyear"].dtype == np.dtype("uint16")
 
 
-def test_output_values(data: DataContainer):
+def test_output_values(data: DataContainer) -> None:
     """Test to check the output values."""
     datetime_columns = ["creation_date"]
     features = ["year", "month", "day", "hour", "minute", "second", "weekday", "dayofyear"]
@@ -181,7 +183,7 @@ def test_output_values(data: DataContainer):
     )
 
 
-def test_error_in_incorrect_date_column(data: DataContainer):
+def test_error_in_incorrect_date_column(data: DataContainer) -> None:
     """Check step raises an error when a column has incorrect date values."""
     datetime_columns = ["creation_date", "incorrect_date"]
     features = ["year", "month", "day"]
@@ -191,28 +193,41 @@ def test_error_in_incorrect_date_column(data: DataContainer):
         features=features,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Column 'incorrect_date' contains invalid datetime values. "
+            "Please ensure that the column contains valid datetime values before extracting "
+            "features."
+        ),
+    ):
         calculate_features_step.execute(data)
 
 
-def test_init_with_string_datetime_columns():
+def test_init_with_string_datetime_columns() -> None:
+    """Check step initializes with a single datetime column as a string."""
     calculate_features_step = CalculateFeaturesStep(
         datetime_columns="creation_date", features=["year"]
     )
     assert calculate_features_step.datetime_columns == ["creation_date"]
 
 
-def test_init_with_datetime_columns_but_no_features():
-    with pytest.raises(ValueError):
+def test_init_with_datetime_columns_but_no_features() -> None:
+    """Check step raises an error when no features are provided."""
+    with pytest.raises(
+        ValueError, match="No datetime features specified. Must specify at least one feature"
+    ):
         CalculateFeaturesStep(datetime_columns=["creation_date"])
 
 
-def test_init_with_unsupported_features():
+def test_init_with_unsupported_features() -> None:
+    """Check step raises an error when an unsupported feature is provided."""
     with pytest.raises(UnsupportedFeatureError):
         CalculateFeaturesStep(datetime_columns=["creation_date"], features=["unsupported_feature"])
 
 
-def test_execute_with_prediction(data: DataContainer):
+def test_execute_with_prediction(data: DataContainer) -> None:
+    """Check step executes correctly with prediction data."""
     data.is_train = False
     data.flow = data.train.copy()
 

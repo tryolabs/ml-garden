@@ -1,5 +1,5 @@
-import os
 from enum import Enum
+from pathlib import Path
 from pprint import pformat
 from typing import Optional
 
@@ -8,6 +8,8 @@ import pandas as pd
 from ml_garden.core import DataContainer
 from ml_garden.core.steps.base import PipelineStep
 from ml_garden.utils.df_type_conversions import apply_all_dtype_conversions
+
+# ruff: noqa: FBT001 FBT002 N806 SLF001 C901 PLR0912 PLR0915
 
 
 class FileType(Enum):
@@ -29,7 +31,7 @@ class GenerateStep(PipelineStep):
         drop_columns: Optional[list[str]] = None,
         optimize_dtypes: bool = False,
         optimize_dtypes_skip_cols: Optional[list[str]] = None,
-        **kwargs,
+        **kwargs: Optional[dict],
     ) -> None:
         self.init_logger()
         self.train_path = train_path
@@ -42,16 +44,17 @@ class GenerateStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
             The updated data container
         """
-
         # Skip GenerateStep if the data is already loaded
         if not data.is_train and data.raw is not None:
             data.flow = data.raw
@@ -59,25 +62,31 @@ class GenerateStep(PipelineStep):
 
         if data.is_train:
             if not self.train_path:
-                raise ValueError("train_path must be provided for training.")
+                error_msg = "train_path must be provided for training."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
             if self.test_path:
-                self.logger.info(f"Test path provided: {self.test_path}")
+                self.logger.info("Test path provided: %s", self.test_path)
                 # Load test data and add it to the DataContainer
                 test_df = self._load_data_from_file(self.test_path)
                 data.test = test_df
 
         if not data.is_train and not self.predict_path and data.raw is None:
-            raise ValueError(
+            error_msg = (
                 "predict_path was not set in the configuration file, and no DataFrame was provided"
                 " for prediction. Please provide a predict_path or a DataFrame for prediction."
             )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
         file_path = self.train_path if data.is_train else self.predict_path
 
-        self.logger.info(f"Generating data from file: {file_path}")
+        self.logger.info("Generating data from file: %s", file_path)
 
-        if not file_path or not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
+        if not file_path or not Path(file_path).exists():
+            error_msg = f"File not found: {file_path}"
+            self.logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
 
         df = self._load_data_from_file(file_path)
 
@@ -90,7 +99,9 @@ class GenerateStep(PipelineStep):
             # assigned a float dtype, instead of int, so that NA values are properly handled
             # Handle the target column separately, since the prediction df won't have a target
             if data.target is None:
-                raise ValueError("Target not found in DataContainer at Generate step.")
+                error_msg = "Target not found in DataContainer at Generate step."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
             opt_X = pd.concat([df, data.test]) if data.test is not None else df
             opt_y = opt_X[[data.target]]
@@ -105,7 +116,7 @@ class GenerateStep(PipelineStep):
                     opt_X = pd.concat([opt_X, predict_df])
 
             if self.drop_columns is not None:
-                opt_X.drop(columns=self.drop_columns, inplace=True)
+                opt_X = opt_X.drop(columns=self.drop_columns)
 
             if self.optimize_dtypes:
                 apply_all_dtype_conversions(df=opt_X, skip_cols=set(self.optimize_dtypes_skip_cols))
@@ -117,7 +128,7 @@ class GenerateStep(PipelineStep):
             if self.train_path.endswith(".csv") or self.optimize_dtypes:
                 # Log the inferred schema for csvs or if we optimized dtypes
                 self.logger.info(
-                    f"Inferred Schema for raw data:\n {pformat(data._generate_step_dtypes)}"
+                    "Inferred Schema for raw data:\n %s", pformat(data._generate_step_dtypes)
                 )
 
             # Re-split the optimized df into train/test, discard prediction since we're doing
@@ -132,10 +143,12 @@ class GenerateStep(PipelineStep):
         else:
             # Apply the schema saved during training to the DataFrame
             if data._generate_step_dtypes is None:
-                raise AttributeError(
+                error_msg = (
                     "Training schema not found in DataContainer. "
                     "Please train the pipeline before making predictions."
                 )
+                self.logger.error(error_msg)
+                raise AttributeError(error_msg)
             for key, value in data._generate_step_dtypes.items():
                 try:
                     if key == data.target:
@@ -144,90 +157,93 @@ class GenerateStep(PipelineStep):
                     elif key in df.columns:
                         df[key] = df[key].astype(value)
                     else:
-                        raise ValueError(
-                            f"Column {key} from training schema not found in DataFrame"
-                        )
-                except Exception as e:
-                    raise ValueError(
-                        f"Failed to convert column {key} to type {value}: {e}. "
-                        "Verifiy all possible values for the column are observed in the "
-                        "concatenation of train, test and prediction sets, or specify the dataset "
-                        "dtypes manually"
-                    )
+                        self._handle_missing_column_error(key)
+                except (ValueError, TypeError) as e:
+                    self._handle_column_conversion_error(key, value, e)
 
-        df.reset_index(drop=True, inplace=True)  # Reset index for consistency
+        df = df.reset_index(drop=True)  # Reset index for consistency
         data.raw = df
         data.flow = df
 
-        self.logger.info(f"Generated DataFrame with shape: {df.shape}")
+        self.logger.info("Generated DataFrame with shape: %s", df.shape)
 
         return data
 
     def _infer_file_type(self, file_path: str) -> FileType:
         """Infer the file type based on the file extension.
+
         Parameters
         ----------
         file_path : str
             The file path
+
         Returns
         -------
         FileType
             The file type
         """
-        _, file_extension = os.path.splitext(file_path)
-        file_extension = file_extension.lower()
+        file_path_obj = Path(file_path)
+        file_extension = file_path_obj.suffix.lower()
 
         try:
             return FileType(file_extension)
         except ValueError:
-            raise ValueError(f"Unsupported file extension: {file_extension}")
+            error_msg = f"Unsupported file extension: {file_extension}"
+            self.logger.exception(error_msg)
+            raise ValueError(error_msg) from None
 
-    def _read_csv(self, file_path: str, **kwargs) -> pd.DataFrame:
+    def _read_csv(self, file_path: str, **kwargs: Optional[dict]) -> pd.DataFrame:
         """Read a CSV file.
+
         Parameters
         ----------
         file_path : str
             The file path
         **kwargs
             Additional keyword arguments to pass to pd.read_csv
+
         Returns
         -------
         pd.DataFrame
             The DataFrame
         """
         index_col = kwargs.pop("index", None)
-        self.logger.info(f"Reading CSV file with kwargs: {kwargs}")
+        self.logger.info("Reading CSV file with kwargs: %s", kwargs)
         df = pd.read_csv(file_path, **kwargs)
         if index_col is not None:
-            df.set_index(index_col, inplace=True)
+            df = df.set_index(index_col)
         return df
 
-    def _read_parquet(self, file_path: str, **kwargs) -> pd.DataFrame:
+    def _read_parquet(self, file_path: str, **kwargs: Optional[dict]) -> pd.DataFrame:
         """Read a parquet file.
+
         Parameters
         ----------
         file_path : str
             The file path
         **kwargs
             Additional keyword arguments to pass to pd.read_parquet
+
         Returns
         -------
         pd.DataFrame
             The DataFrame
         """
         index_col = kwargs.pop("index", None)
-        self.logger.info(f"Reading parquet file with kwargs: {kwargs}")
+        self.logger.info("Reading parquet file with kwargs: %s", kwargs)
         df = pd.read_parquet(file_path, **kwargs)
         if index_col is not None:
-            df.set_index(index_col, inplace=True)
+            df = df.set_index(index_col)  # Avoid using inplace=True
         return df
 
     def _load_data_from_file(self, file_path: str) -> pd.DataFrame:
         """Load data from a file.
+
         Parameters
         ----------
         file_path : str
             The file path
+
         Returns
         -------
         pd.DataFrame
@@ -240,4 +256,21 @@ class GenerateStep(PipelineStep):
         elif file_type == FileType.PARQUET:
             return self._read_parquet(file_path, **self.kwargs)
         else:
-            raise ValueError(f"Unsupported file type: {file_type}")
+            error_msg = f"Unsupported file type: {file_type}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def _handle_column_conversion_error(self, key: str, value: any, error: Exception) -> None:
+        error_msg = (
+            f"Failed to convert column {key} to type {value}: {error}. "
+            "Verifiy all possible values for the column are observed in the "
+            "concatenation of train, test and prediction sets, or specify the dataset "
+            "dtypes manually"
+        )
+        self.logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    def _handle_missing_column_error(self, key: str) -> None:
+        error_msg = f"Column {key} from training schema not found in DataFrame"
+        self.logger.error(error_msg)
+        raise ValueError(error_msg)

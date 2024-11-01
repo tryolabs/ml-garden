@@ -1,24 +1,23 @@
 import logging
-import os
 import time
 import zipfile
-from os import unlink
+from pathlib import Path
 
 import xgboost as xgb
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def compress_zipfile(
     filename: str,
     compression: int = zipfile.ZIP_BZIP2,
     compresslevel: int = 9,
+    *,
     delete_uncompressed: bool = False,
 ) -> None:
     """
-    Compress a single file into a .zip file using the algorithm specified by compression parameter
-    (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED, zipfile.ZIP_BZIP2, or zipfile.ZIP_LZMA) and with the
-    specified compression level (1-9).
+    Compress a single file into a .zip file using the algorithm specified by compression parameter.
+
     If delete_uncompressed is True, it will also delete the original uncompressed file after
     compression.
 
@@ -46,16 +45,17 @@ def compress_zipfile(
         compression=compression,
         compresslevel=compresslevel,
     ) as zip_file:
-        zip_file.write(filename, arcname=os.path.basename(filename))
+        zip_file.write(filename, arcname=Path(filename).name)
 
     if delete_uncompressed:
-        os.unlink(filename)
+        Path(filename).unlink()
 
 
-def decompress_zipfile(filename: str):
+def decompress_zipfile(filename: str) -> None:
     """
     Extract all files contained in a .zip file to the current directory.
-    filename must not contain .zip extension, it will be added automatically by this function
+
+    Filename must not contain .zip extension, it will be added automatically by this function
 
     Parameters
     ----------
@@ -63,15 +63,15 @@ def decompress_zipfile(filename: str):
         The name of the .zip file to be decompressed, without the .zip extension
     """
     with zipfile.ZipFile(filename + ".zip", "r") as zip_file:
-        zip_file.extractall(path=os.path.dirname(filename))
+        zip_file.extractall(path=Path(filename).parent)
 
 
 # Function to save and compress an XGBoost model
 def save_and_compress_xgb_booster(
-    model: xgb.Booster, filename: str, compression=zipfile.ZIP_BZIP2, compresslevel: int = 9
+    model: xgb.Booster, filename: str, compression: int = zipfile.ZIP_BZIP2, compresslevel: int = 9
 ) -> None:
     """
-    Saves an XGBoost model into a compressed file using BZ2 compression.
+    Save an XGBoost model into a compressed file using BZ2 compression.
 
     Parameters
     ----------
@@ -84,11 +84,10 @@ def save_and_compress_xgb_booster(
     compresslevel : int, optional
         Compression level (1-9) to use, higher is more compression. , by default 9
     """
-
     # Save model directly to a UBJSON file
     start_time = time.time()
     model.save_model(filename)
-    logger.debug(f"Model saved in {time.time() - start_time:.2f} seconds.")
+    logger.debug("Model saved in %.2f seconds.", time.time() - start_time)
 
     start_time = time.time()
     compress_zipfile(
@@ -97,16 +96,15 @@ def save_and_compress_xgb_booster(
         compresslevel=compresslevel,
         delete_uncompressed=True,
     )
-    logger.debug(f"Model bzip2 compressed in {time.time() - start_time:.2f} seconds.")
+    logger.debug("Model bzip2 compressed in %.2f seconds.", time.time() - start_time)
 
 
 def load_compressed_xgb_booster(filename: str) -> xgb.Booster:
     """
-    Loads an XGBoost model from a BZ2 compressed UBJSON file.
+    Load an XGBoost model from a BZ2 compressed UBJSON file.
 
     Parameters
     ----------
-
     filename : str
         The name of the file where the model is stored. File extension should be .ubj or .json,
         the .bz2 extension will be appended automatically
@@ -121,5 +119,5 @@ def load_compressed_xgb_booster(filename: str) -> xgb.Booster:
     # Load the model from the temporary UBJSON file
     model = xgb.Booster()
     model.load_model(filename)
-    unlink(filename)  # Delete the temporary UBJSON file
+    Path(filename).unlink()  # Delete the temporary UBJSON file
     return model

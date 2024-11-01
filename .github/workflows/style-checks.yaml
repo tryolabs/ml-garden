@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -21,20 +21,20 @@ jobs:
       # Allow loading a cached venv created in a previous run if the lock file is identical
       - name: Load cached venv if it exists
         id: venv-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
 
       - name: Install dependencies
         if: steps.venv-cache.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --only dev
 
-      - name: Check format with black
-        run: poetry run black --check .
+      - name: Check linting with Ruff
+        run: poetry run ruff check
 
-      - name: Check style with flake8
-        run: poetry run flake8 .
+      - name: Check format with Ruff
+        run: poetry run ruff format --check
 
-      - name: Check import sorting with isort
-        run: poetry run isort --check .
+      - name: Check docstring coverage
+        run: poetry run docstr-coverage ./**/*.py --fail-under 20  --verbose=2

@@ -5,6 +5,8 @@ import pandas as pd
 
 from ml_garden.core.constants import Task
 
+# ruff: noqa: N803 N806
+
 
 class Model(ABC):
     """Base class for models."""
@@ -17,6 +19,7 @@ class Model(ABC):
         X: pd.DataFrame,
         y: pd.Series,
         eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
+        *,
         verbose: Optional[bool] = True,
     ) -> None:
         """Abstract method for fitting the model."""

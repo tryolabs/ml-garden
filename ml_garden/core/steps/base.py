@@ -18,4 +18,4 @@ class PipelineStep(ABC):
     def init_logger(self) -> None:
         """Initialize the logger."""
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.debug(f"{self.__class__.__name__} initialized")
+        self.logger.debug("%s initialized", self.__class__.__name__)

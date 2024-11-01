@@ -4,18 +4,24 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import mlflow
-import pandas as pd
 
 from ml_garden.core.constants import Task
 from ml_garden.core.data_container import DataContainer
 from ml_garden.core.model_registry import ModelRegistry
-from ml_garden.core.random_state_generator import initialize_random_state
+from ml_garden.core.random_state_generator import RandomStateManager
 from ml_garden.core.step_registry import StepRegistry
-from ml_garden.core.steps import PipelineStep
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+    from ml_garden.core.steps import PipelineStep
+
+# ruff: noqa: PLR0915 C901
 
 
 class Pipeline:
@@ -38,11 +44,13 @@ class Pipeline:
         save_data_path: str,
         target: str,
         task: Task,
-        columns_to_ignore_for_training: Optional[list[str]] = None,
-        tracking: Optional[dict] = None,
-    ):
+        columns_to_ignore_for_training: list[str] | None = None,
+        tracking: dict | None = None,
+    ) -> None:
         if not isinstance(task, Task):
-            raise ValueError(f"task must be an instance of Task enum, got {type(task)}")
+            error_message = f"task must be an instance of Task enum, got {type(task)}"
+            self.logger.error(error_message)
+            raise TypeError(error_message)
 
         self.steps = []
         self.save_data_path = save_data_path
@@ -62,11 +70,11 @@ class Pipeline:
         data.task = self.task
         return data
 
-    def add_steps(self, steps: list[PipelineStep]):
+    def add_steps(self, steps: list[PipelineStep]) -> None:
         """Add steps to the pipeline."""
         self.steps.extend(steps)
 
-    def run(self, is_train: bool, df: Optional[pd.DataFrame] = None) -> DataContainer:
+    def run(self, *, is_train: bool, df: pd.DataFrame | None = None) -> DataContainer:
         """Run the pipeline on the given data."""
         data = self._initialize_data()
 
@@ -76,9 +84,9 @@ class Pipeline:
         else:
             loaded_data = DataContainer.from_pickle(self.save_data_path)
             if loaded_data is None:
-                raise ValueError(
-                    f"Failed to load data from the pickle file ({self.save_data_path})."
-                )
+                error_message = f"Failed to load data from the pickle file ({self.save_data_path})."
+                self.logger.error(error_message)
+                raise ValueError(error_message)
             data.update(loaded_data)
             if df is not None:
                 data.raw = df
@@ -90,11 +98,11 @@ class Pipeline:
         for i, step in enumerate(steps_to_run):
             start_time = time.time()
             log_str = f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
-            Pipeline.logger.info(log_str)
+            self.logger.info(log_str)
 
             data = step.execute(data)
 
-            Pipeline.logger.info(f"{log_str} done. Took: {time.time() - start_time:.2f}s")
+            self.logger.info("%s done. Took: %.2fs", log_str, time.time() - start_time)
 
         if is_train:
             data.save(self.save_data_path, keys=self.KEYS_TO_SAVE)
@@ -110,7 +118,7 @@ class Pipeline:
         """Run the pipeline in training mode."""
         return self.run(is_train=True)
 
-    def predict(self, df: Optional[pd.DataFrame] = None) -> DataContainer:
+    def predict(self, df: pd.DataFrame | None = None) -> DataContainer:
         """Run the pipeline in inference mode.
 
         Parameters
@@ -130,19 +138,25 @@ class Pipeline:
     @classmethod
     def _validate_configuration(cls, config: dict[str, Any]) -> None:
         if "parameters" not in config["pipeline"]:
-            raise ValueError("Missing pipeline parameters section in the config file.")
+            error_message = "Missing pipeline parameters section in the config file."
+            cls.logger.error(error_message)
+            raise ValueError(error_message)
 
         if "save_data_path" not in config["pipeline"]["parameters"]:
-            raise ValueError(
+            error_message = (
                 "A path for saving the data must be provided. Use the `save_data_path` attribute "
                 'of the pipeline parameters" section in the config.'
             )
+            cls.logger.error(error_message)
+            raise ValueError(error_message)
 
         if "target" not in config["pipeline"]["parameters"]:
-            raise ValueError(
+            error_message = (
                 "A target column must be provided. Use the `target` attribute of the pipeline"
                 ' "parameters" section in the config.'
             )
+            cls.logger.error(error_message)
+            raise ValueError(error_message)
 
     @classmethod
     def _validate_task(cls, task: str) -> Task:
@@ -150,25 +164,29 @@ class Pipeline:
             return Task(task.lower())
         except ValueError:
             supported_tasks = ", ".join(t.value for t in Task)
-            raise ValueError(f"Invalid task: {task}. Supported tasks are: {supported_tasks}")
+            error_message = f"Invalid task: {task}. Supported tasks are: {supported_tasks}"
+            cls.logger.exception(error_message)
+            raise ValueError(error_message) from None
 
     @classmethod
     def from_json(cls, path: str) -> Pipeline:
         """Load a pipeline from a JSON file."""
         # check file is a json file
         if not path.endswith(".json"):
-            raise ValueError(f"File {path} is not a JSON file")
+            error_message = f"File {path} is not a JSON file"
+            cls.logger.error(error_message)
+            raise ValueError(error_message)
 
-        with open(path, "r") as config_file:
+        with Path(path).open() as config_file:
             config = json.load(config_file)
 
-        Pipeline._validate_configuration(config)
+        cls._validate_configuration(config)
 
         custom_steps_path = config.get("custom_steps_path")
         if custom_steps_path:
             cls.step_registry.load_and_register_custom_steps(custom_steps_path)
 
-        task = Pipeline._validate_task(config["pipeline"]["parameters"]["task"])
+        task = cls._validate_task(config["pipeline"]["parameters"]["task"])
 
         pipeline = Pipeline(
             save_data_path=config["pipeline"]["parameters"]["save_data_path"],
@@ -181,11 +199,8 @@ class Pipeline:
         )
         pipeline.config = config
 
-        if "seed" in config["pipeline"]["parameters"]:
-            seed = config["pipeline"]["parameters"]["seed"]
-        else:
-            seed = 42
-        initialize_random_state(seed)
+        seed = config["pipeline"]["parameters"].get("seed", 42)
+        RandomStateManager.initialize(seed)
 
         steps = []
 
@@ -193,8 +208,10 @@ class Pipeline:
             step_type = step_config["step_type"]
             parameters = step_config.get("parameters", {})
 
-            Pipeline.logger.info(
-                f"Creating step {step_type} with parameters: \n {json.dumps(parameters, indent=4)}"
+            cls.logger.info(
+                "Creating step %s with parameters: \n %s",
+                step_type,
+                json.dumps(parameters, indent=4),
             )
 
             # change model from string to class
@@ -204,10 +221,12 @@ class Pipeline:
                 parameters["model_class"] = model_class
 
                 if pipeline.task not in model_class.TASKS:
-                    raise ValueError(
+                    error_message = (
                         f"The model class '{model_class_name}' is intended for '{model_class.TASK}'"
                         f" tasks, but the pipeline task is '{pipeline.task}'."
                     )
+                    cls.logger.error(error_message)
+                    raise ValueError(error_message)
 
             step_class = cls.step_registry.get_step_class(step_type)
             step = step_class(**parameters)
@@ -220,9 +239,9 @@ class Pipeline:
         self,
         data: DataContainer,
         experiment: str,
-        run: Optional[str] = None,
-        description: Optional[str] = None,
-        tracking_uri: Optional[str] = None,
+        run: str | None = None,
+        description: str | None = None,
+        tracking_uri: str | None = None,
     ) -> None:
         """
         Log the pipeline run to MLflow.
@@ -270,9 +289,11 @@ class Pipeline:
         >>> pipeline.log_experiment(data, experiment='ames_housing', run='baseline')
         """
         if not data.is_train:
-            raise ValueError("Logging to MLflow is only supported for training runs.")
+            error_message = "Logging to MLflow is only supported for training runs."
+            self.logger.error(error_message)
+            raise ValueError(error_message)
 
-        def log_params_from_config(config):
+        def log_params_from_config(config: dict) -> None:
             # Log top-level parameters
             for key in ["name", "description", "parameters"]:
                 if key in config["pipeline"]:
@@ -309,7 +330,7 @@ class Pipeline:
             mlflow.log_figure(fig, "feature_importance.png")
 
         if tracking_uri:
-            self.logger.info(f"Setting MLflow tracking URI to: {tracking_uri}")
+            self.logger.info("Setting MLflow tracking URI to: %s", tracking_uri)
             mlflow.set_tracking_uri(tracking_uri)
 
         mlflow.set_experiment(experiment)
@@ -317,12 +338,12 @@ class Pipeline:
         if not run:
             mode_name = "train" if data.is_train else "predict"
             run = (
-                f"{self.__class__.__name__}_{mode_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                f"{self.__class__.__name__}_{mode_name}_"
+                f"{datetime.now(datetime.UTC).strftime('%Y%m%d_%H%M%S')}"
             )
-            self.logger.info(f"Run name not provided. Using default run name: {run}")
+            self.logger.info("Run name not provided. Using default run name: %s", run)
 
         with mlflow.start_run(run_name=run):
-
             mlflow.set_tag("name", self.config["pipeline"]["name"])
 
             log_params_from_config(self.config)
@@ -363,6 +384,7 @@ class Pipeline:
                 mlflow.log_artifact(compressed_data_path, artifact_path="data")
 
     def __str__(self) -> str:
+        """Return a string representation of the pipeline with its steps."""
         step_names = [f"{i + 1}. {step.__class__.__name__}" for i, step in enumerate(self.steps)]
         return f"{self.__class__.__name__} with steps:\n" + "\n".join(step_names)
 

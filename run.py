@@ -28,9 +28,7 @@ def setup_logging(log_level: int) -> None:
 
 
 def main() -> None:
-    """
-    Main function to run the pipeline based on command line arguments.
-    """
+    """Run the pipeline based on command line arguments."""
     parser = argparse.ArgumentParser(description="Run the pipeline.")
     parser.add_argument("config_file", type=str, help="Path to the configuration JSON file.")
     parser.add_argument(
@@ -56,7 +54,7 @@ def main() -> None:
     log_level = getattr(logging, args.log_level.upper())
     setup_logging(log_level)
 
-    logging.info(f"Loading pipeline from {args.config_file}")
+    logging.info("Loading pipeline from %s", args.config_file)
     pipeline = Pipeline.from_json(args.config_file)
 
     if args.predict:

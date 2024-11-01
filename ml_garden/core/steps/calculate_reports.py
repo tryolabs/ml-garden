@@ -17,6 +17,7 @@ class CalculateReportsStep(PipelineStep):
 
     def __init__(self, max_samples: int = 1000) -> None:
         """Initialize CalculateReportsStep.
+
         Parameters
         ----------
         max_samples : int, optional
@@ -27,10 +28,12 @@ class CalculateReportsStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -40,33 +43,37 @@ class CalculateReportsStep(PipelineStep):
 
         model = data.model
         if model is None:
-            raise ValueError("Model not found in data container.")
+            message = "Model not found in data container."
+            self.logger.error(message)
+            raise ValueError(message)
 
         df = (
             data.X_test
             if data.X_test is not None
-            else data.X_validation if data.X_validation is not None else None
+            else data.X_validation
+            if data.X_validation is not None
+            else None
         )
         if df is None:
-            raise ValueError(
-                "Both test and validation are None. A validation or test set is required."
-            )
+            message = "Both test and validation are None. A validation or test set is required."
+            self.logger.error(message)
+            raise ValueError(message)
 
         if len(df) > self.max_samples:
             # Randomly sample a subset of data points if the dataset is larger than max_samples
             self.logger.info(
-                f"Dataset contains {len(df)} data points and max_samples is set to"
-                f" {self.max_samples}."
+                "Dataset contains %d data points and max_samples is set to %d.",
+                len(df),
+                self.max_samples,
             )
-            self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
+            self.logger.info("Sampling %d data points from the dataset.", self.max_samples)
             df = df.sample(n=self.max_samples, random_state=42)
 
-        X = df
+        X = df  # noqa: N806
 
         # Calculate SHAP values with progress tracking and logging
         explainer = shap.TreeExplainer(model.model)
         shap_values = []
-        # shap_base_value = explainer.expected_value
         total_rows = len(X)
         start_time = time.time()
         with tqdm(total=total_rows, desc="Calculating SHAP values") as pbar:
@@ -86,7 +93,7 @@ class CalculateReportsStep(PipelineStep):
             columns=["feature", "importance"],
         )
         feature_importance = feature_importance.sort_values(by="importance", ascending=True)
-        feature_importance.reset_index(drop=True, inplace=True)
+        feature_importance = feature_importance.reset_index(drop=True)  # Avoid inplace=True
 
         data.feature_importance = feature_importance
 
