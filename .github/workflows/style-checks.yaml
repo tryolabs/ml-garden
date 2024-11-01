@@ -36,5 +36,5 @@ jobs:
       - name: Check format with Ruff
         run: poetry run ruff format --check
 
-      # - name: Check docstring coverage
-      #   run: poetry run docstr-coverage ./**/*.py --fail-under 20  --verbose=2
+      - name: Check docstring coverage
+        run: poetry run docstr-coverage ./**/*.py --fail-under 20  --verbose=2 --skip-file-doc
