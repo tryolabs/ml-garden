@@ -16,6 +16,7 @@ from ml_garden.core.model_registry import ModelRegistry
 from ml_garden.core.random_state_generator import initialize_random_state
 from ml_garden.core.step_registry import StepRegistry
 from ml_garden.core.steps import PipelineStep
+from ml_garden.core.steps.fit_model import ModelStep
 
 
 class Pipeline:
@@ -24,6 +25,8 @@ class Pipeline:
     _step_registry = {}
     logger = logging.getLogger("Pipeline")
     step_registry = StepRegistry()
+    # TODO: model and step registries should be singletons, to avoid coupling Pipeline with all
+    # the steps and models
     model_registry = ModelRegistry()
 
     KEYS_TO_SAVE = [
@@ -89,12 +92,16 @@ class Pipeline:
 
         for i, step in enumerate(steps_to_run):
             start_time = time.time()
-            log_str = f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
+            log_str = (
+                f"Running {step.__class__.__name__} - {i + 1} / {len(steps_to_run)}"
+            )
             Pipeline.logger.info(log_str)
 
             data = step.execute(data)
 
-            Pipeline.logger.info(f"{log_str} done. Took: {time.time() - start_time:.2f}s")
+            Pipeline.logger.info(
+                f"{log_str} done. Took: {time.time() - start_time:.2f}s"
+            )
 
         if is_train:
             data.save(self.save_data_path, keys=self.KEYS_TO_SAVE)
@@ -150,7 +157,9 @@ class Pipeline:
             return Task(task.lower())
         except ValueError:
             supported_tasks = ", ".join(t.value for t in Task)
-            raise ValueError(f"Invalid task: {task}. Supported tasks are: {supported_tasks}")
+            raise ValueError(
+                f"Invalid task: {task}. Supported tasks are: {supported_tasks}"
+            )
 
     @classmethod
     def from_json(cls, path: str) -> Pipeline:
@@ -191,6 +200,7 @@ class Pipeline:
 
         for step_config in config["pipeline"]["steps"]:
             step_type = step_config["step_type"]
+            step_class = cls.step_registry.get_step_class(step_type)
             parameters = step_config.get("parameters", {})
 
             Pipeline.logger.info(
@@ -198,7 +208,7 @@ class Pipeline:
             )
 
             # change model from string to class
-            if step_type == "ModelStep":
+            if issubclass(step_class, ModelStep):
                 model_class_name = parameters.pop("model_class")
                 model_class = cls.model_registry.get_model_class(model_class_name)
                 parameters["model_class"] = model_class
@@ -209,7 +219,6 @@ class Pipeline:
                         f" tasks, but the pipeline task is '{pipeline.task}'."
                     )
 
-            step_class = cls.step_registry.get_step_class(step_type)
             step = step_class(**parameters)
             steps.append(step)
 
@@ -290,10 +299,13 @@ class Pipeline:
                     if isinstance(value, dict):
                         for key_mp, value_mp in value.items():
                             mlflow.log_param(
-                                f"pipeline.steps_{i}.parameters.{key}.{key_mp}", value_mp
+                                f"pipeline.steps_{i}.parameters.{key}.{key_mp}",
+                                value_mp,
                             )
                     elif key == "model_class":
-                        mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value.__name__)
+                        mlflow.log_param(
+                            f"pipeline.steps_{i}.parameters.{key}", value.__name__
+                        )
                     else:
                         mlflow.log_param(f"pipeline.steps_{i}.parameters.{key}", value)
 
@@ -316,13 +328,10 @@ class Pipeline:
 
         if not run:
             mode_name = "train" if data.is_train else "predict"
-            run = (
-                f"{self.__class__.__name__}_{mode_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            )
+            run = f"{self.__class__.__name__}_{mode_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             self.logger.info(f"Run name not provided. Using default run name: {run}")
 
         with mlflow.start_run(run_name=run):
-
             mlflow.set_tag("name", self.config["pipeline"]["name"])
 
             log_params_from_config(self.config)
@@ -343,14 +352,19 @@ class Pipeline:
                 plot_feature_importance(data.feature_importance)
 
             if self.config:
-                self.logger.debug("Logging pipeline configuration to MLflow as a JSON file")
+                self.logger.debug(
+                    "Logging pipeline configuration to MLflow as a JSON file"
+                )
                 # convert model_class to string
                 config_copy = self.config.copy()
                 fit_step = next(
                     step
                     for step in config_copy["pipeline"]["steps"]
-                    if step["step_type"] == "ModelStep"
+                    if issubclass(
+                        self.step_registry.get_step_class(step["step_type"]), ModelStep
+                    )
                 )
+
                 fit_step["parameters"]["model_class"] = fit_step["parameters"][
                     "model_class"
                 ].__name__
@@ -363,7 +377,9 @@ class Pipeline:
                 mlflow.log_artifact(compressed_data_path, artifact_path="data")
 
     def __str__(self) -> str:
-        step_names = [f"{i + 1}. {step.__class__.__name__}" for i, step in enumerate(self.steps)]
+        step_names = [
+            f"{i + 1}. {step.__class__.__name__}" for i, step in enumerate(self.steps)
+        ]
         return f"{self.__class__.__name__} with steps:\n" + "\n".join(step_names)
 
     def __repr__(self) -> str:
