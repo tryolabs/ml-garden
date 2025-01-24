@@ -8,7 +8,6 @@ __pycache__/
 
 *.joblib
 *.bin
-*.json
 *.pkl
 
 # Autogluon
@@ -17,8 +16,6 @@ AutogluonModels/
 # ignore mlflow folder
 mlruns/
 runs/
-
-examples/
 
 # Distribution / packaging
 .Python

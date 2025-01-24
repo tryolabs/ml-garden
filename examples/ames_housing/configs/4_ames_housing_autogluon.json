@@ -1,0 +1,67 @@
+{
+    "pipeline": {
+        "name": "XGBoostTrainingPipeline",
+        "description": "Training pipeline for XGBoost models.",
+        "parameters": {
+            "save_data_path": "ames_housing.pkl",
+            "target": "SalePrice",
+            "task": "regression",
+            "tracking": {
+                "experiment": "ames_housing",
+                "run": "baseline"
+            }
+        },
+        "steps": [
+            {
+                "step_type": "GenerateStep",
+                "parameters": {
+                    "train_path": "examples/ames_housing/data/train.csv",
+                    "predict_path": "examples/ames_housing/data/test.csv",
+                    "drop_columns": [
+                        "Id"
+                    ]
+                }
+            },
+            {
+                "step_type": "TabularSplitStep",
+                "parameters": {
+                    "train_percentage": 0.7,
+                    "validation_percentage": 0.2,
+                    "test_percentage": 0.1
+                }
+            },
+            {
+                "step_type": "CleanStep"
+            },
+            {
+                "step_type": "EncodeStep"
+            },
+            {
+                "step_type": "AutoGluonModelStep",
+                "parameters": {
+                    "model_class": "AutoGluonModel",
+                    "autogluon_create_params": {},
+                    "autogluon_fit_params": {
+                        "presets": [
+                            "high_quality"
+                        ],
+                        "time_limit": 1800,
+                        "num_bag_folds": 5,
+                        "num_bag_sets": 2,
+                        "num_stack_levels": 1,
+                        "dynamic_stacking": false
+                    }
+                }
+            },
+            {
+                "step_type": "CalculateMetricsStep"
+            },
+            {
+                "step_type": "ExplainerDashboardStep",
+                "parameters": {
+                    "enable_step": false
+                }
+            }
+        ]
+    }
+}
