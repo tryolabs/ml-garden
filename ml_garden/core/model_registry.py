@@ -4,6 +4,7 @@ import pkgutil
 from typing import Dict, Type
 
 from ml_garden.core.model import Model
+from ml_garden.core.steps.fit_model_autogluon import AutoGluonModel
 
 
 class ModelClassNotFoundError(Exception):
@@ -26,6 +27,7 @@ class ModelRegistry:
         """
         self._model_registry: Dict[str, Type[Model]] = {}
         self.logger = logging.getLogger(__name__)
+        self.register_model(AutoGluonModel)
 
     def register_model(self, model_class: Type[Model]) -> None:
         """
@@ -102,7 +104,9 @@ class ModelRegistry:
         try:
             package = importlib.import_module(package_name)
             prefix = package.__name__ + "."
-            for importer, modname, ispkg in pkgutil.walk_packages(package.__path__, prefix):
+            for importer, modname, ispkg in pkgutil.walk_packages(
+                package.__path__, prefix
+            ):
                 module = importlib.import_module(modname)
                 for name in dir(module):
                     attribute = getattr(module, name)
