@@ -1,55 +1,10 @@
-from typing import Any, List, Optional, Tuple, Type
-
-import pandas as pd
-from autogluon.tabular import TabularPredictor
+from typing import Any, Optional, Type
 
 from ml_garden.core import DataContainer
 from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 from ml_garden.core.steps.fit_model import ModelStep
-
-
-class AutoGluonModel(Model):
-    """Base class for models."""
-
-    TASKS: List[Task] = [Task.CLASSIFICATION, Task.REGRESSION, Task.QUANTILE_REGRESSION]
-
-    def __init__(
-        self,
-        autogluon_create_params: dict[str, Any],
-        autogluon_fit_params: dict[str, Any],
-    ) -> None:
-        super().__init__()
-        self.autogluon_create_params = autogluon_create_params
-        self.autogluon_fit_params = autogluon_fit_params
-
-    def fit(
-        self,
-        X: pd.DataFrame,
-        y: pd.Series,
-        eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
-        verbose: Optional[bool] = True,
-    ) -> None:
-        # AutoGluon performs it's own splits so we need to concatenate the train and validation data
-        dfs = [pd.concat([X, y], axis=1)]
-        if eval_set is not None:
-            dfs.extend(
-                [pd.concat([X_eval, y_eval], axis=1) for X_eval, y_eval in eval_set]
-            )
-        concatenated_df = pd.concat(dfs, axis=0)
-
-        self.model = TabularPredictor(
-            **self.autogluon_create_params,
-        ).fit(
-            train_data=concatenated_df,
-            **self.autogluon_fit_params,
-        )
-
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        return self.model.predict(X, as_pandas=True)
-
-    def predict_proba(self, X: pd.DataFrame) -> pd.DataFrame:
-        return self.model.predict_proba(X, as_pandas=True)
+from ml_garden.implementation.tabular.autogluon.model import AutoGluon
 
 
 class AutoGluonModelStep(ModelStep):
@@ -75,7 +30,7 @@ class AutoGluonModelStep(ModelStep):
             The AutoGluon fit params, by default None
         """
         super().__init__(
-            model_class=AutoGluonModel, model_parameters=None, optuna_params=None
+            model_class=AutoGluon, model_parameters=None, optuna_params=None
         )
         self.autogluon_create_params = autogluon_create_params or {}
         self.autogluon_fit_params = autogluon_fit_params or {}
@@ -106,7 +61,7 @@ class AutoGluonModelStep(ModelStep):
             return "regression"
         else:
             raise ValueError(
-                f"Task {task} not supported by AutoGluon. Supported tasks: {AutoGluonModel.TASKS}"
+                f"Task {task} not supported by AutoGluon. Supported tasks: {AutoGluon.TASKS}"
             )
 
     def train(self, data: DataContainer) -> DataContainer:
@@ -130,7 +85,7 @@ class AutoGluonModelStep(ModelStep):
         self.autogluon_create_params["label"] = data.target
         self.autogluon_create_params["problem_type"] = data.task.value
 
-        model = AutoGluonModel(
+        model = AutoGluon(
             self.autogluon_create_params,
             self.autogluon_fit_params,
         )
@@ -147,22 +102,3 @@ class AutoGluonModelStep(ModelStep):
         self._save_datasets_predictions(data)
 
         return data
-
-    def _save_datasets_predictions(self, data: DataContainer) -> None:
-        """Save the predictions for each dataset (train, val, test) in the DataContainer.
-        Parameters
-        ----------
-        data : DataContainer
-            The data container
-        """
-        for dataset_name in ["train", "validation", "test"]:
-            dataset = getattr(data, dataset_name, None)
-            encoded_dataset = getattr(data, f"X_{dataset_name}", None)
-
-            if dataset is None or encoded_dataset is None:
-                self.logger.warning(
-                    f"Dataset '{dataset_name}' not found. Skipping metric calculation."
-                )
-                continue
-
-            dataset[data.prediction_column] = data.model.predict(encoded_dataset)
