@@ -150,7 +150,8 @@ def convert_object_columns_to_base_type(
         skip_cols = set()
 
     object_cols = (
-        df.drop(columns=[col for col in skip_cols if col in df.columns]).dtypes == "object"
+        df.drop(columns=[col for col in skip_cols if col in df.columns]).dtypes
+        == "object"
     )
     object_cols = object_cols.index[object_cols.values].tolist()
     no_nan_object_columns = (~df.loc[:, object_cols].isna()).all(axis=0)
@@ -160,9 +161,9 @@ def convert_object_columns_to_base_type(
     # col = no_nan_object_columns[0]
     for col in no_nan_object_columns:
         first_non_na_type = type_of_first_non_na(df[col])
-        if (first_non_na_type in (datetime.date, datetime.datetime)) or ("datetime64") in str(
-            first_non_na_type
-        ):
+        if (first_non_na_type in (datetime.date, datetime.datetime)) or (
+            "datetime64"
+        ) in str(first_non_na_type):
             df[col] = pd.to_datetime(df[col])
         else:
             # Savage
@@ -170,6 +171,13 @@ def convert_object_columns_to_base_type(
             # Didn't find any better solution.
             # I can speak for hours as to why Pandas doesn't provide =)
             try:
+                # Pandas won't raise an error for negative values when converting to unsigned,
+                # instead returning the unconverted float64 array. This breaks the logic for
+                # inputs such as pd.to_numeric(pd.Series([1.0, 0.0, -1.0]), downcast="unsigned")
+                # since instead of raising the error and being converted to "integer" in the
+                # except, it will remain as a float64 silenty.
+                if (df[col] <= 0).any():
+                    raise ValueError("Column contains negative values.")
                 df[col] = pd.to_numeric(df[col].values, downcast="unsigned")
             except ValueError:
                 try:
@@ -200,7 +208,9 @@ def convert_object_columns_to_base_type(
         is_object_to_be_converted = convert_object_all_nans_to_float32 and (
             first_non_na_type is None
         )
-        is_bool_to_be_converted = convert_bools_with_nans_to_float32 and (first_non_na_type == bool)
+        is_bool_to_be_converted = convert_bools_with_nans_to_float32 and (
+            first_non_na_type == bool
+        )
 
         do_float_conversion = (
             is_float_to_be_converted
@@ -216,10 +226,14 @@ def convert_object_columns_to_base_type(
             continue
 
     if fill_string_nans:
-        string_columns = detect_string_columns(df, skip_cols=skip_cols, object_cols_only=True)
+        string_columns = detect_string_columns(
+            df, skip_cols=skip_cols, object_cols_only=True
+        )
         if string_columns:
             df.loc[:, string_columns].fillna("")
-            df.loc[:, string_columns] = df.loc[:, string_columns].astype(pd.StringDtype())
+            df.loc[:, string_columns] = df.loc[:, string_columns].astype(
+                pd.StringDtype()
+            )
     return df
 
 
@@ -274,11 +288,15 @@ def apply_all_dtype_conversions(
     Returns:
         pd.DataFrame: _description_
     """
-    df = convert_to_categoricals(df, skip_cols=skip_cols, not_present_string=not_present_string)
+    df = convert_to_categoricals(
+        df, skip_cols=skip_cols, not_present_string=not_present_string
+    )
     df = convert_object_columns_to_base_type(df, skip_cols=skip_cols)
     df = downcast_int64_and_float64(df, skip_cols=skip_cols)
     return df
 
 
-def calculate_memory_storage(df: pd.DataFrame, base: int = 2**20, round_units: int = 2) -> float:
+def calculate_memory_storage(
+    df: pd.DataFrame, base: int = 2**20, round_units: int = 2
+) -> float:
     return round(df.memory_usage(deep=True).sum() / base, round_units)
