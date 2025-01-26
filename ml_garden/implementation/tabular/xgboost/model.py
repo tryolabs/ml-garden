@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import pandas as pd
 import xgboost as xgb
@@ -20,7 +20,7 @@ class XGBoostRegressor(Model):
         self,
         X: pd.DataFrame,  # noqa: N803
         y: pd.Series,
-        eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
+        eval_set: Optional[list[tuple[pd.DataFrame, pd.Series]]] = None,
         *,
         verbose: bool = True,
     ) -> None:
@@ -40,7 +40,7 @@ class XGBoostClassifier(Model):
         self,
         X: pd.DataFrame,  # noqa: N803
         y: pd.Series,
-        eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
+        eval_set: Optional[list[tuple[pd.DataFrame, pd.Series]]] = None,
         *,
         verbose: bool = True,
     ) -> None:

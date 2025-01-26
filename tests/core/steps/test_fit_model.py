@@ -9,14 +9,14 @@ from ml_garden.core.model import Model
 from ml_garden.core.steps.fit_model import ModelStep, OptunaOptimizer
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_model_class() -> mock.MagicMock:
     mock_model = mock.MagicMock(spec=Model)
     mock_model.__name__ = "MockModel"
     return mock_model
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_container() -> DataContainer:
     # Create a sample DataContainer for testing
     data = {

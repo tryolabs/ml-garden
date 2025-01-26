@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import pandas as pd
 from autogluon.tabular import TabularPredictor
@@ -7,7 +7,7 @@ from autogluon.tabular import TabularPredictor
 from ml_garden.core.constants import Task
 from ml_garden.core.model import Model
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class AutoGluon(Model):
@@ -17,24 +17,22 @@ class AutoGluon(Model):
         self,
         autogluon_create_params: dict[str, Any],
         autogluon_fit_params: dict[str, Any],
-    ):
+    ) -> None:
         self.autogluon_create_params = autogluon_create_params
         self.autogluon_fit_params = autogluon_fit_params
         self.model: Optional[TabularPredictor] = None
 
     def fit(
         self,
-        X: pd.DataFrame,
+        X: pd.DataFrame,  # noqa: N803
         y: pd.Series,
-        eval_set: Optional[List[Tuple[pd.DataFrame, pd.Series]]] = None,
+        eval_set: Optional[list[tuple[pd.DataFrame, pd.Series]]] = None,
         verbose: Optional[bool] = True,
     ) -> None:
         # AutoGluon performs it's own splits so we need to concatenate the train and validation data
         dfs = [pd.concat([X, y], axis=1)]
         if eval_set is not None:
-            dfs.extend(
-                [pd.concat([X_eval, y_eval], axis=1) for X_eval, y_eval in eval_set]
-            )
+            dfs.extend([pd.concat([X_eval, y_eval], axis=1) for X_eval, y_eval in eval_set])
         concatenated_df = pd.concat(dfs, axis=0)
         if not verbose:
             self.autogluon_create_params["verbosity"] = 0
@@ -62,6 +60,7 @@ class AutoGluon(Model):
 
     def predict_proba(self, X: pd.DataFrame) -> pd.DataFrame:
         if self.model.problem_type == "regression":
-            raise ValueError("predict_proba is not available for regression tasks.")
+            msg = "predict_proba is not available for regression tasks."
+            raise ValueError(msg)
         probabilities = self.model.predict_proba(X, as_pandas=True)
         return pd.DataFrame(probabilities, index=X.index)

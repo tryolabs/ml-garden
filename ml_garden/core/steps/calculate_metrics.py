@@ -1,7 +1,7 @@
 """Calculate metrics for regression and classification tasks."""
 
 import json
-from typing import Dict, List, TypedDict, Union
+from typing import TypedDict, Union
 
 import numpy as np
 import pandas as pd
@@ -55,16 +55,16 @@ class ClassificationMetrics(TypedDict):
     """Classification metrics."""
 
     Overall: ClassificationOverallMetrics
-    Per_Class: Dict[str, ClassMetrics]
-    Confusion_Matrix: List[List[int]]
+    Per_Class: dict[str, ClassMetrics]
+    Confusion_Matrix: list[list[int]]
 
 
 class DatasetMetrics(TypedDict):
     """Dataset metrics."""
 
-    train: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
-    validation: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
-    test: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    train: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    validation: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    test: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
 
 
 class CalculateMetricsStep(PipelineStep):
@@ -213,7 +213,7 @@ class CalculateMetricsStep(PipelineStep):
         """
         self.logger.debug("Starting metric calculation")
 
-        metrics: Dict[str, Union[RegressionMetrics, ClassificationMetrics]] = {}
+        metrics: dict[str, Union[RegressionMetrics, ClassificationMetrics]] = {}
 
         if data.is_train:
             for dataset_name in ["train", "validation", "test"]:

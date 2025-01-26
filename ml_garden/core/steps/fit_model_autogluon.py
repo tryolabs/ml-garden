@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from ml_garden.core import DataContainer
 from ml_garden.core.constants import Task
@@ -15,44 +15,42 @@ class AutoGluonModelStep(ModelStep):
 
     def __init__(
         self,
-        model_class: Type[Model],
+        model_class: type[Model],  # noqa: ARG002
         autogluon_create_params: Optional[dict[str, Any]] = None,
         autogluon_fit_params: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize ModelStep.
+
         Parameters
         ----------
-        model_class : Type[Model]
+        model_class : type[Model]
             The model class to use
         autogluon_create_params : dict
             The AutoGluon create params
         autogluon_fit_params : dict, optional
             The AutoGluon fit params, by default None
         """
-        super().__init__(
-            model_class=AutoGluon, model_parameters=None, optuna_params=None
-        )
+        super().__init__(model_class=AutoGluon, model_parameters=None, optuna_params=None)
         self.autogluon_create_params = autogluon_create_params or {}
         self.autogluon_fit_params = autogluon_fit_params or {}
 
-    def _get_autogluon_problem_type_from_task(
-        self, task: Task, data: DataContainer
-    ) -> str:
+    def _get_autogluon_problem_type_from_task(self, task: Task, data: DataContainer) -> str:
         """Get the AutoGluon problem type from the task.
+
         Parameters
         ----------
         task : Task
             The task
         data : DataContainer
             The data container
+
         Returns
         -------
         str
             The AutoGluon problem type
         """
-
         if task == Task.CLASSIFICATION:
-            if len(data.y_train.unique()) == 2:
+            if len(data.y_train.unique()) == 2:  # noqa: PLR2004
                 return "binary"
             return "multiclass"
         elif task == Task.QUANTILE_REGRESSION:
@@ -60,16 +58,19 @@ class AutoGluonModelStep(ModelStep):
         elif task == Task.REGRESSION:
             return "regression"
         else:
-            raise ValueError(
+            error_message = (
                 f"Task {task} not supported by AutoGluon. Supported tasks: {AutoGluon.TASKS}"
             )
+            raise ValueError(error_message)
 
     def train(self, data: DataContainer) -> DataContainer:
         """Train the model.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -77,7 +78,7 @@ class AutoGluonModelStep(ModelStep):
         """
         self.logger.info(f"Fitting the {self.model_class.__name__} model")
 
-        assert data.X_train is not None and data.y_train is not None, (
+        assert data.X_train is not None and data.y_train is not None, (  # noqa: PT018, S101
             "Encoded train data not found in the DataContainer, make sure the EncodeStep was"
             " executed before FitModelStep"
         )

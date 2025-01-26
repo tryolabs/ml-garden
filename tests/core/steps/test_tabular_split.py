@@ -15,7 +15,7 @@ def _setup_random_state() -> None:
     RandomStateManager.initialize(seed=42)
 
 
-@pytest.fixture()
+@pytest.fixture
 def input_data() -> pd.DataFrame:
     # Data as a dictionary
     data_dict = {
@@ -32,7 +32,7 @@ def input_data() -> pd.DataFrame:
     return pd.DataFrame(data_dict)
 
 
-@pytest.fixture()
+@pytest.fixture
 def data(input_data: pd.DataFrame) -> DataContainer:
     data_container = DataContainer({"is_train": True})
     data_container.columns_to_ignore_for_training = []

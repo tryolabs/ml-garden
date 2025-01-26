@@ -6,7 +6,7 @@ from ml_garden.core.constants import Task
 from ml_garden.core.steps import CalculateMetricsStep
 
 
-@pytest.fixture()
+@pytest.fixture
 def data() -> DataContainer:
     """Return test data."""
     data_container = DataContainer({"is_train": True})

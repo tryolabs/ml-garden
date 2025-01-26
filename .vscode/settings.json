@@ -26,7 +26,6 @@
     "files.trimTrailingWhitespace": true,
     "jupyter.notebookFileRoot": "${workspaceFolder}",
     "jupyter.interactiveWindow.textEditor.executeSelection": true,
-    "jupyter.generateSVGPlots": true,
     "autoDocstring.docstringFormat": "numpy",
     "python.testing.pytestArgs": [
         "tests"
@@ -39,7 +38,5 @@
     "ruff.organizeImports": true,
     "ruff.fixAll": true,
     "ruff.importStrategy": "fromEnvironment",
-    "ruff.lint.run": "onSave",
-    "python.linting.enabled": false,
-    "python.linting.pylintEnabled": false
+    "ruff.lint.run": "onSave"
 }

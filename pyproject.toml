@@ -110,8 +110,6 @@ select = [
 unfixable = ["PIE794"]
 
 ignore = [
-    "ANN101",
-    "ANN102",
     "ANN401",
     "D418",
     "FIX002",
@@ -148,6 +146,14 @@ ignore = [
     "ISC001",
     "ISC002",
     "PD901",
+
+    "FBT001",
+    "FBT002",
+    "G004",
+    "N803",
+    "ERA001",
+    "TD002",
+    "TD003",
 ]
 
 exclude = [
@@ -189,3 +195,8 @@ line-ending = "auto"
 
 [tool.ruff.lint.pylint]
 max-args = 10
+max-branches = 15
+
+[tool.ruff.lint.mccabe]
+# Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 15

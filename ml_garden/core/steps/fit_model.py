@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional, Type
+from typing import Optional
 
 import numpy as np
 import optuna
@@ -44,7 +44,7 @@ class OptunaOptimizer:
         y_train: pd.Series,
         X_validation: pd.DataFrame,
         y_validation: pd.Series,
-        model_class: Type[Model],
+        model_class: type[Model],
         model_parameters: dict,
         task: Task,
     ) -> dict:
@@ -194,7 +194,7 @@ class ModelStep(PipelineStep):
 
     def __init__(
         self,
-        model_class: Type[Model],
+        model_class: type[Model],
         model_parameters: Optional[dict] = None,
         optuna_params: Optional[dict] = None,
     ) -> None:

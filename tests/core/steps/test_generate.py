@@ -6,24 +6,24 @@ from ml_garden.core.steps import GenerateStep
 
 
 # Fixture to create a sample CSV file for testing
-@pytest.fixture()
+@pytest.fixture
 def train_csv_file() -> str:
     return "tests/data/train.csv"
 
 
-@pytest.fixture()
+@pytest.fixture
 def predict_csv_file() -> str:
     return "tests/data/predict.csv"
 
 
 # Fixture to create a DataContainer for testing
-@pytest.fixture()
+@pytest.fixture
 def train_data_container() -> DataContainer:
     data = DataContainer({"target": "target", "is_train": True})
     return data
 
 
-@pytest.fixture()
+@pytest.fixture
 def predict_data_container() -> DataContainer:
     data_container = DataContainer({"target": "target", "is_train": False})
 

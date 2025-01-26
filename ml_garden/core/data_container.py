@@ -721,7 +721,7 @@ class DataContainer:
         return self["predict_proba"]
 
     @predict_proba.setter
-    def predict_proba(self, value: pd.DataFrame):
+    def predict_proba(self, value: pd.DataFrame) -> None:
         """
         Set the prediction probabilities in the DataContainer.
 

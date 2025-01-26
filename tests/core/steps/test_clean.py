@@ -7,7 +7,7 @@ from ml_garden.core.steps.clean import CleanStep
 # Add these constants near the top of the file, after imports
 
 
-@pytest.fixture()
+@pytest.fixture
 def input_data() -> pd.DataFrame:
     data_dict = {
         "id": [1, 2, 3, 4, 5],
@@ -18,7 +18,7 @@ def input_data() -> pd.DataFrame:
     return pd.DataFrame(data_dict)
 
 
-@pytest.fixture()
+@pytest.fixture
 def data(input_data: pd.DataFrame) -> DataContainer:
     data_container = DataContainer({"is_train": True})
     data_container.columns_to_ignore_for_training = []

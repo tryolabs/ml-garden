@@ -101,11 +101,16 @@ def test_log_experiment_success(tmpdir: Path) -> None:
         }
     }
 
-    with patch("mlflow.set_tracking_uri"), patch("mlflow.set_experiment"), patch(
-        "mlflow.start_run"
-    ), patch("mlflow.log_param"), patch("mlflow.log_metric"), patch("mlflow.log_figure"), patch(
-        "mlflow.log_dict"
-    ), patch("mlflow.log_artifact"):
+    with (
+        patch("mlflow.set_tracking_uri"),
+        patch("mlflow.set_experiment"),
+        patch("mlflow.start_run"),
+        patch("mlflow.log_param"),
+        patch("mlflow.log_metric"),
+        patch("mlflow.log_figure"),
+        patch("mlflow.log_dict"),
+        patch("mlflow.log_artifact"),
+    ):
         pipeline.log_experiment(data, experiment="test_experiment")
 
         mlflow.set_experiment.assert_called_with("test_experiment")

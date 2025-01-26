@@ -1,6 +1,6 @@
 """Calculate datetime-related features from specified columns."""
 
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -21,8 +21,8 @@ class CalculateFeaturesStep(PipelineStep):
 
     def __init__(
         self,
-        datetime_columns: Optional[Union[List[str], str]] = None,
-        features: Optional[List[str]] = None,
+        datetime_columns: Optional[Union[list[str], str]] = None,
+        features: Optional[list[str]] = None,
     ) -> None:
         """Initialize CalculateFeaturesStep.
 
@@ -93,10 +93,10 @@ class CalculateFeaturesStep(PipelineStep):
                 )
                 if log:
                     self.logger.info(f"Column '{column}' automatically converted to datetime.")
-            except ValueError as e:
-                self.logger.error(f"Error converting column '{column}' to datetime: {e}")
-            except Exception as e:
-                self.logger.error(f"Unexpected error converting column '{column}' to datetime: {e}")
+            except ValueError:
+                self.logger.exception(f"Error converting column '{column}' to datetime")
+            except Exception:
+                self.logger.exception(f"Unexpected error converting column '{column}' to datetime")
         elif log:
             self.logger.debug(f"Column '{column}' is already a datetime type.")
         return df
@@ -162,9 +162,9 @@ class CalculateFeaturesStep(PipelineStep):
 
         for attr_name, dataset, should_log in datasets:
             if dataset is not None:
-                dataset = self._create_datetime_features(dataset, log=should_log)
-                dataset = self._drop_datetime_columns(dataset, log=should_log)
-                setattr(data, attr_name, dataset)
+                ds = self._create_datetime_features(dataset, log=should_log)
+                ds = self._drop_datetime_columns(ds, log=should_log)
+                setattr(data, attr_name, ds)
 
         return data
 

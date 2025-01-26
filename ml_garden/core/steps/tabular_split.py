@@ -1,5 +1,5 @@
 from math import isclose
-from typing import Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -94,7 +94,7 @@ class TabularSplitStep(PipelineStep):
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
 
-    def _set_X_y(self, data: DataContainer) -> None:
+    def _set_X_y(self, data: DataContainer) -> None:  # noqa: N802
         """
         Set X and y for train, validation, and test sets.
 
@@ -111,7 +111,7 @@ class TabularSplitStep(PipelineStep):
         None
         """
 
-        def split_X_y(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+        def split_X_y(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:  # noqa: N802
             df = df.drop(columns=data.columns_to_ignore_for_training)
             if data.target is None:
                 return df, None
