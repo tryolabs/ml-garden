@@ -9,7 +9,6 @@ from ml_garden import Pipeline
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-# %%
 # Path to your experiment configuration json file
 # json_path = "examples/ames_housing/configs/1_ames_housing_baseline.json"
 # json_path = "examples/ames_housing/configs/2_ames_housing_hp_tuning.json"
@@ -35,3 +34,5 @@ ExplainerDashboard(explainer=data.explainer).run()
 
 # %%
 data.model.model.leaderboard()
+
+# %%
