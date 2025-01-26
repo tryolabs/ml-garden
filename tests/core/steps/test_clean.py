@@ -43,15 +43,15 @@ def test_remove_outliers_clip(data: DataContainer) -> None:
 
     # Check that the outlier values are dropped from the DataFrame
     for outlier in outlier_rows:
-        assert (
-            outlier not in result.train[column].to_numpy()
-        ), f"Outlier value {outlier} was not dropped from the DataFrame"
+        assert outlier not in result.train[column].to_numpy(), (
+            f"Outlier value {outlier} was not dropped from the DataFrame"
+        )
 
     # Check that the normal values are still present in the DataFrame
     for normal_value in normal_rows:
-        assert (
-            normal_value in result.train[column].to_numpy()
-        ), f"Normal value {normal_value} was incorrectly dropped from the DataFrame"
+        assert normal_value in result.train[column].to_numpy(), (
+            f"Normal value {normal_value} was incorrectly dropped from the DataFrame"
+        )
 
 
 def test_remove_outliers_drop(data: DataContainer) -> None:
@@ -64,15 +64,15 @@ def test_remove_outliers_drop(data: DataContainer) -> None:
 
     # Check that the outlier values are dropped from the DataFrame
     for outlier in outlier_rows:
-        assert (
-            outlier not in result.train[column].to_numpy()
-        ), f"Outlier value {outlier} was not dropped from the DataFrame"
+        assert outlier not in result.train[column].to_numpy(), (
+            f"Outlier value {outlier} was not dropped from the DataFrame"
+        )
 
     # Check that the normal values are still present in the DataFrame
     for normal_value in normal_rows:
-        assert (
-            normal_value in result.train[column].to_numpy()
-        ), f"Normal value {normal_value} was incorrectly dropped from the DataFrame"
+        assert normal_value in result.train[column].to_numpy(), (
+            f"Normal value {normal_value} was incorrectly dropped from the DataFrame"
+        )
 
 
 def test_convert_dtypes(data: DataContainer) -> None:
