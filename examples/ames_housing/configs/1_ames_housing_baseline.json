@@ -25,9 +25,9 @@
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.7,
+                    "train_percentage": 0.6,
                     "validation_percentage": 0.2,
-                    "test_percentage": 0.1
+                    "test_percentage": 0.2
                 }
             },
             {

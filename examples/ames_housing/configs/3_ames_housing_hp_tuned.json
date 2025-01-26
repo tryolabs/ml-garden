@@ -25,9 +25,9 @@
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.7,
+                    "train_percentage": 0.6,
                     "validation_percentage": 0.2,
-                    "test_percentage": 0.1
+                    "test_percentage": 0.2
                 }
             },
             {
@@ -45,12 +45,12 @@
                         "eval_metric": "rmse",
                         "tree_method": "hist",
                         "early_stopping_rounds": 20,
-                        "max_depth": 15,
-                        "eta": 0.08311222976823307,
-                        "n_estimators": 374,
-                        "min_child_weight": 6,
-                        "subsample": 0.5272883435658126,
-                        "colsample_bytree": 0.946222179438676
+                        "max_depth": 5,
+                        "eta": 0.15805002999964826,
+                        "n_estimators": 1019,
+                        "min_child_weight": 3,
+                        "subsample": 0.8807043595486204,
+                        "colsample_bytree": 0.8754815170751743
                     }
                 }
             },
