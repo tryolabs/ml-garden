@@ -1,12 +1,3 @@
-[tool.black]
-line-length = 100
-preview = true
-
-[tool.isort]
-atomic = true
-profile = "black"
-skip = [".venv"]
-
 [tool.poetry]
 name = "ml-garden"
 version = "0.1.0"
@@ -44,16 +35,157 @@ autogluon = ["autogluon", "boto3", "botocore"]
 all_models = ["xgboost", "autogluon", "boto3", "botocore"]
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^7.1.0"
-black = "^24.4.2"
-isort = "^5.13.2"
 ipykernel = "^6.29.4"
 memray = "^1.13.1"
 pyinstrument = "^4.6.2"
 pytest = "^8.2.2"
 ipywidgets = "^8.1.5"
-
+ruff = "^0.3.0"
+docstr-coverage = "^2.3.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "D",
+    "C901",
+    "I",
+    "N",
+    "UP",
+    "YTT",
+    "ANN",
+    "ASYNC",
+    "S",
+    "BLE",
+    "FBT",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "DJ",
+    "EM",
+    "EXE",
+    "ISC",
+    "ICN",
+    "LOG",
+    "G",
+    "PIE",
+    "T20",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "SLF",
+    "SIM",
+    "TID",
+    "TCH",
+    "INT",
+    "ARG",
+    "PTH",
+    "TD",
+    "FIX",
+    "ERA",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "FLY",
+    "NPY",
+    "AIR",
+    "PERF",
+    "FURB",
+]
+
+unfixable = ["PIE794"]
+
+ignore = [
+    "ANN101",
+    "ANN102",
+    "ANN401",
+    "D418",
+    "FIX002",
+    "TRY003",
+    "RSE102",
+    "PERF203",
+    "RUF013",
+    "E203",
+    "PLR6301",
+    "FBT003",
+    "SIM108",
+    "SIM117",
+    "A003",
+    "PIE790",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D106",
+    "D107",
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "D300",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+    "PD901",
+]
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = ["S101", "B018", "D100", "D104", "ARG"]
+"**/notebooks/**/*.py" = ["B018", "ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.pylint]
+max-args = 10

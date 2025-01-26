@@ -5,9 +5,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from ml_garden.core import DataContainer
-from ml_garden.core.random_state_generator import get_random_state
+from ml_garden.core.random_state_generator import RandomStateManager
 from ml_garden.core.steps.base import PipelineStep
 from ml_garden.utils.string_utils import concatenate_columns
+
+# ruff: noqa: ERA001 PLR0915
 
 
 class TabularSplitStep(PipelineStep):
@@ -24,7 +26,7 @@ class TabularSplitStep(PipelineStep):
         group_by_columns: Optional[list[str]] = None,
     ) -> None:
         """
-        Initialize the TabularSplitStep
+        Initialize the TabularSplitStep.
 
         Parameters
         ----------
@@ -53,33 +55,44 @@ class TabularSplitStep(PipelineStep):
         self.group_by_columns = group_by_columns
 
         if self.train_percentage <= 0 or self.train_percentage >= 1:
-            raise ValueError("train_percentage must be between 0 and 1.")
+            error_msg = "train_percentage must be between 0 and 1."
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
         if self.validation_percentage is not None:
             if self.validation_percentage <= 0 or self.validation_percentage >= 1:
-                raise ValueError("validation_percentage must be between 0 and 1.")
+                error_msg = "validation_percentage must be between 0 and 1."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
             if self.test_percentage is None:
                 if self.train_percentage + self.validation_percentage != 1:
-                    raise ValueError(
+                    error_msg = (
                         "The sum of train_percentage and validation_percentage must equal 1 when"
                         " test_percentage is not specified."
                     )
-            else:
-                if not isclose(
-                    self.train_percentage + self.validation_percentage + self.test_percentage, 1
-                ):
-                    raise ValueError(
-                        "The sum of train_percentage, validation_percentage, and test_percentage"
-                        " must equal 1."
-                    )
+                    self.logger.error(error_msg)
+                    raise ValueError(error_msg)
+            elif not isclose(
+                self.train_percentage + self.validation_percentage + self.test_percentage, 1
+            ):
+                error_msg = (
+                    "The sum of train_percentage, validation_percentage, and test_percentage"
+                    " must equal 1."
+                )
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
         if self.test_percentage is not None:
             if self.test_percentage <= 0 or self.test_percentage >= 1:
-                raise ValueError("test_percentage must be between 0 and 1.")
+                error_msg = "test_percentage must be between 0 and 1."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
             if self.validation_percentage is None:
-                raise ValueError(
+                error_msg = (
                     "validation_percentage must be provided when test_percentage is specified."
                 )
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
     def _set_X_y(self, data: DataContainer) -> None:
         """
@@ -158,16 +171,21 @@ class TabularSplitStep(PipelineStep):
         # may break downstream code.
         # Also if idx = pd.Index(data=[0]), len(idx)==1 but len(df.loc[idx])==2, which can cause
         # inconsistencies and make interpretation difficult to understand
-        assert not df.index.duplicated().any(), (
-            "Duplicate indices found in the dataframe before split. Please ensure dataframe indices"
-            "are unique before feeding them to the SplitStep."
-        )
+        if df.index.duplicated().any():
+            error_msg = (
+                "Duplicate indices found in the dataframe before split. Please ensure dataframe "
+                "indices are unique before feeding them to the SplitStep."
+            )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
         if self.test_percentage is not None and data.test is not None:
-            raise ValueError(
+            error_msg = (
                 "Cannot set test_percentage in TabularSplitStep when data.test is already set. "
                 "If the test dataset was provided in the generate step, do not set test_percentage."
             )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
         if self.group_by_columns is not None:
             # Group based splits
@@ -181,18 +199,22 @@ class TabularSplitStep(PipelineStep):
         if self.test_percentage is not None:
             # Train, Validation and Test split
             train_val_split_values, test_split_values = train_test_split(
-                split_values, test_size=self.test_percentage, random_state=get_random_state()
+                split_values,
+                test_size=self.test_percentage,
+                random_state=RandomStateManager.get_state(),
             )
             train_split_values, validation_split_values = train_test_split(
                 train_val_split_values,
                 train_size=self.train_percentage
                 / (self.train_percentage + self.validation_percentage),
-                random_state=get_random_state(),
+                random_state=RandomStateManager.get_state(),
             )
         else:
             # Train and Validation split only
             train_split_values, validation_split_values = train_test_split(
-                split_values, train_size=self.train_percentage, random_state=get_random_state()
+                split_values,
+                train_size=self.train_percentage,
+                random_state=RandomStateManager.get_state(),
             )
 
             test_split_values = []
@@ -248,18 +270,24 @@ class TabularSplitStep(PipelineStep):
             test_groups = len(test_split_values)
             total_groups = train_groups + validation_groups + test_groups
 
-            self.logger.info(f"Using group by columns for splits based on: {self.group_by_columns}")
             self.logger.info(
-                f"Number of groups in train set: {train_groups} | {train_groups / total_groups:.2%}"
+                "Using group by columns for splits based on: %s", self.group_by_columns
             )
             self.logger.info(
-                f"Number of groups in validation set: {validation_groups} |"
-                f" {validation_groups / total_groups:.2%}"
+                "Number of groups in train set: %d | %.2f%%",
+                train_groups,
+                train_groups / total_groups * 100,
+            )
+            self.logger.info(
+                "Number of groups in validation set: %d | %.2f%%",
+                validation_groups,
+                validation_groups / total_groups * 100,
             )
             if data.test is not None:
                 self.logger.info(
-                    f"Number of groups in test set: {test_groups} |"
-                    f" {test_groups / total_groups:.2%}"
+                    "Number of groups in test set: %d | %.2f%%",
+                    test_groups,
+                    test_groups / total_groups * 100,
                 )
 
         train_rows = len(data.train)
@@ -269,15 +297,16 @@ class TabularSplitStep(PipelineStep):
         total_rows = train_rows + validation_rows + test_rows
 
         self.logger.info(
-            f"Number of rows in training set: {train_rows} | {train_rows / total_rows:.2%}"
+            "Number of rows in training set: %d | %.2f%%", train_rows, train_rows / total_rows * 100
         )
         self.logger.info(
-            f"Number of rows in validation set: {validation_rows} |"
-            f" {validation_rows / total_rows:.2%}"
+            "Number of rows in validation set: %d | %.2f%%",
+            validation_rows,
+            validation_rows / total_rows * 100,
         )
         if data.test is not None or data.test is not None:
             self.logger.info(
-                f"Number of rows in test set: {test_rows} | {test_rows / total_rows:.2%}"
+                "Number of rows in test set: %d | %.2f%%", test_rows, test_rows / total_rows * 100
             )
 
         # Set X and y for train, validation and test datasets

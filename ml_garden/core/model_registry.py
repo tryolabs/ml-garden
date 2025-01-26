@@ -43,7 +43,9 @@ class ModelRegistry:
         """
         model_name = model_class.__name__.lower()
         if not issubclass(model_class, Model):
-            raise ValueError(f"{model_class} must be a subclass of Model")
+            error_message = f"{model_class} must be a subclass of Model"
+            self.logger.exception(error_message)
+            raise TypeError(error_message)
         self._model_registry[model_name] = model_class
 
     def get_model_class(self, model_name: str) -> Type[Model]:
@@ -69,10 +71,12 @@ class ModelRegistry:
         if model_name in self._model_registry:
             return self._model_registry[model_name]
         else:
-            raise ModelClassNotFoundError(
+            error_message = (
                 f"Model class '{model_name}' not found in registry. Available models:"
                 f" {list(self._model_registry.keys())}"
             )
+            self.logger.exception(error_message)
+            raise ModelClassNotFoundError(error_message)
 
     def get_all_model_classes(self) -> Dict[str, Type[Model]]:
         """
@@ -102,9 +106,7 @@ class ModelRegistry:
         try:
             package = importlib.import_module(package_name)
             prefix = package.__name__ + "."
-            for importer, modname, ispkg in pkgutil.walk_packages(
-                package.__path__, prefix
-            ):
+            for importer, modname, ispkg in pkgutil.walk_packages(package.__path__, prefix):
                 module = importlib.import_module(modname)
                 for name in dir(module):
                     attribute = getattr(module, name)
@@ -115,4 +117,6 @@ class ModelRegistry:
                     ):
                         self.register_model(attribute)
         except ImportError as e:
-            self.logger.error(f"Failed to import package: {package_name}. Error: {e}")
+            error_message = f"Failed to import package: {package_name}. Error: {e}"
+            self.logger.exception(error_message)
+            raise ImportError(error_message) from e
