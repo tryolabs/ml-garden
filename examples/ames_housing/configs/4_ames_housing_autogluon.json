@@ -8,7 +8,7 @@
             "task": "regression",
             "tracking": {
                 "experiment": "ames_housing",
-                "run": "baseline"
+                "run": "AutoGluon"
             }
         },
         "steps": [
@@ -19,15 +19,16 @@
                     "predict_path": "examples/ames_housing/data/test.csv",
                     "drop_columns": [
                         "Id"
-                    ]
+                    ],
+                    "optimize_dtypes": true
                 }
             },
             {
                 "step_type": "TabularSplitStep",
                 "parameters": {
-                    "train_percentage": 0.7,
+                    "train_percentage": 0.6,
                     "validation_percentage": 0.2,
-                    "test_percentage": 0.1
+                    "test_percentage": 0.2
                 }
             },
             {
@@ -39,15 +40,17 @@
             {
                 "step_type": "AutoGluonModelStep",
                 "parameters": {
-                    "model_class": "AutoGluonModel",
-                    "autogluon_create_params": {},
+                    "model_class": "AutoGluon",
+                    "autogluon_create_params": {
+                        "verbosity": 2
+                    },
                     "autogluon_fit_params": {
                         "presets": [
-                            "high_quality"
+                            "high_quality",
+                            "optimize_for_deployment"
                         ],
+                        "save_bag_folds": true,
                         "time_limit": 1800,
-                        "num_bag_folds": 5,
-                        "num_bag_sets": 2,
                         "num_stack_levels": 1,
                         "dynamic_stacking": false
                     }
