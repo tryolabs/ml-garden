@@ -118,7 +118,7 @@ class ExplainerDashboardStep(PipelineStep):
                 error_message = f"Unsupported task type: {data.task}"
                 raise ValueError(error_message)
 
-            explainer = explainer_class(
+            explainer: RegressionExplainer | ClassifierExplainer = explainer_class(
                 model,
                 X_background=X_background,
                 X=X,

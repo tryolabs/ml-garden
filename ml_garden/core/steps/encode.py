@@ -360,7 +360,7 @@ class EncodeStep(PipelineStep):
                     # inputs such as pd.to_numeric(pd.Series([1.0, 0.0, -1.0]), downcast="unsigned")
                     # since instead of raising the error and being converted to "integer" in the
                     # except, it will remain as a float64 silenty.
-                    if (encoded_data[col] <= 0).any():
+                    if (encoded_data[col] < 0).any():
                         raise ValueError("Column contains negative values.")  # noqa: TRY301, EM101
                     encoded_data[col] = pd.to_numeric(encoded_data[col].values, downcast="unsigned")
                 except ValueError:

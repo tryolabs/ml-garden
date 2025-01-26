@@ -73,7 +73,6 @@ def test_check_target_encoding(train_data_container: DataContainer) -> None:
     """Test to check if target encoding is correctly applied."""
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
-
     # Check that the 'category_high' column is encoded as float32
     assert result.X_train["category_high"].dtype == np.dtype("float32")
 

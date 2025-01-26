@@ -154,10 +154,10 @@ class CalculateFeaturesStep(PipelineStep):
         self.logger.info("Calculating features")
 
         datasets = [
-            ("X_prediction", data.X_prediction, True),
-            ("X_train", data.X_train, True),
-            ("X_validation", data.X_validation, False),
-            ("X_test", data.X_test, False),
+            ("flow", data.flow, True),
+            ("train", data.train, True),
+            ("validation", data.validation, False),
+            ("test", data.test, False),
         ]
 
         for attr_name, dataset, should_log in datasets:
@@ -190,7 +190,7 @@ class CalculateFeaturesStep(PipelineStep):
         if self.datetime_columns:
             for column in self.datetime_columns:
                 if column in dataset.columns:
-                    dataset = self._convert_column_to_datetime(dataset, column)
+                    dataset = self._convert_column_to_datetime(dataset, column, log)
 
                     if self.features:
                         for feature in self.features:

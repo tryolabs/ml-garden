@@ -29,6 +29,9 @@ class XGBoostRegressor(Model):
     def predict(self, X: pd.DataFrame) -> pd.Series:  # noqa: N803
         return self.model.predict(X)
 
+    def predict_proba(self, X: pd.DataFrame) -> pd.Series:  # noqa: N803
+        return self.model.predict_proba(X)
+
 
 class XGBoostClassifier(Model):
     TASKS = [Task.CLASSIFICATION]

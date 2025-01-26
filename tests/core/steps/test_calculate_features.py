@@ -61,7 +61,7 @@ def input_data() -> pd.DataFrame:
 
 
 @pytest.fixture
-def data(input_data: pd.DataFrame) -> DataContainer:  # noqa: C901
+def data(input_data: pd.DataFrame) -> DataContainer:
     data_container = DataContainer({"is_train": True})
     data_container.columns_to_ignore_for_training = []
     data_container.train = input_data
@@ -74,7 +74,7 @@ def test_skipping_with_no_parameters(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert result.X_train.equals(data.X_train)
+    assert result.train.equals(data.train)
 
 
 def test_feature_names(data: DataContainer) -> None:
@@ -89,22 +89,22 @@ def test_feature_names(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert "creation_date_year" in result.X_train.columns
-    assert "creation_date_month" in result.X_train.columns
-    assert "creation_date_day" in result.X_train.columns
-    assert "creation_date_hour" in result.X_train.columns
-    assert "creation_date_minute" in result.X_train.columns
-    assert "creation_date_second" in result.X_train.columns
-    assert "creation_date_weekday" in result.X_train.columns
-    assert "creation_date_dayofyear" in result.X_train.columns
-    assert "deletion_date_year" in result.X_train.columns
-    assert "deletion_date_month" in result.X_train.columns
-    assert "deletion_date_day" in result.X_train.columns
-    assert "deletion_date_hour" in result.X_train.columns
-    assert "deletion_date_minute" in result.X_train.columns
-    assert "deletion_date_second" in result.X_train.columns
-    assert "deletion_date_weekday" in result.X_train.columns
-    assert "deletion_date_dayofyear" in result.X_train.columns
+    assert "creation_date_year" in result.train.columns
+    assert "creation_date_month" in result.train.columns
+    assert "creation_date_day" in result.train.columns
+    assert "creation_date_hour" in result.train.columns
+    assert "creation_date_minute" in result.train.columns
+    assert "creation_date_second" in result.train.columns
+    assert "creation_date_weekday" in result.train.columns
+    assert "creation_date_dayofyear" in result.train.columns
+    assert "deletion_date_year" in result.train.columns
+    assert "deletion_date_month" in result.train.columns
+    assert "deletion_date_day" in result.train.columns
+    assert "deletion_date_hour" in result.train.columns
+    assert "deletion_date_minute" in result.train.columns
+    assert "deletion_date_second" in result.train.columns
+    assert "deletion_date_weekday" in result.train.columns
+    assert "deletion_date_dayofyear" in result.train.columns
 
 
 def test_date_columns_are_ignored_for_training(data: DataContainer) -> None:
@@ -119,8 +119,8 @@ def test_date_columns_are_ignored_for_training(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert "creation_date" not in result.X_train.columns
-    assert "deletion_date" not in result.X_train.columns
+    assert "creation_date" not in result.train.columns
+    assert "deletion_date" not in result.train.columns
 
 
 def test_output_dtypes(data: DataContainer) -> None:
@@ -135,14 +135,14 @@ def test_output_dtypes(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert result.X_train["creation_date_year"].dtype == np.dtype("uint16")
-    assert result.X_train["creation_date_month"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_day"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_hour"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_minute"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_second"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_weekday"].dtype == np.dtype("uint8")
-    assert result.X_train["creation_date_dayofyear"].dtype == np.dtype("uint16")
+    assert result.train["creation_date_year"].dtype == np.dtype("uint16")
+    assert result.train["creation_date_month"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_day"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_hour"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_minute"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_second"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_weekday"].dtype == np.dtype("uint8")
+    assert result.train["creation_date_dayofyear"].dtype == np.dtype("uint16")
 
 
 def test_output_values(data: DataContainer) -> None:
@@ -157,28 +157,28 @@ def test_output_values(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert result.X_train["creation_date_year"].equals(
+    assert result.train["creation_date_year"].equals(
         pd.Series([2023, 2023, 2023, 2023, 2023, 2023, 2024, 2024], dtype="uint16")
     )
-    assert result.X_train["creation_date_month"].equals(
+    assert result.train["creation_date_month"].equals(
         pd.Series([1, 1, 1, 1, 1, 11, 2, 3], dtype="uint8")
     )
-    assert result.X_train["creation_date_day"].equals(
+    assert result.train["creation_date_day"].equals(
         pd.Series([1, 2, 3, 4, 5, 1, 28, 28], dtype="uint8")
     )
-    assert result.X_train["creation_date_hour"].equals(
+    assert result.train["creation_date_hour"].equals(
         pd.Series([0, 0, 0, 0, 0, 0, 0, 0], dtype="uint8")
     )
-    assert result.X_train["creation_date_minute"].equals(
+    assert result.train["creation_date_minute"].equals(
         pd.Series([0, 0, 0, 0, 0, 0, 0, 0], dtype="uint8")
     )
-    assert result.X_train["creation_date_second"].equals(
+    assert result.train["creation_date_second"].equals(
         pd.Series([0, 0, 0, 0, 0, 0, 0, 0], dtype="uint8")
     )
-    assert result.X_train["creation_date_weekday"].equals(
+    assert result.train["creation_date_weekday"].equals(
         pd.Series([6, 0, 1, 2, 3, 2, 2, 3], dtype="uint8")
     )
-    assert result.X_train["creation_date_dayofyear"].equals(
+    assert result.train["creation_date_dayofyear"].equals(
         pd.Series([1, 2, 3, 4, 5, 305, 59, 88], dtype="uint16")
     )
 
@@ -229,7 +229,7 @@ def test_init_with_unsupported_features() -> None:
 def test_execute_with_prediction(data: DataContainer) -> None:
     """Check step executes correctly with prediction data."""
     data.is_train = False
-    data.X_prediction = data.X_train.copy()
+    data.flow = data.train.copy()
 
     datetime_columns = ["creation_date"]
     features = ["year", "month", "day"]
@@ -241,6 +241,6 @@ def test_execute_with_prediction(data: DataContainer) -> None:
     result = calculate_features_step.execute(data)
 
     assert isinstance(result, DataContainer)
-    assert "creation_date_year" in result.X_prediction.columns
-    assert "creation_date_month" in result.X_prediction.columns
-    assert "creation_date_day" in result.X_prediction.columns
+    assert "creation_date_year" in result.flow.columns
+    assert "creation_date_month" in result.flow.columns
+    assert "creation_date_day" in result.flow.columns
