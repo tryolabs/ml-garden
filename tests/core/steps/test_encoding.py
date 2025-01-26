@@ -34,7 +34,7 @@ def train_data_container(train_data: pd.DataFrame) -> DataContainer:
     return data
 
 
-def test_check_numeric_passthrough(train_data_container: DataContainer):
+def test_check_numeric_passthrough(train_data_container: DataContainer) -> None:
     """Test to check if numeric columns are correctly passed through."""
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
@@ -52,7 +52,7 @@ def test_check_numeric_passthrough(train_data_container: DataContainer):
         pdt.assert_series_equal(result.X_train[column], train_data_container.X_train[column])
 
 
-def test_check_ordinal_encoding(train_data_container: DataContainer):
+def test_check_ordinal_encoding(train_data_container: DataContainer) -> None:
     """Test to check if ordinal encoding is correctly applied."""
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
@@ -69,11 +69,10 @@ def test_check_ordinal_encoding(train_data_container: DataContainer):
     )
 
 
-def test_check_target_encoding(train_data_container: DataContainer):
+def test_check_target_encoding(train_data_container: DataContainer) -> None:
     """Test to check if target encoding is correctly applied."""
     encode_step = EncodeStep()
     result = encode_step.execute(train_data_container)
-
     # Check that the 'category_high' column is encoded as float32
     assert result.X_train["category_high"].dtype == np.dtype("float32")
 
@@ -84,7 +83,7 @@ def test_check_target_encoding(train_data_container: DataContainer):
     assert len(result.X_train["category_high"].unique()) > 1
 
 
-def test_check_cardinality_threshold(train_data_container: DataContainer):
+def test_check_cardinality_threshold(train_data_container: DataContainer) -> None:
     """Test to check if cardinality threshold is correctly applied."""
     encode_step = EncodeStep(cardinality_threshold=7)
     result = encode_step.execute(train_data_container)
@@ -93,7 +92,7 @@ def test_check_cardinality_threshold(train_data_container: DataContainer):
     assert result.X_train["category_high"].dtype == np.dtype("uint8")
 
 
-def test_custom_feature_encoders_dictionary(train_data_container: DataContainer):
+def test_custom_feature_encoders_dictionary(train_data_container: DataContainer) -> None:
     """Test to check if custom feature encoders dictionary is correctly applied."""
     custom_encoding = {
         "category_high": {

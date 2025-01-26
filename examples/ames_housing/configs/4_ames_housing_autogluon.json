@@ -8,7 +8,7 @@
             "task": "regression",
             "tracking": {
                 "experiment": "ames_housing",
-                "run": "baseline"
+                "run": "AutoGluon"
             }
         },
         "steps": [
@@ -19,7 +19,8 @@
                     "predict_path": "examples/ames_housing/data/test.csv",
                     "drop_columns": [
                         "Id"
-                    ]
+                    ],
+                    "optimize_dtypes": true
                 }
             },
             {
@@ -37,9 +38,22 @@
                 "step_type": "EncodeStep"
             },
             {
-                "step_type": "ModelStep",
+                "step_type": "AutoGluonModelStep",
                 "parameters": {
-                    "model_class": "XGBoostRegressor"
+                    "model_class": "AutoGluon",
+                    "autogluon_create_params": {
+                        "verbosity": 2
+                    },
+                    "autogluon_fit_params": {
+                        "presets": [
+                            "high_quality",
+                            "optimize_for_deployment"
+                        ],
+                        "save_bag_folds": true,
+                        "time_limit": 1800,
+                        "num_stack_levels": 1,
+                        "dynamic_stacking": false
+                    }
                 }
             },
             {

@@ -4,8 +4,10 @@ from explainerdashboard import ClassifierExplainer, RegressionExplainer
 
 from ml_garden.core import DataContainer
 from ml_garden.core.constants import Task
-from ml_garden.core.random_state_generator import get_random_state
+from ml_garden.core.random_state_generator import RandomStateManager
 from ml_garden.core.steps.base import PipelineStep
+
+# ruff: noqa: N803 N806
 
 
 class ExplainerDashboardStep(PipelineStep):
@@ -18,9 +20,11 @@ class ExplainerDashboardStep(PipelineStep):
         self,
         max_samples: int = 1000,
         X_background_samples: int = 100,
+        *,
         enable_step: bool = True,
     ) -> None:
         """Initialize ExplainerDashboardStep.
+
         Parameters
         ----------
         max_samples : int, optional
@@ -37,10 +41,12 @@ class ExplainerDashboardStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -54,11 +60,13 @@ class ExplainerDashboardStep(PipelineStep):
 
         model = data.model
         if model is None:
-            raise ValueError("Model not found in data container.")
+            error_message = "Model not found in data container."
+            raise ValueError(error_message)
 
         target = data.target
         if target is None:
-            raise ValueError("Target column not found in any parameter.")
+            error_message = "Target column not found in any parameter."
+            raise ValueError(error_message)
 
         if data.is_train:
             # Explainer dashboard is calculated only during training
@@ -75,7 +83,7 @@ class ExplainerDashboardStep(PipelineStep):
             # of the data.
             if self.X_background_samples > 0 and len(X) > self.X_background_samples:
                 X_background = X.sample(
-                    n=self.max_samples, random_state=get_random_state(), replace=False
+                    n=self.max_samples, random_state=RandomStateManager.get_state(), replace=False
                 )
             else:
                 X_background = X
@@ -83,18 +91,22 @@ class ExplainerDashboardStep(PipelineStep):
             if self.max_samples > 0 and len(X) > self.max_samples:
                 # Randomly sample a subset of data points if the dataset is larger than max_samples
                 self.logger.info(
-                    f"Dataset contains {len(X)} data points and max_samples is set to"
-                    f" {self.max_samples}."
+                    "Dataset contains %s data points and max_samples is set to %s.",
+                    len(X),
+                    self.max_samples,
                 )
-                self.logger.info(f"Sampling {self.max_samples} data points from the dataset.")
-                sample_rows = np.random.choice(range(len(X)), replace=False, size=self.max_samples)
+                self.logger.info("Sampling %s data points from the dataset.", self.max_samples)
+                rng = np.random.default_rng()  # Create a random number generator
+                sample_rows = rng.choice(
+                    len(X), replace=False, size=self.max_samples
+                )  # Use the generator
                 X = X.iloc[sample_rows, :]
                 y = y.iloc[sample_rows]
 
-            # This can happen if there are duplicate indices, the Shap values will run, taking a
-            # long time, but it will crash when calculating the shap dependence plots.
-            # To avoid this potential long wait to a crash we add this assertion here
-            assert len(X) == len(y), "Mismatch in number of samples and labels"
+            # To avoid this potential long wait to a crash we add this check here
+            if len(X) != len(y):
+                error_message = "Mismatch in number of samples and labels"
+                raise ValueError(error_message)
 
             # Choose the appropriate explainer based on the task
             explainer_class = {
@@ -103,9 +115,10 @@ class ExplainerDashboardStep(PipelineStep):
             }.get(data.task)
 
             if explainer_class is None:
-                raise ValueError(f"Unsupported task type: {data.task}")
+                error_message = f"Unsupported task type: {data.task}"
+                raise ValueError(error_message)
 
-            explainer = explainer_class(
+            explainer: RegressionExplainer | ClassifierExplainer = explainer_class(
                 model,
                 X_background=X_background,
                 X=X,

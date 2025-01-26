@@ -1,9 +1,7 @@
 {
     "recommendations": [
         "ms-python.python",
-        "ms-python.isort",
-        "ms-python.flake8",
-        "ms-python.black-formatter",
-        "njpwerner.autodocstring",
+        "charliermarsh.ruff",
+        "njpwerner.autodocstring"
     ]
 }

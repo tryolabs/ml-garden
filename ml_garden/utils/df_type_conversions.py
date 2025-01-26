@@ -1,27 +1,26 @@
 import datetime
 from collections.abc import Hashable
+from contextlib import suppress
 from decimal import Decimal
-from typing import Optional, Type
+from typing import Optional
 
 import numpy as np
 import pandas as pd
+
+# ruff: noqa: C901 PLR0912
 
 NOT_PRESENT_STRING = "NA"
 
 
 def detect_categorical(
-    column,
+    column: pd.Series,
     q: float = 0.75,
     t: int = 1,
-    considered_dtype_names: list[str] = [
-        "object",
-        "string",
-        "int",
-        "int64",
-        "category",
-    ],
+    considered_dtype_names: Optional[list[str]] = None,
     skip_cols: Optional[set[str]] = None,
-):
+) -> bool:
+    if considered_dtype_names is None:
+        considered_dtype_names = ["object", "string", "int", "int64", "category"]
     # Consider column as categorical if:
     # - it's dtype name is among the ones considered and
     # -- it already is a pandas categorical or
@@ -38,7 +37,7 @@ def detect_categorical(
             idx = column.first_valid_index()
             if idx is not None:
                 return (
-                    isinstance(column.at[idx], Hashable)
+                    isinstance(column.loc[idx], Hashable)
                     and np.quantile(a=column.value_counts(), q=q) > t
                 )
             else:
@@ -48,12 +47,14 @@ def detect_categorical(
 
 
 def detect_categoricals(
-    df,
+    df: pd.DataFrame,
     q: float = 0.75,
     t: int = 1,
-    considered_dtype_names: list[str] = ["object", "int", "int64", "category"],
+    considered_dtype_names: Optional[list[str]] = None,
     skip_cols: Optional[set[str]] = None,
-):
+) -> pd.Series:
+    if considered_dtype_names is None:
+        considered_dtype_names = ["object", "int", "int64", "category"]
     return df.apply(
         detect_categorical,
         q=q,
@@ -64,13 +65,15 @@ def detect_categoricals(
 
 
 def convert_to_categoricals(
-    df,
+    df: pd.DataFrame,
     q: float = 0.75,
     t: int = 1,
-    considered_dtype_names: list[str] = ["object", "string"],
+    considered_dtype_names: Optional[list[str]] = None,
     skip_cols: Optional[set[str]] = None,
     not_present_string: Optional[str] = NOT_PRESENT_STRING,
-):
+) -> pd.DataFrame:
+    if considered_dtype_names is None:
+        considered_dtype_names = ["object", "string"]
     # For conversion the default considered_dtype_names includes only object
     # columns since they are the ones that can get performance gains from
     # converting to categories
@@ -89,11 +92,11 @@ def convert_to_categoricals(
     return df
 
 
-def type_of_first_non_na(s: pd.Series) -> Optional[Type]:
+def type_of_first_non_na(s: pd.Series) -> Optional[type]:
     first_non_na = s.first_valid_index()
     if first_non_na is None:
         return None
-    elif isinstance(first_non_na, pd.Series):
+    if isinstance(first_non_na, pd.Series):
         return type(s[first_non_na.iloc[0]])
     else:
         return type(s[first_non_na])
@@ -102,10 +105,12 @@ def type_of_first_non_na(s: pd.Series) -> Optional[Type]:
 def detect_string_columns(
     df: pd.DataFrame,
     skip_cols: Optional[set[str]] = None,
+    *,
     object_cols_only: bool = False,
 ) -> list[str]:
     """
-    Detect string columns and return a list of their names
+    Detect string columns and return a list of their names.
+
     This method examines the contents of "object" and "string" columns and if the first
     non-null value found is a string, then the column is considered a string column
 
@@ -117,7 +122,8 @@ def detect_string_columns(
             columns only, otherwise check "string" or "object" dtyped columns. Defaults to
             False.
 
-    Returns:
+    Returns
+    -------
         list[str]: list of string column names
     """
     if skip_cols is None:
@@ -131,9 +137,10 @@ def detect_string_columns(
                 res.append(column)
             elif dtypes[column].name == "object":
                 idx_first_non_null = df[column].first_valid_index()
-                if idx_first_non_null is not None:
-                    if isinstance(df.loc[idx_first_non_null, column], str):
-                        res.append(column)
+                if idx_first_non_null is not None and isinstance(
+                    df.loc[idx_first_non_null, column], str
+                ):
+                    res.append(column)
 
     return res
 
@@ -141,23 +148,24 @@ def detect_string_columns(
 def convert_object_columns_to_base_type(
     df: pd.DataFrame,
     skip_cols: Optional[set[str]] = None,
+    *,
     convert_object_all_nans_to_float32: bool = True,
     convert_ints_with_nans_to_float32: bool = True,
     convert_bools_with_nans_to_float32: bool = True,
-    fill_string_nans: bool = True,
-):
+    fill_string_nans: bool | None = True,
+) -> pd.DataFrame:
     if skip_cols is None:
         skip_cols = set()
 
     object_cols = (
         df.drop(columns=[col for col in skip_cols if col in df.columns]).dtypes == "object"
     )
-    object_cols = object_cols.index[object_cols.values].tolist()
+    object_cols = object_cols.index[object_cols.to_numpy()].tolist()
     no_nan_object_columns = (~df.loc[:, object_cols].isna()).all(axis=0)
     no_nan_object_columns = no_nan_object_columns[no_nan_object_columns].index.tolist()
 
     # Interactive debugging assignments
-    # col = no_nan_object_columns[0]
+    # col = no_nan_object_columns[0] # noqa: ERA001
     for col in no_nan_object_columns:
         first_non_na_type = type_of_first_non_na(df[col])
         if (first_non_na_type in (datetime.date, datetime.datetime)) or ("datetime64") in str(
@@ -170,6 +178,13 @@ def convert_object_columns_to_base_type(
             # Didn't find any better solution.
             # I can speak for hours as to why Pandas doesn't provide =)
             try:
+                # Pandas won't raise an error for negative values when converting to unsigned,
+                # instead returning the unconverted float64 array. This breaks the logic for
+                # inputs such as pd.to_numeric(pd.Series([1.0, 0.0, -1.0]), downcast="unsigned")
+                # since instead of raising the error and being converted to "integer" in the
+                # except, it will remain as a float64 silenty.
+                if (df[col] < 0).any():
+                    raise ValueError("Column contains negative values.")  # noqa: TRY301, EM101
                 df[col] = pd.to_numeric(df[col].values, downcast="unsigned")
             except ValueError:
                 try:
@@ -183,13 +198,13 @@ def convert_object_columns_to_base_type(
                 # True objects can't be converted
                 pass
 
-    # col = 'is_qced'
+    # col = 'is_qced' # noqa: ERA001
     any_nan_object_columns = (df.loc[:, object_cols].isna()).any(axis=0)
     any_nan_object_columns = any_nan_object_columns[any_nan_object_columns].index
     for col in any_nan_object_columns:
         first_non_na_type = type_of_first_non_na(s=df[col])
 
-        if first_non_na_type == str:
+        if isinstance(first_non_na_type, str):
             df[col] = df[col].astype(pd.StringDtype())
             continue
 
@@ -200,7 +215,9 @@ def convert_object_columns_to_base_type(
         is_object_to_be_converted = convert_object_all_nans_to_float32 and (
             first_non_na_type is None
         )
-        is_bool_to_be_converted = convert_bools_with_nans_to_float32 and (first_non_na_type == bool)
+        is_bool_to_be_converted = convert_bools_with_nans_to_float32 and (
+            isinstance(first_non_na_type, bool)
+        )
 
         do_float_conversion = (
             is_float_to_be_converted
@@ -209,10 +226,8 @@ def convert_object_columns_to_base_type(
             or is_bool_to_be_converted
         )
         if do_float_conversion:
-            try:
+            with suppress(ValueError):
                 df[col] = pd.to_numeric(df[col].values, downcast="float")
-            except ValueError:
-                pass
             continue
 
     if fill_string_nans:
@@ -224,8 +239,8 @@ def convert_object_columns_to_base_type(
 
 
 def downcast_int64_and_float64(
-    df: pd.DataFrame, skip_cols: Optional[set[str]] = None, use_unsigned: bool = True
-):
+    df: pd.DataFrame, skip_cols: Optional[set[str]] = None, *, use_unsigned: bool = True
+) -> pd.DataFrame:
     if skip_cols is None:
         skip_cols = set()
 
@@ -271,7 +286,8 @@ def apply_all_dtype_conversions(
           to avoid having nans in the column (and hence needing an object column dtype). If set to
           None this process will be skipped. Defaults to NOT_PRESENT_STRING.
 
-    Returns:
+    Returns
+    -------
         pd.DataFrame: _description_
     """
     df = convert_to_categoricals(df, skip_cols=skip_cols, not_present_string=not_present_string)

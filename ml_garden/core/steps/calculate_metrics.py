@@ -1,5 +1,7 @@
+"""Calculate metrics for regression and classification tasks."""
+
 import json
-from typing import Dict, List, TypedDict, Union
+from typing import TypedDict, Union
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,8 @@ from ml_garden.core.steps.base import PipelineStep
 
 
 class RegressionMetrics(TypedDict):
+    """Regression metrics."""
+
     MAE: float
     RMSE: float
     R_2: float
@@ -30,6 +34,8 @@ class RegressionMetrics(TypedDict):
 
 
 class ClassMetrics(TypedDict):
+    """Classification metrics."""
+
     Precision: float
     Recall: float
     F1_Score: float
@@ -37,6 +43,8 @@ class ClassMetrics(TypedDict):
 
 
 class ClassificationOverallMetrics(TypedDict):
+    """Classification overall metrics."""
+
     Accuracy: float
     Weighted_Precision: float
     Weighted_Recall: float
@@ -44,15 +52,19 @@ class ClassificationOverallMetrics(TypedDict):
 
 
 class ClassificationMetrics(TypedDict):
+    """Classification metrics."""
+
     Overall: ClassificationOverallMetrics
-    Per_Class: Dict[str, ClassMetrics]
-    Confusion_Matrix: List[List[int]]
+    Per_Class: dict[str, ClassMetrics]
+    Confusion_Matrix: list[list[int]]
 
 
 class DatasetMetrics(TypedDict):
-    train: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
-    validation: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
-    test: Dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    """Dataset metrics."""
+
+    train: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    validation: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
+    test: dict[str, Union[RegressionMetrics, ClassificationMetrics]]
 
 
 class CalculateMetricsStep(PipelineStep):
@@ -92,12 +104,12 @@ class CalculateMetricsStep(PipelineStep):
         median_absolute_error = np.median(np.abs(true_values - predictions))
 
         return RegressionMetrics(
-            MAE=mae,
-            RMSE=rmse,
-            R_2=r2,
-            Mean_Error=me,
-            Max_Error=max_error,
-            Median_Absolute_Error=median_absolute_error,
+            MAE=float(mae),
+            RMSE=float(rmse),
+            R_2=float(r2),
+            Mean_Error=float(me),
+            Max_Error=float(max_error),
+            Median_Absolute_Error=float(median_absolute_error),
         )
 
     def _calculate_classification_metrics(
@@ -126,18 +138,18 @@ class CalculateMetricsStep(PipelineStep):
         cm = confusion_matrix(true_values, predictions)
 
         overall = ClassificationOverallMetrics(
-            Accuracy=accuracy,
-            Weighted_Precision=weighted_precision,
-            Weighted_Recall=weighted_recall,
-            Weighted_F1_Score=weighted_f1,
+            Accuracy=float(accuracy),
+            Weighted_Precision=float(weighted_precision),
+            Weighted_Recall=float(weighted_recall),
+            Weighted_F1_Score=float(weighted_f1),
         )
 
         per_class = {}
         for i, class_label in enumerate(np.unique(true_values)):
-            per_class[f"Class_{class_label}"] = ClassMetrics(
-                Precision=precision[i],
-                Recall=recall[i],
-                F1_Score=f1[i],
+            per_class[str(class_label)] = ClassMetrics(
+                Precision=float(precision[i]),
+                Recall=float(recall[i]),
+                F1_Score=float(f1[i]),
                 Support=int(support[i]),
             )
 
@@ -180,7 +192,8 @@ class CalculateMetricsStep(PipelineStep):
         try:
             calculate_metrics = metric_calculators[task]
         except KeyError:
-            raise ValueError(f"Unsupported task type: {task}")
+            error_message = f"Unsupported task type: {task}"
+            raise ValueError(error_message) from None
 
         return calculate_metrics(true_values=true_values, predictions=predictions)
 
@@ -200,7 +213,7 @@ class CalculateMetricsStep(PipelineStep):
         """
         self.logger.debug("Starting metric calculation")
 
-        metrics: DatasetMetrics = {}
+        metrics: dict[str, Union[RegressionMetrics, ClassificationMetrics]] = {}
 
         if data.is_train:
             for dataset_name in ["train", "validation", "test"]:
@@ -208,7 +221,7 @@ class CalculateMetricsStep(PipelineStep):
 
                 if dataset is None:
                     self.logger.warning(
-                        f"Dataset '{dataset_name}' not found. Skipping metric calculation."
+                        "Dataset '%s' not found. Skipping metric calculation.", dataset_name
                     )
                     continue
 
@@ -218,7 +231,7 @@ class CalculateMetricsStep(PipelineStep):
                     task=data.task,
                 )
 
-            self.logger.info(f"Metrics: {json.dumps(metrics, indent=4)}")
+            self.logger.info("Metrics: %s", json.dumps(metrics, indent=4))
 
             data.metrics = metrics
 

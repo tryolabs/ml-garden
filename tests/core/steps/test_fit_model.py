@@ -1,4 +1,4 @@
-import unittest.mock as mock
+from unittest import mock
 
 import pandas as pd
 import pytest
@@ -10,14 +10,14 @@ from ml_garden.core.steps.fit_model import ModelStep, OptunaOptimizer
 
 
 @pytest.fixture
-def mock_model_class():
+def mock_model_class() -> mock.MagicMock:
     mock_model = mock.MagicMock(spec=Model)
     mock_model.__name__ = "MockModel"
     return mock_model
 
 
 @pytest.fixture
-def data_container():
+def data_container() -> DataContainer:
     # Create a sample DataContainer for testing
     data = {
         "X_train": pd.DataFrame({"feature1": [1, 2, 3], "feature2": [4, 5, 6]}),
@@ -35,7 +35,7 @@ def data_container():
     return DataContainer(data)
 
 
-def test_train(mock_model_class, data_container):
+def test_train(mock_model_class: mock.MagicMock, data_container: DataContainer) -> None:
     model_step = ModelStep(model_class=mock_model_class)
 
     # Set the return values of the predict method for each dataset
@@ -43,7 +43,7 @@ def test_train(mock_model_class, data_container):
     mock_validation_predictions = pd.Series([0, 1], name=data_container.prediction_column)
     mock_test_predictions = pd.Series([1, 0], name=data_container.prediction_column)
 
-    def mock_predict(X):
+    def mock_predict(X: pd.DataFrame) -> pd.Series:  # noqa: N803
         if X.equals(data_container.X_train):
             return mock_train_predictions
         elif X.equals(data_container.X_validation):
@@ -68,7 +68,7 @@ def test_train(mock_model_class, data_container):
     assert result.test[result.prediction_column].equals(mock_test_predictions)
 
 
-def test_predict(mock_model_class, data_container):
+def test_predict(mock_model_class: mock.MagicMock, data_container: DataContainer) -> None:
     # Set the is_train attribute to False to simulate a prediction scenario
     data_container.is_train = False
 
@@ -100,7 +100,7 @@ def test_predict(mock_model_class, data_container):
     assert result.predictions.equals(mock_predictions)
 
 
-def test_optuna_optimizer(mock_model_class, data_container):
+def test_optuna_optimizer(mock_model_class: mock.MagicMock, data_container: DataContainer) -> None:
     optuna_params = {
         "objective_metric": "mae",
         "trials": 5,
@@ -149,16 +149,20 @@ def test_optuna_optimizer(mock_model_class, data_container):
     assert result.model == mock_model_class.return_value
 
 
-def test_train_missing_data(mock_model_class, data_container):
+def test_train_missing_data(
+    mock_model_class: mock.MagicMock, data_container: DataContainer
+) -> None:
     model_step = ModelStep(model_class=mock_model_class)
     data_container.X_train = None
     data_container.y_train = None
 
-    with pytest.raises(AssertionError, match="Encoded train data not found"):
+    with pytest.raises(ValueError, match="Encoded train data not found"):
         model_step.train(data_container)
 
 
-def test_optuna_optimizer_unsupported_metric(mock_model_class, data_container):
+def test_optuna_optimizer_unsupported_metric(
+    mock_model_class: mock.MagicMock, data_container: DataContainer
+) -> None:
     optuna_params = {
         "objective_metric": "unsupported_metric",
         "trials": 5,
@@ -176,7 +180,7 @@ def test_optuna_optimizer_unsupported_metric(mock_model_class, data_container):
         model_step.train(data_container)
 
 
-def test_execute(mock_model_class, data_container):
+def test_execute(mock_model_class: mock.MagicMock, data_container: DataContainer) -> None:
     model_step = ModelStep(model_class=mock_model_class)
 
     with mock.patch.object(model_step, "train") as mock_train:

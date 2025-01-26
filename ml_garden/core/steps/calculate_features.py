@@ -1,4 +1,6 @@
-from typing import List, Optional, Union
+"""Calculate datetime-related features from specified columns."""
+
+from typing import Optional, Union
 
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
@@ -10,8 +12,6 @@ from ml_garden.core.steps.base import PipelineStep
 class UnsupportedFeatureError(Exception):
     """Custom exception for unsupported features."""
 
-    pass
-
 
 class CalculateFeaturesStep(PipelineStep):
     """Calculate datetime-related features from specified columns."""
@@ -21,8 +21,8 @@ class CalculateFeaturesStep(PipelineStep):
 
     def __init__(
         self,
-        datetime_columns: Optional[Union[List[str], str]] = None,
-        features: Optional[List[str]] = None,
+        datetime_columns: Optional[Union[list[str], str]] = None,
+        features: Optional[list[str]] = None,
     ) -> None:
         """Initialize CalculateFeaturesStep.
 
@@ -55,18 +55,21 @@ class CalculateFeaturesStep(PipelineStep):
         if self.features:
             unsupported_features = set(self.features) - set(self.feature_extractors.keys())
             if unsupported_features:
-                raise UnsupportedFeatureError(
+                unsupported_features_message = (
                     f"Unsupported datetime features: {unsupported_features}"
                 )
+                raise UnsupportedFeatureError(unsupported_features_message)
 
         if self.datetime_columns and not self.features:
-            raise ValueError(
+            message = (
                 "No datetime features specified. Must specify at least one feature. Possible"
                 f" features: {list(self.feature_extractors.keys())}"
             )
+            raise ValueError(message)
 
     def _convert_column_to_datetime(self, df: pd.DataFrame, column: str, log: bool) -> pd.DataFrame:
         """Convert a column to datetime.
+
         Parameters
         ----------
         df : pd.DataFrame
@@ -75,6 +78,7 @@ class CalculateFeaturesStep(PipelineStep):
             The name of the column to convert
         log: bool
             If True, logs information.
+
         Returns
         -------
         pd.DataFrame
@@ -89,17 +93,17 @@ class CalculateFeaturesStep(PipelineStep):
                 )
                 if log:
                     self.logger.info(f"Column '{column}' automatically converted to datetime.")
-            except ValueError as e:
-                self.logger.error(f"Error converting column '{column}' to datetime: {e}")
-            except Exception as e:
-                self.logger.error(f"Unexpected error converting column '{column}' to datetime: {e}")
-        else:
-            if log:
-                self.logger.debug(f"Column '{column}' is already a datetime type.")
+            except ValueError:
+                self.logger.exception(f"Error converting column '{column}' to datetime")
+            except Exception:
+                self.logger.exception(f"Unexpected error converting column '{column}' to datetime")
+        elif log:
+            self.logger.debug(f"Column '{column}' is already a datetime type.")
         return df
 
     def _extract_feature(self, df: pd.DataFrame, column: str, feature: str) -> None:
         """Extract a single feature from a datetime column.
+
         Parameters
         ----------
         df : pd.DataFrame
@@ -117,13 +121,14 @@ class CalculateFeaturesStep(PipelineStep):
             elif feature in ["month", "day", "hour", "minute", "second", "weekday"]:
                 df.loc[:, feature_column] = extractor(df[column]).astype("uint8")
             else:
-                raise ValueError(f"Unsupported feature: {feature}")
-        except AttributeError:
+                error_message = f"Unsupported feature: {feature}"
+                raise ValueError(error_message)
+        except AttributeError as exc:
             error_message = (
                 f"Column '{column}' contains invalid datetime values. Please ensure that the column"
                 " contains valid datetime values before extracting features."
             )
-            raise ValueError(error_message)
+            raise ValueError(error_message) from exc
 
     def _drop_datetime_columns(self, df: pd.DataFrame, log: bool) -> pd.DataFrame:
         """Drop the datetime columns from the `df`."""
@@ -135,10 +140,12 @@ class CalculateFeaturesStep(PipelineStep):
 
     def execute(self, data: DataContainer) -> DataContainer:
         """Execute the step.
+
         Parameters
         ----------
         data : DataContainer
             The data container
+
         Returns
         -------
         DataContainer
@@ -147,30 +154,32 @@ class CalculateFeaturesStep(PipelineStep):
         self.logger.info("Calculating features")
 
         datasets = [
-            ("X_prediction", data.X_prediction, True),
-            ("X_train", data.X_train, True),
-            ("X_validation", data.X_validation, False),
-            ("X_test", data.X_test, False),
+            ("flow", data.flow, True),
+            ("train", data.train, True),
+            ("validation", data.validation, False),
+            ("test", data.test, False),
         ]
 
         for attr_name, dataset, should_log in datasets:
             if dataset is not None:
-                dataset = self._create_datetime_features(dataset, log=should_log)
-                dataset = self._drop_datetime_columns(dataset, log=should_log)
-                setattr(data, attr_name, dataset)
+                ds = self._create_datetime_features(dataset, log=should_log)
+                ds = self._drop_datetime_columns(ds, log=should_log)
+                setattr(data, attr_name, ds)
 
         return data
 
     def _create_datetime_features(
-        self, df: pd.DataFrame, log: Optional[bool] = False
+        self, dataset: pd.DataFrame, *, log: Optional[bool] = False
     ) -> pd.DataFrame:
         """Create datetime features.
+
         Parameters
         ----------
         df : pd.DataFrame
             The DataFrame containing the datetime columns
         log : Optional[bool], optional
             Whether to log warnings and errors, by default False
+
         Returns
         -------
         pd.DataFrame
@@ -180,26 +189,23 @@ class CalculateFeaturesStep(PipelineStep):
 
         if self.datetime_columns:
             for column in self.datetime_columns:
-                if column in df.columns:
-                    df = self._convert_column_to_datetime(df, column, log)
+                if column in dataset.columns:
+                    dataset = self._convert_column_to_datetime(dataset, column, log)
 
                     if self.features:
                         for feature in self.features:
-                            self._extract_feature(df, column, feature)
+                            self._extract_feature(dataset, column, feature)
                             created_features.append(f"{column}_{feature}")
-                    else:
-                        if log:
-                            self.logger.warning(
-                                "No datetime features specified. Skipping feature extraction."
-                            )
-                else:
-                    if log:
-                        self.logger.warning("Datetime column '{column}' not found in the DataFrame")
-        else:
-            if log:
-                self.logger.warning("No datetime columns specified. Skipping feature extraction.")
+                    elif log:
+                        self.logger.warning(
+                            "No datetime features specified. Skipping feature extraction."
+                        )
+                elif log:
+                    self.logger.warning("Datetime column '{column}' not found in the DataFrame")
+        elif log:
+            self.logger.warning("No datetime columns specified. Skipping feature extraction.")
 
         if log:
             self.logger.info(f"Created new features: {self.features}")
 
-        return df
+        return dataset

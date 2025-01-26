@@ -16,6 +16,7 @@ The key components of the pipeline include Pipeline Steps, which are predefined 
 - Evaluation metrics calculation and reporting
 - Explainable AI (XAI) dashboard for model interpretability
 - Extensible architecture for adding custom pipeline steps
+- MLOps best practices for ensuring consistent results between training and serving
 
 ## Installation
 

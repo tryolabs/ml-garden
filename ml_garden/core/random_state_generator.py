@@ -3,28 +3,17 @@ from typing import Optional
 import numpy as np
 from numpy.random import RandomState
 
-_random_state = None
 
+class RandomStateManager:
+    _instance: Optional[RandomState] = None
 
-def get_random_state() -> Optional[RandomState]:
-    """
-    Get the global random state object.
+    @classmethod
+    def get_state(cls) -> RandomState:
+        if cls._instance is None:
+            message = "Random state has not been initialized."
+            raise ValueError(message)
+        return cls._instance
 
-    Returns
-    ----------
-    RandomState or None: The global random state object if initialized, else None.
-    """
-    global _random_state
-    return _random_state
-
-
-def initialize_random_state(seed: int):
-    """
-    Initialize the global random state object with the provided seed.
-
-    Parameters
-    ----------
-    seed (int): The seed value to initialize the random state object.
-    """
-    global _random_state
-    _random_state = np.random.RandomState(seed)
+    @classmethod
+    def initialize(cls, seed: int) -> None:
+        cls._instance = np.random.RandomState(seed)
