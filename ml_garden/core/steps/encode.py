@@ -178,6 +178,8 @@ class EncodeStep(PipelineStep):
 
         encoded_data = self._restore_column_order(df, encoded_data)
         encoded_data = self._restore_numeric_dtypes(encoded_data, original_numeric_dtypes)
+        encoded_data = self._restore_target_encoded_dtypes(encoded_data, encoder)
+
         encoded_data = self._convert_float64_to_float32(encoded_data)
 
         feature_encoder_map = self._create_feature_encoder_map(encoder)
@@ -382,6 +384,22 @@ class EncodeStep(PipelineStep):
                         col,
                         dtype,
                     )
+        return encoded_data
+
+    def _restore_target_encoded_dtypes(self, encoded_data, encoder):
+        """Convert the columns handled by any TargetEncoder in the given encoder to float32."""
+        for name, transformer, cols in encoder.transformers:
+            # Direct TargetEncoder
+            if type(transformer).__name__ == "TargetEncoder":
+                for col in cols:
+                    encoded_data[col] = encoded_data[col].astype("float32")
+
+            # Nested transformers (if inside pipelines or additional ColumnTransformers)
+            elif hasattr(transformer, "transformers"):
+                for nested_name, nested_transformer, nested_cols in transformer.transformers:
+                    if type(nested_transformer).__name__ == "TargetEncoder":
+                        for col in nested_cols:
+                            encoded_data[col] = encoded_data[col].astype("float32")
         return encoded_data
 
     def _convert_float64_to_float32(self, encoded_data: pd.DataFrame) -> pd.DataFrame:
